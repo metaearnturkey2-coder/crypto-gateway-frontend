@@ -434,7 +434,7 @@ export default function DashboardPage() {
               </button>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <p className="text-zinc-400 text-sm mb-2">
                   Create Payment Endpoint
@@ -464,12 +464,52 @@ export default function DashboardPage() {
 
               <div>
                 <p className="text-zinc-400 text-sm mb-2">
+                  Status Endpoint
+                </p>
+
+                <div className="flex flex-col md:flex-row gap-3">
+                  <input
+                    type="text"
+                    value="GET http://localhost:5000/api/public/payments/status/{paymentId}"
+                    readOnly
+                    className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
+                  />
+
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        "http://localhost:5000/api/public/payments/status/{paymentId}"
+                      );
+                      alert("Status endpoint copied");
+                    }}
+                    className="bg-zinc-800 px-5 py-3 rounded-xl hover:bg-zinc-700 transition"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-zinc-400 text-sm mb-2">
                   Required Header
                 </p>
 
                 <input
                   type="text"
                   value="x-api-key: YOUR_API_KEY"
+                  readOnly
+                  className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
+                />
+              </div>
+
+              <div>
+                <p className="text-zinc-400 text-sm mb-2">
+                  Status by Order ID
+                </p>
+
+                <input
+                  type="text"
+                  value="GET /api/public/payments/status?orderId=ORDER-1001"
                   readOnly
                   className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
                 />
