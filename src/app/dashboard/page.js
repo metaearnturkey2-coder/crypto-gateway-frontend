@@ -72,6 +72,77 @@ const CodeSnippet = ({ title, description, value, copied, onCopy }) => (
   </div>
 );
 
+const DetailField = ({ label, value, actionLabel, onAction }) => (
+  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-zinc-500 text-xs mb-1">{label}</p>
+        <p className="break-all text-sm">{value || "Not provided"}</p>
+      </div>
+
+      {actionLabel && (
+        <button
+          type="button"
+          onClick={onAction}
+          className="shrink-0 bg-zinc-800 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition"
+        >
+          {actionLabel}
+        </button>
+      )}
+    </div>
+  </div>
+);
+
+const buildPaymentTimeline = (payment, webhooks) => {
+  const items = [
+    {
+      label: "Created",
+      detail: new Date(payment.createdAt).toLocaleString(),
+      tone: "complete",
+    },
+    {
+      label: "Awaiting payment",
+      detail: `Expires ${new Date(payment.expiresAt).toLocaleString()}`,
+      tone: payment.status === "PENDING" ? "active" : "complete",
+    },
+  ];
+
+  if (payment.status === "PAID") {
+    items.push({
+      label: "Paid",
+      detail: payment.txHash || "Transaction confirmed",
+      tone: "complete",
+    });
+  }
+
+  if (payment.status === "EXPIRED") {
+    items.push({
+      label: "Expired",
+      detail: "Checkout is no longer payable",
+      tone: "failed",
+    });
+  }
+
+  if (payment.status === "CANCELLED") {
+    items.push({
+      label: "Cancelled",
+      detail: "Merchant cancelled this payment",
+      tone: "failed",
+    });
+  }
+
+  if (webhooks.length > 0) {
+    const latestWebhook = webhooks[0];
+    items.push({
+      label: `Webhook ${latestWebhook.status}`,
+      detail: `${latestWebhook.event} - ${latestWebhook.attempts}/${latestWebhook.maxAttempts} attempts`,
+      tone: latestWebhook.status === "SUCCESS" ? "complete" : "active",
+    });
+  }
+
+  return items;
+};
+
 export default function DashboardPage() {
   const [merchant, setMerchant] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -1125,165 +1196,256 @@ app.post("/webhook", express.json(), (req, res) => {
 
       {selectedPayment && (
         <div className="fixed inset-0 z-50 bg-black/80 px-4 py-8 overflow-y-auto">
-          <div className="max-w-4xl mx-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+          <div className="max-w-6xl mx-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-2xl font-bold">Payment Details</h2>
-                <p className="text-zinc-400 text-sm break-all">
-                  {selectedPayment.id}
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setSelectedPayment(null);
-                  setWebhookHistory([]);
-                }}
-                className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8 text-sm">
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500">Amount</p>
-                <p className="text-xl font-bold">
-                  {selectedPayment.amount} {selectedPayment.currency}
-                </p>
-              </div>
-
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500">Status</p>
-                <p className="font-semibold">{selectedPayment.status}</p>
-              </div>
-
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500">Order ID</p>
-                <p className="break-all">
-                  {selectedPayment.orderId || "Not provided"}
-                </p>
-              </div>
-
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500">Customer</p>
-                <p className="break-all">
-                  {selectedPayment.customerEmail || "Not provided"}
-                </p>
-              </div>
-
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2">
-                <p className="text-zinc-500">Checkout URL</p>
-                <div className="flex flex-col md:flex-row gap-3 mt-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={`http://localhost:3000/pay/${selectedPayment.id}`}
-                    className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-                  />
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        `http://localhost:3000/pay/${selectedPayment.id}`
-                      );
-                      alert("Checkout URL copied");
-                    }}
-                    className="bg-white text-black px-5 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold">Payment Details</h2>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(
+                      selectedPayment.status
+                    )}`}
                   >
-                    Copy
-                  </button>
+                    {selectedPayment.status}
+                  </span>
                 </div>
-              </div>
-
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2">
-                <p className="text-zinc-500">Wallet Address</p>
-                <p className="break-all">{selectedPayment.walletAddress}</p>
-              </div>
-
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500">Tx Hash</p>
-                <p className="break-all">
-                  {selectedPayment.txHash || "Not confirmed yet"}
+                <p className="text-zinc-400 text-sm">
+                  {selectedPayment.amount} {selectedPayment.currency}
+                  {selectedPayment.orderId
+                    ? ` - ${selectedPayment.orderId}`
+                    : ""}
                 </p>
               </div>
 
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500">Time Left</p>
-                <p>{formatTimeLeft(selectedPayment.expiresAt, now)}</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={() => verifyPayment(selectedPayment.id)}
+                  disabled={selectedPayment.status !== "PENDING"}
+                  className="bg-blue-500 text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Verify Now
+                </button>
+
+                <button
+                  onClick={() => cancelPayment(selectedPayment.id)}
+                  disabled={selectedPayment.status !== "PENDING"}
+                  className="bg-red-500 text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Cancel
+                </button>
+
+                <a
+                  href={`/pay/${selectedPayment.id}`}
+                  target="_blank"
+                  className="bg-white text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition"
+                >
+                  Checkout
+                </a>
+
+                <button
+                  onClick={() => {
+                    setSelectedPayment(null);
+                    setWebhookHistory([]);
+                  }}
+                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+                >
+                  Close
+                </button>
               </div>
             </div>
 
-            <div>
-              <h3 className="text-xl font-bold mb-4">Webhook History</h3>
-
-              {detailsLoading && (
-                <p className="text-zinc-400">Loading webhook history...</p>
-              )}
-
-              {!detailsLoading && webhookHistory.length === 0 && (
-                <p className="text-zinc-400">No webhook events yet.</p>
-              )}
-
-              <div className="space-y-3">
-                {webhookHistory.map((webhook) => (
-                  <div
-                    key={webhook.id}
-                    className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"
-                  >
-                    <div className="flex flex-col lg:flex-row gap-4 lg:items-start lg:justify-between">
-                      <div className="text-sm text-zinc-400 space-y-1">
+            <div className="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
+              <aside className="space-y-4">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <h3 className="font-bold mb-4">Timeline</h3>
+                  <div className="space-y-4">
+                    {buildPaymentTimeline(
+                      selectedPayment,
+                      webhookHistory
+                    ).map((item, index) => (
+                      <div key={`${item.label}-${index}`} className="flex gap-3">
                         <span
-                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(
-                            webhook.status
-                          )}`}
-                        >
-                          {webhook.status}
-                        </span>
-
-                        <p className="break-all">
-                          <span className="text-zinc-500">URL:</span>{" "}
-                          {webhook.url}
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Event:</span>{" "}
-                          {webhook.event}
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Attempts:</span>{" "}
-                          {webhook.attempts}/{webhook.maxAttempts}
-                        </p>
-                        <p>
-                          <span className="text-zinc-500">Created:</span>{" "}
-                          {new Date(webhook.createdAt).toLocaleString()}
-                        </p>
-                        {webhook.nextRetryAt && (
-                          <p>
-                            <span className="text-zinc-500">Next retry:</span>{" "}
-                            {new Date(webhook.nextRetryAt).toLocaleString()}
+                          className={`mt-1 h-3 w-3 rounded-full ${
+                            item.tone === "failed"
+                              ? "bg-red-500"
+                              : item.tone === "active"
+                              ? "bg-yellow-500"
+                              : "bg-green-500"
+                          }`}
+                        />
+                        <div>
+                          <p className="font-semibold">{item.label}</p>
+                          <p className="text-zinc-500 text-xs break-all">
+                            {item.detail}
                           </p>
-                        )}
-                        {(webhook.lastStatusCode || webhook.lastError) && (
-                          <p className="break-all">
-                            <span className="text-zinc-500">Last result:</span>{" "}
-                            {webhook.lastStatusCode || webhook.lastError}
-                          </p>
-                        )}
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                </div>
 
-                      <button
-                        onClick={() => retryWebhook(webhook.id)}
-                        disabled={
-                          webhook.status === "SUCCESS" ||
-                          webhook.attempts >= webhook.maxAttempts
-                        }
-                        className="bg-blue-500 text-black px-4 py-2 rounded-xl hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Retry
-                      </button>
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <h3 className="font-bold mb-3">Operation Summary</h3>
+                  <div className="space-y-2 text-sm text-zinc-400">
+                    <p>
+                      <span className="text-zinc-500">Time left:</span>{" "}
+                      {formatTimeLeft(selectedPayment.expiresAt, now)}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Webhook events:</span>{" "}
+                      {webhookHistory.length}
+                    </p>
+                    <p>
+                      <span className="text-zinc-500">Network:</span>{" "}
+                      {selectedPayment.network}
+                    </p>
+                  </div>
+                </div>
+              </aside>
+
+              <section className="space-y-6">
+                <div>
+                  <h3 className="text-xl font-bold mb-4">Payment Data</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <DetailField
+                      label="Payment ID"
+                      value={selectedPayment.id}
+                      actionLabel="Copy"
+                      onAction={() => {
+                        navigator.clipboard.writeText(selectedPayment.id);
+                        alert("Payment ID copied");
+                      }}
+                    />
+                    <DetailField
+                      label="Checkout URL"
+                      value={`http://localhost:3000/pay/${selectedPayment.id}`}
+                      actionLabel="Copy"
+                      onAction={() => {
+                        navigator.clipboard.writeText(
+                          `http://localhost:3000/pay/${selectedPayment.id}`
+                        );
+                        alert("Checkout URL copied");
+                      }}
+                    />
+                    <DetailField
+                      label="Order ID"
+                      value={selectedPayment.orderId}
+                    />
+                    <DetailField
+                      label="Customer"
+                      value={selectedPayment.customerEmail}
+                    />
+                    <DetailField
+                      label="Wallet Address"
+                      value={selectedPayment.walletAddress}
+                      actionLabel="Copy"
+                      onAction={() => {
+                        navigator.clipboard.writeText(
+                          selectedPayment.walletAddress
+                        );
+                        alert("Wallet address copied");
+                      }}
+                    />
+                    <DetailField
+                      label="Tx Hash"
+                      value={selectedPayment.txHash || "Not confirmed yet"}
+                      actionLabel={selectedPayment.txHash ? "Copy" : ""}
+                      onAction={() => {
+                        navigator.clipboard.writeText(selectedPayment.txHash);
+                        alert("Tx hash copied");
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold">Webhook History</h3>
+                      <p className="text-zinc-500 text-sm">
+                        Delivery attempts and retry status for this payment.
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
+
+                  {detailsLoading && (
+                    <p className="text-zinc-400">Loading webhook history...</p>
+                  )}
+
+                  {!detailsLoading && webhookHistory.length === 0 && (
+                    <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-zinc-400">
+                      No webhook events yet.
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {webhookHistory.map((webhook) => (
+                      <div
+                        key={webhook.id}
+                        className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"
+                      >
+                        <div className="flex flex-col lg:flex-row gap-4 lg:items-start lg:justify-between">
+                          <div className="min-w-0 text-sm text-zinc-400 space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span
+                                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(
+                                  webhook.status
+                                )}`}
+                              >
+                                {webhook.status}
+                              </span>
+                              <span className="text-zinc-500">
+                                {webhook.event}
+                              </span>
+                            </div>
+
+                            <p className="break-all">
+                              <span className="text-zinc-500">URL:</span>{" "}
+                              {webhook.url}
+                            </p>
+                            <p>
+                              <span className="text-zinc-500">Attempts:</span>{" "}
+                              {webhook.attempts}/{webhook.maxAttempts}
+                            </p>
+                            <p>
+                              <span className="text-zinc-500">Created:</span>{" "}
+                              {new Date(webhook.createdAt).toLocaleString()}
+                            </p>
+                            {webhook.nextRetryAt && (
+                              <p>
+                                <span className="text-zinc-500">
+                                  Next retry:
+                                </span>{" "}
+                                {new Date(webhook.nextRetryAt).toLocaleString()}
+                              </p>
+                            )}
+                            {(webhook.lastStatusCode || webhook.lastError) && (
+                              <p className="break-all">
+                                <span className="text-zinc-500">
+                                  Last result:
+                                </span>{" "}
+                                {webhook.lastStatusCode ||
+                                  webhook.lastError}
+                              </p>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => retryWebhook(webhook.id)}
+                            disabled={
+                              webhook.status === "SUCCESS" ||
+                              webhook.attempts >= webhook.maxAttempts
+                            }
+                            className="bg-blue-500 text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </section>
             </div>
           </div>
         </div>
