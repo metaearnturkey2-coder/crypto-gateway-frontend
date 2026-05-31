@@ -1,8 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
+
+const formatTimeLeft = (expiresAt, now) => {
+  if (!expiresAt) {
+    return "No expiration";
+  }
+
+  if (!now) {
+    return "Calculating...";
+  }
+
+  const diff = new Date(expiresAt).getTime() - now;
+
+  if (diff <= 0) {
+    return "Expired";
+  }
+
+  const totalSeconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+};
 
 export default function PaymentCheckoutPage() {
   const params = useParams();
@@ -10,8 +32,9 @@ export default function PaymentCheckoutPage() {
 
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [now, setNow] = useState(0);
 
-  const fetchPayment = async () => {
+  const fetchPayment = useCallback(async () => {
     try {
       const response = await fetch(
         `http://localhost:5000/api/public/payments/${paymentId}`
@@ -31,17 +54,29 @@ export default function PaymentCheckoutPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [paymentId]);
 
   useEffect(() => {
-    fetchPayment();
+    const refreshPayment = () => {
+      fetchPayment();
+    };
+
+    refreshPayment();
 
     const interval = setInterval(() => {
-      fetchPayment();
+      refreshPayment();
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [paymentId]);
+  }, [fetchPayment]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   if (loading) {
     return (
@@ -67,7 +102,7 @@ export default function PaymentCheckoutPage() {
         </h1>
 
         <p className="text-zinc-400 mb-8">
-          Send the exact amount to the wallet below.
+          Send the exact amount before this payment expires.
         </p>
 
         <div className="bg-white p-4 rounded-2xl inline-block mb-6">
@@ -81,6 +116,20 @@ export default function PaymentCheckoutPage() {
               {payment.amount} {payment.currency}
             </p>
           </div>
+
+          {(payment.orderId || payment.customerEmail) && (
+            <div className="bg-zinc-800 rounded-xl p-4">
+              <p className="text-zinc-400 text-sm">Order</p>
+              {payment.orderId && (
+                <p className="font-semibold break-all">{payment.orderId}</p>
+              )}
+              {payment.customerEmail && (
+                <p className="text-sm text-zinc-400 break-all">
+                  {payment.customerEmail}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="bg-zinc-800 rounded-xl p-4">
             <p className="text-zinc-400 text-sm">Network</p>
@@ -110,11 +159,20 @@ export default function PaymentCheckoutPage() {
               className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${
                 payment.status === "PAID"
                   ? "bg-green-500 text-black"
+                  : payment.status === "EXPIRED"
+                  ? "bg-red-500 text-black"
                   : "bg-yellow-500 text-black"
               }`}
             >
               {payment.status}
             </span>
+          </div>
+
+          <div className="bg-zinc-800 rounded-xl p-4">
+            <p className="text-zinc-400 text-sm">Time Left</p>
+            <p className="text-2xl font-bold">
+              {formatTimeLeft(payment.expiresAt, now)}
+            </p>
           </div>
         </div>
 
