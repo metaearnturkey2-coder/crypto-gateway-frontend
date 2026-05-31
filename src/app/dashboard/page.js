@@ -49,6 +49,22 @@ const getPaymentStatusClassName = (status) => {
   return "bg-yellow-500 text-black";
 };
 
+const getAuditActionClassName = (action) => {
+  if (action.includes("regenerated")) {
+    return "bg-red-500 text-black";
+  }
+
+  if (action.includes("cancel")) {
+    return "bg-red-500 text-black";
+  }
+
+  if (action.includes("verified") || action.includes("created")) {
+    return "bg-green-500 text-black";
+  }
+
+  return "bg-zinc-700 text-white";
+};
+
 const CodeSnippet = ({ title, description, value, copied, onCopy }) => (
   <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#050505]">
     <div className="flex items-start justify-between gap-4 border-b border-zinc-800 px-4 py-3">
@@ -146,6 +162,7 @@ const buildPaymentTimeline = (payment, webhooks) => {
 export default function DashboardPage() {
   const [merchant, setMerchant] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [amount, setAmount] = useState("");
   const [orderId, setOrderId] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -211,6 +228,21 @@ export default function DashboardPage() {
       const paymentsData = await paymentsResponse.json();
 
       setPayments(paymentsData.payments || []);
+
+      const auditResponse = await fetch(
+        "http://localhost:5000/api/merchant/audit-logs",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const auditData = await auditResponse.json();
+
+      if (auditResponse.ok) {
+        setAuditLogs(auditData.auditLogs || []);
+      }
     } catch (error) {
       console.error(error);
       alert("Dashboard error");
@@ -955,6 +987,58 @@ app.post("/webhook", express.json(), (req, res) => {
             <p className="text-zinc-500 text-xs mt-4">
               Auto refresh active: payments update every 10 seconds.
             </p>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">Activity</h2>
+                <p className="text-zinc-500 text-sm">
+                  Latest merchant actions and operational events.
+                </p>
+              </div>
+
+              <span className="text-zinc-500 text-sm">
+                Last {auditLogs.length} events
+              </span>
+            </div>
+
+            {auditLogs.length === 0 && (
+              <p className="text-zinc-400">No activity recorded yet.</p>
+            )}
+
+            {auditLogs.length > 0 && (
+              <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
+                {auditLogs.map((log) => (
+                  <div
+                    key={log.id}
+                    className="grid grid-cols-1 lg:grid-cols-[180px_1fr_190px] gap-3 bg-zinc-950 p-4 text-sm"
+                  >
+                    <div>
+                      <span
+                        className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getAuditActionClassName(
+                          log.action
+                        )}`}
+                      >
+                        {log.action}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="font-semibold">{log.message}</p>
+                      <p className="text-zinc-500 text-xs break-all mt-1">
+                        {log.targetType}
+                        {log.targetId ? `: ${log.targetId}` : ""}
+                      </p>
+                    </div>
+
+                    <p className="text-zinc-500 lg:text-right">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4">
