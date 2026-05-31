@@ -162,6 +162,18 @@ const buildPaymentTimeline = (payment, webhooks) => {
 export default function DashboardPage() {
   const [merchant, setMerchant] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [paymentStats, setPaymentStats] = useState({
+    total: 0,
+    paid: 0,
+    pending: 0,
+    expired: 0,
+  });
+  const [paymentPagination, setPaymentPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalCount: 0,
+    totalPages: 1,
+  });
   const [auditLogs, setAuditLogs] = useState([]);
   const [amount, setAmount] = useState("");
   const [orderId, setOrderId] = useState("");
@@ -175,6 +187,7 @@ export default function DashboardPage() {
   const [paymentSearch, setPaymentSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
+  const [paymentPage, setPaymentPage] = useState(1);
   const [copiedSnippet, setCopiedSnippet] = useState("");
   const [activeIntegrationKey, setActiveIntegrationKey] =
     useState("create-payment");
@@ -216,8 +229,16 @@ export default function DashboardPage() {
 
       setCallbackUrl(dashboardData.merchant?.callbackUrl || "");
 
+      const paymentParams = new URLSearchParams({
+        page: String(paymentPage),
+        limit: String(paymentPagination.limit),
+        status: statusFilter,
+        webhookStatus: webhookStatusFilter,
+        search: paymentSearch.trim(),
+      });
+
       const paymentsResponse = await fetch(
-        "http://localhost:5000/api/payments",
+        `http://localhost:5000/api/payments?${paymentParams.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -228,6 +249,20 @@ export default function DashboardPage() {
       const paymentsData = await paymentsResponse.json();
 
       setPayments(paymentsData.payments || []);
+      setPaymentStats(
+        paymentsData.stats || {
+          total: 0,
+          paid: 0,
+          pending: 0,
+          expired: 0,
+        }
+      );
+      setPaymentPagination({
+        page: paymentsData.page || paymentPage,
+        limit: paymentsData.limit || paymentPagination.limit,
+        totalCount: paymentsData.totalCount || 0,
+        totalPages: paymentsData.totalPages || 1,
+      });
 
       const auditResponse = await fetch(
         "http://localhost:5000/api/merchant/audit-logs",
@@ -249,7 +284,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [
+    paymentPage,
+    paymentPagination.limit,
+    paymentSearch,
+    statusFilter,
+    webhookStatusFilter,
+  ]);
 
   const saveCallbackUrl = async (e) => {
     e.preventDefault();
@@ -521,36 +562,6 @@ export default function DashboardPage() {
     }
   };
 
-  const filteredPayments = useMemo(() => {
-    const normalizedSearch = paymentSearch.trim().toLowerCase();
-
-    return payments.filter((payment) => {
-      const latestWebhook = payment.webhookEvents?.[0];
-      const matchesStatus =
-        statusFilter === "ALL" || payment.status === statusFilter;
-      const matchesWebhookStatus =
-        webhookStatusFilter === "ALL" ||
-        latestWebhook?.status === webhookStatusFilter ||
-        (webhookStatusFilter === "NONE" && !latestWebhook);
-      const searchableText = [
-        payment.id,
-        payment.orderId,
-        payment.customerEmail,
-        payment.walletAddress,
-        payment.txHash,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return (
-        matchesStatus &&
-        matchesWebhookStatus &&
-        (!normalizedSearch || searchableText.includes(normalizedSearch))
-      );
-    });
-  }, [paymentSearch, payments, statusFilter, webhookStatusFilter]);
-
   const copySnippet = (name, value) => {
     navigator.clipboard.writeText(value);
     setCopiedSnippet(name);
@@ -724,33 +735,22 @@ app.post("/webhook", express.json(), (req, res) => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <p className="text-zinc-400 mb-2">Total Payments</p>
-              <h2 className="text-3xl font-bold">{payments.length}</h2>
+              <h2 className="text-3xl font-bold">{paymentStats.total}</h2>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <p className="text-zinc-400 mb-2">Paid Payments</p>
-              <h2 className="text-3xl font-bold">
-                {payments.filter((p) => p.status === "PAID").length}
-              </h2>
+              <h2 className="text-3xl font-bold">{paymentStats.paid}</h2>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <p className="text-zinc-400 mb-2">Pending Payments</p>
-              <h2 className="text-3xl font-bold">
-                {payments.filter((p) => p.status === "PENDING").length}
-              </h2>
+              <h2 className="text-3xl font-bold">{paymentStats.pending}</h2>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <p className="text-zinc-400 mb-2">Expired Payments</p>
-              <h2 className="text-3xl font-bold">
-                {
-                  payments.filter(
-                    (p) =>
-                      p.status === "EXPIRED" || p.status === "CANCELLED"
-                  ).length
-                }
-              </h2>
+              <h2 className="text-3xl font-bold">{paymentStats.expired}</h2>
             </div>
           </div>
 
@@ -759,7 +759,8 @@ app.post("/webhook", express.json(), (req, res) => {
               <div>
                 <h2 className="text-2xl font-bold">Payments</h2>
                 <p className="text-zinc-500 text-sm">
-                  Showing {filteredPayments.length} of {payments.length}
+                  Showing {payments.length} of {paymentPagination.totalCount}
+                  {" "}matching payments
                 </p>
               </div>
 
@@ -768,6 +769,7 @@ app.post("/webhook", express.json(), (req, res) => {
                   setPaymentSearch("");
                   setStatusFilter("ALL");
                   setWebhookStatusFilter("ALL");
+                  setPaymentPage(1);
                 }}
                 className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
               >
@@ -780,13 +782,19 @@ app.post("/webhook", express.json(), (req, res) => {
                 type="text"
                 placeholder="Search payment, order, customer, wallet, tx"
                 value={paymentSearch}
-                onChange={(e) => setPaymentSearch(e.target.value)}
+                onChange={(e) => {
+                  setPaymentSearch(e.target.value);
+                  setPaymentPage(1);
+                }}
                 className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               />
 
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPaymentPage(1);
+                }}
                 className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               >
                 <option value="ALL">All payment statuses</option>
@@ -798,7 +806,10 @@ app.post("/webhook", express.json(), (req, res) => {
 
               <select
                 value={webhookStatusFilter}
-                onChange={(e) => setWebhookStatusFilter(e.target.value)}
+                onChange={(e) => {
+                  setWebhookStatusFilter(e.target.value);
+                  setPaymentPage(1);
+                }}
                 className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               >
                 <option value="ALL">All webhook statuses</option>
@@ -810,17 +821,17 @@ app.post("/webhook", express.json(), (req, res) => {
             </div>
 
             <div className="space-y-4">
-              {payments.length === 0 && (
+              {paymentStats.total === 0 && (
                 <p className="text-zinc-400">No payments yet.</p>
               )}
 
-              {payments.length > 0 && filteredPayments.length === 0 && (
+              {paymentStats.total > 0 && payments.length === 0 && (
                 <p className="text-zinc-400">
                   No payments match the current filters.
                 </p>
               )}
 
-              {filteredPayments.map((payment) => (
+              {payments.map((payment) => (
                 <div
                   key={payment.id}
                   className="border border-zinc-800 rounded-xl p-6"
@@ -982,6 +993,43 @@ app.post("/webhook", express.json(), (req, res) => {
                   })()}
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <p className="text-zinc-500 text-sm">
+                Page {paymentPagination.page} of {paymentPagination.totalPages}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() =>
+                    setPaymentPage((currentPage) =>
+                      Math.max(currentPage - 1, 1)
+                    )
+                  }
+                  disabled={paymentPagination.page <= 1}
+                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <button
+                  onClick={() =>
+                    setPaymentPage((currentPage) =>
+                      Math.min(
+                        currentPage + 1,
+                        paymentPagination.totalPages
+                      )
+                    )
+                  }
+                  disabled={
+                    paymentPagination.page >= paymentPagination.totalPages
+                  }
+                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
             </div>
 
             <p className="text-zinc-500 text-xs mt-4">
