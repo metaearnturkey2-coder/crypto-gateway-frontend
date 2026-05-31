@@ -69,6 +69,18 @@ const getApiCallClassName = (success) => {
   return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
 };
 
+const getPayoutStatusClassName = (status) => {
+  if (status === "PAID" || status === "APPROVED") {
+    return "bg-green-500 text-black";
+  }
+
+  if (status === "REJECTED") {
+    return "bg-red-500 text-black";
+  }
+
+  return "bg-yellow-500 text-black";
+};
+
 const CodeSnippet = ({ title, description, value, copied, onCopy }) => (
   <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#050505]">
     <div className="flex items-start justify-between gap-4 border-b border-zinc-800 px-4 py-3">
@@ -197,9 +209,22 @@ export default function DashboardPage() {
     },
     recentCalls: [],
   });
+  const [settlements, setSettlements] = useState({
+    summary: {
+      grossPaid: 0,
+      reservedForPayouts: 0,
+      available: 0,
+      currency: "USDT",
+      network: "TRC20",
+    },
+    payoutRequests: [],
+  });
   const [amount, setAmount] = useState("");
   const [orderId, setOrderId] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
+  const [payoutAmount, setPayoutAmount] = useState("");
+  const [payoutWalletAddress, setPayoutWalletAddress] = useState("");
+  const [payoutNote, setPayoutNote] = useState("");
   const [callbackUrl, setCallbackUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(0);
@@ -340,6 +365,30 @@ export default function DashboardPage() {
             statusCalls: 0,
           },
           recentCalls: apiUsageData.recentCalls || [],
+        });
+      }
+
+      const settlementsResponse = await fetch(
+        "http://localhost:5000/api/merchant/settlements",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const settlementsData = await settlementsResponse.json();
+
+      if (settlementsResponse.ok) {
+        setSettlements({
+          summary: settlementsData.summary || {
+            grossPaid: 0,
+            reservedForPayouts: 0,
+            available: 0,
+            currency: "USDT",
+            network: "TRC20",
+          },
+          payoutRequests: settlementsData.payoutRequests || [],
         });
       }
     } catch (error) {
@@ -630,6 +679,57 @@ export default function DashboardPage() {
     }
   };
 
+  const createPayoutRequest = async (e) => {
+    e.preventDefault();
+
+    const token = localStorage.getItem("token");
+    const numericAmount = Number(payoutAmount);
+
+    if (!numericAmount || numericAmount <= 0) {
+      alert("Please enter a valid payout amount");
+      return;
+    }
+
+    if (!payoutWalletAddress.trim()) {
+      alert("Please enter a payout wallet address");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/merchant/payout-requests",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            amount: numericAmount,
+            walletAddress: payoutWalletAddress,
+            note: payoutNote || undefined,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      alert(data.message);
+
+      if (!response.ok) {
+        return;
+      }
+
+      setPayoutAmount("");
+      setPayoutWalletAddress("");
+      setPayoutNote("");
+      fetchDashboard();
+    } catch (error) {
+      console.error(error);
+      alert("Create payout request error");
+    }
+  };
+
   const copySnippet = (name, value) => {
     navigator.clipboard.writeText(value);
     setCopiedSnippet(name);
@@ -820,6 +920,121 @@ app.post("/webhook", express.json(), (req, res) => {
               <p className="text-zinc-400 mb-2">Expired Payments</p>
               <h2 className="text-3xl font-bold">{paymentStats.expired}</h2>
             </div>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">Balance & Settlements</h2>
+                <p className="text-zinc-500 text-sm mt-1">
+                  Request manual payouts from confirmed paid volume.
+                </p>
+              </div>
+
+              <span className="w-fit rounded-full border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-300">
+                {settlements.summary.network} {settlements.summary.currency}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Available</p>
+                <p className="text-3xl font-bold">
+                  {settlements.summary.available} {settlements.summary.currency}
+                </p>
+              </div>
+
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Gross Paid</p>
+                <p className="text-3xl font-bold">
+                  {settlements.summary.grossPaid} {settlements.summary.currency}
+                </p>
+              </div>
+
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Reserved</p>
+                <p className="text-3xl font-bold">
+                  {settlements.summary.reservedForPayouts}{" "}
+                  {settlements.summary.currency}
+                </p>
+              </div>
+            </div>
+
+            <form
+              onSubmit={createPayoutRequest}
+              className="grid grid-cols-1 lg:grid-cols-[160px_1fr_1fr_auto] gap-4 mb-5"
+            >
+              <input
+                type="number"
+                placeholder="Amount"
+                value={payoutAmount}
+                onChange={(e) => setPayoutAmount(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder="TRC20 payout wallet address"
+                value={payoutWalletAddress}
+                onChange={(e) => setPayoutWalletAddress(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder="Optional note"
+                value={payoutNote}
+                onChange={(e) => setPayoutNote(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <button
+                type="submit"
+                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+              >
+                Request Payout
+              </button>
+            </form>
+
+            {settlements.payoutRequests.length === 0 && (
+              <p className="text-zinc-400">No payout requests yet.</p>
+            )}
+
+            {settlements.payoutRequests.length > 0 && (
+              <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
+                {settlements.payoutRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="grid grid-cols-1 lg:grid-cols-[170px_1fr_160px_180px] gap-3 bg-zinc-950 p-4 text-sm"
+                  >
+                    <div>
+                      <p className="font-semibold">
+                        {request.amount} {request.currency}
+                      </p>
+                      <p className="text-zinc-500 text-xs">
+                        {request.network}
+                      </p>
+                    </div>
+
+                    <p className="break-all text-zinc-400">
+                      {request.walletAddress}
+                    </p>
+
+                    <span
+                      className={`h-fit w-fit rounded-full px-3 py-1 text-xs font-semibold ${getPayoutStatusClassName(
+                        request.status
+                      )}`}
+                    >
+                      {request.status}
+                    </span>
+
+                    <p className="text-zinc-500 lg:text-right">
+                      {new Date(request.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
