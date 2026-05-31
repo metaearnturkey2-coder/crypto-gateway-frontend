@@ -65,6 +65,10 @@ const getAuditActionClassName = (action) => {
   return "bg-zinc-700 text-white";
 };
 
+const getApiCallClassName = (success) => {
+  return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
+};
+
 const CodeSnippet = ({ title, description, value, copied, onCopy }) => (
   <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#050505]">
     <div className="flex items-start justify-between gap-4 border-b border-zinc-800 px-4 py-3">
@@ -183,6 +187,16 @@ export default function DashboardPage() {
   });
   const [auditActions, setAuditActions] = useState([]);
   const [auditTargetTypes, setAuditTargetTypes] = useState([]);
+  const [apiUsage, setApiUsage] = useState({
+    summary: {
+      total: 0,
+      successful: 0,
+      failed: 0,
+      createCalls: 0,
+      statusCalls: 0,
+    },
+    recentCalls: [],
+  });
   const [amount, setAmount] = useState("");
   const [orderId, setOrderId] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -303,6 +317,30 @@ export default function DashboardPage() {
         });
         setAuditActions(auditData.actions || []);
         setAuditTargetTypes(auditData.targetTypes || []);
+      }
+
+      const apiUsageResponse = await fetch(
+        "http://localhost:5000/api/merchant/api-usage",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const apiUsageData = await apiUsageResponse.json();
+
+      if (apiUsageResponse.ok) {
+        setApiUsage({
+          summary: apiUsageData.summary || {
+            total: 0,
+            successful: 0,
+            failed: 0,
+            createCalls: 0,
+            statusCalls: 0,
+          },
+          recentCalls: apiUsageData.recentCalls || [],
+        });
       }
     } catch (error) {
       console.error(error);
@@ -1193,6 +1231,87 @@ app.post("/webhook", express.json(), (req, res) => {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">API Usage</h2>
+                <p className="text-zinc-500 text-sm">
+                  Public API request volume and recent integration calls.
+                </p>
+              </div>
+
+              <span className="text-zinc-500 text-sm">Last 24 hours</span>
+            </div>
+
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Requests</p>
+                <p className="text-2xl font-bold">{apiUsage.summary.total}</p>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Successful</p>
+                <p className="text-2xl font-bold">
+                  {apiUsage.summary.successful}
+                </p>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Failed</p>
+                <p className="text-2xl font-bold">{apiUsage.summary.failed}</p>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Create Calls</p>
+                <p className="text-2xl font-bold">
+                  {apiUsage.summary.createCalls}
+                </p>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Status Calls</p>
+                <p className="text-2xl font-bold">
+                  {apiUsage.summary.statusCalls}
+                </p>
+              </div>
+            </div>
+
+            {apiUsage.recentCalls.length === 0 && (
+              <p className="text-zinc-400">No API requests recorded yet.</p>
+            )}
+
+            {apiUsage.recentCalls.length > 0 && (
+              <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
+                {apiUsage.recentCalls.map((call) => (
+                  <div
+                    key={call.id}
+                    className="grid grid-cols-1 lg:grid-cols-[170px_1fr_110px_190px] gap-3 bg-zinc-950 p-4 text-sm"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${getApiCallClassName(
+                          call.success
+                        )}`}
+                      >
+                        {call.statusCode}
+                      </span>
+                      <span className="text-zinc-500">{call.method}</span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="font-semibold">{call.endpoint}</p>
+                      <p className="text-zinc-500 text-xs break-all mt-1">
+                        {call.path}
+                      </p>
+                    </div>
+
+                    <p className="text-zinc-500">{call.durationMs}ms</p>
+
+                    <p className="text-zinc-500 lg:text-right">
+                      {new Date(call.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4">
