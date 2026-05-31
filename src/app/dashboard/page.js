@@ -175,6 +175,14 @@ export default function DashboardPage() {
     totalPages: 1,
   });
   const [auditLogs, setAuditLogs] = useState([]);
+  const [auditPagination, setAuditPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalCount: 0,
+    totalPages: 1,
+  });
+  const [auditActions, setAuditActions] = useState([]);
+  const [auditTargetTypes, setAuditTargetTypes] = useState([]);
   const [amount, setAmount] = useState("");
   const [orderId, setOrderId] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
@@ -188,6 +196,9 @@ export default function DashboardPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
   const [paymentPage, setPaymentPage] = useState(1);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditActionFilter, setAuditActionFilter] = useState("ALL");
+  const [auditTargetTypeFilter, setAuditTargetTypeFilter] = useState("ALL");
   const [copiedSnippet, setCopiedSnippet] = useState("");
   const [activeIntegrationKey, setActiveIntegrationKey] =
     useState("create-payment");
@@ -264,8 +275,15 @@ export default function DashboardPage() {
         totalPages: paymentsData.totalPages || 1,
       });
 
+      const auditParams = new URLSearchParams({
+        page: String(auditPage),
+        limit: String(auditPagination.limit),
+        action: auditActionFilter,
+        targetType: auditTargetTypeFilter,
+      });
+
       const auditResponse = await fetch(
-        "http://localhost:5000/api/merchant/audit-logs",
+        `http://localhost:5000/api/merchant/audit-logs?${auditParams.toString()}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -277,6 +295,14 @@ export default function DashboardPage() {
 
       if (auditResponse.ok) {
         setAuditLogs(auditData.auditLogs || []);
+        setAuditPagination({
+          page: auditData.page || auditPage,
+          limit: auditData.limit || auditPagination.limit,
+          totalCount: auditData.totalCount || 0,
+          totalPages: auditData.totalPages || 1,
+        });
+        setAuditActions(auditData.actions || []);
+        setAuditTargetTypes(auditData.targetTypes || []);
       }
     } catch (error) {
       console.error(error);
@@ -285,6 +311,10 @@ export default function DashboardPage() {
       setLoading(false);
     }
   }, [
+    auditActionFilter,
+    auditPage,
+    auditPagination.limit,
+    auditTargetTypeFilter,
     paymentPage,
     paymentPagination.limit,
     paymentSearch,
@@ -1042,16 +1072,62 @@ app.post("/webhook", express.json(), (req, res) => {
               <div>
                 <h2 className="text-2xl font-bold">Activity</h2>
                 <p className="text-zinc-500 text-sm">
-                  Latest merchant actions and operational events.
+                  Showing {auditLogs.length} of {auditPagination.totalCount}
+                  {" "}matching events.
                 </p>
               </div>
 
               <span className="text-zinc-500 text-sm">
-                Last {auditLogs.length} events
+                Page {auditPagination.page} of {auditPagination.totalPages}
               </span>
             </div>
 
-            {auditLogs.length === 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 mb-5">
+              <select
+                value={auditActionFilter}
+                onChange={(e) => {
+                  setAuditActionFilter(e.target.value);
+                  setAuditPage(1);
+                }}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              >
+                <option value="ALL">All actions</option>
+                {auditActions.map((action) => (
+                  <option key={action} value={action}>
+                    {action}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={auditTargetTypeFilter}
+                onChange={(e) => {
+                  setAuditTargetTypeFilter(e.target.value);
+                  setAuditPage(1);
+                }}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              >
+                <option value="ALL">All target types</option>
+                {auditTargetTypes.map((targetType) => (
+                  <option key={targetType} value={targetType}>
+                    {targetType}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                onClick={() => {
+                  setAuditActionFilter("ALL");
+                  setAuditTargetTypeFilter("ALL");
+                  setAuditPage(1);
+                }}
+                className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
+              >
+                Clear
+              </button>
+            </div>
+
+            {auditPagination.totalCount === 0 && (
               <p className="text-zinc-400">No activity recorded yet.</p>
             )}
 
@@ -1087,6 +1163,36 @@ app.post("/webhook", express.json(), (req, res) => {
                 ))}
               </div>
             )}
+
+            <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <p className="text-zinc-500 text-sm">
+                Page {auditPagination.page} of {auditPagination.totalPages}
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() =>
+                    setAuditPage((currentPage) => Math.max(currentPage - 1, 1))
+                  }
+                  disabled={auditPagination.page <= 1}
+                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Previous
+                </button>
+
+                <button
+                  onClick={() =>
+                    setAuditPage((currentPage) =>
+                      Math.min(currentPage + 1, auditPagination.totalPages)
+                    )
+                  }
+                  disabled={auditPagination.page >= auditPagination.totalPages}
+                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4">
