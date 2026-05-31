@@ -26,6 +26,18 @@ const formatTimeLeft = (expiresAt, now) => {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 };
 
+const getPaymentStatusClassName = (status) => {
+  if (status === "PAID") {
+    return "bg-green-500 text-black";
+  }
+
+  if (status === "EXPIRED" || status === "CANCELLED") {
+    return "bg-red-500 text-black";
+  }
+
+  return "bg-yellow-500 text-black";
+};
+
 export default function PaymentCheckoutPage() {
   const params = useParams();
   const paymentId = params.id;
@@ -102,7 +114,9 @@ export default function PaymentCheckoutPage() {
         </h1>
 
         <p className="text-zinc-400 mb-8">
-          Send the exact amount before this payment expires.
+          {payment.status === "CANCELLED"
+            ? "This payment has been cancelled by the merchant."
+            : "Send the exact amount before this payment expires."}
         </p>
 
         <div className="bg-white p-4 rounded-2xl inline-block mb-6">
@@ -156,13 +170,9 @@ export default function PaymentCheckoutPage() {
           <div className="bg-zinc-800 rounded-xl p-4">
             <p className="text-zinc-400 text-sm">Status</p>
             <span
-              className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${
-                payment.status === "PAID"
-                  ? "bg-green-500 text-black"
-                  : payment.status === "EXPIRED"
-                  ? "bg-red-500 text-black"
-                  : "bg-yellow-500 text-black"
-              }`}
+              className={`inline-block mt-2 px-3 py-1 rounded-full text-sm font-semibold ${getPaymentStatusClassName(
+                payment.status
+              )}`}
             >
               {payment.status}
             </span>

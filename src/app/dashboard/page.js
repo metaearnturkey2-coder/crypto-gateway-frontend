@@ -37,6 +37,18 @@ const getWebhookStatusClassName = (status) => {
   return "bg-zinc-700 text-white";
 };
 
+const getPaymentStatusClassName = (status) => {
+  if (status === "PAID") {
+    return "bg-green-500 text-black";
+  }
+
+  if (status === "EXPIRED" || status === "CANCELLED") {
+    return "bg-red-500 text-black";
+  }
+
+  return "bg-yellow-500 text-black";
+};
+
 export default function DashboardPage() {
   const [merchant, setMerchant] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -197,6 +209,39 @@ export default function DashboardPage() {
     } catch (error) {
       console.error(error);
       alert("Verify payment error");
+    }
+  };
+
+  const cancelPayment = async (paymentId) => {
+    const confirmed = window.confirm(
+      "Cancel this payment? The checkout will no longer be payable."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/payments/${paymentId}/cancel`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      alert(data.message);
+
+      fetchDashboard();
+    } catch (error) {
+      console.error(error);
+      alert("Cancel payment error");
     }
   };
 
@@ -396,7 +441,12 @@ export default function DashboardPage() {
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <p className="text-zinc-400 mb-2">Expired Payments</p>
               <h2 className="text-3xl font-bold">
-                {payments.filter((p) => p.status === "EXPIRED").length}
+                {
+                  payments.filter(
+                    (p) =>
+                      p.status === "EXPIRED" || p.status === "CANCELLED"
+                  ).length
+                }
               </h2>
             </div>
           </div>
@@ -723,6 +773,14 @@ export default function DashboardPage() {
                         Verify Now
                       </button>
 
+                      <button
+                        onClick={() => cancelPayment(payment.id)}
+                        disabled={payment.status !== "PENDING"}
+                        className="bg-red-500 text-black px-4 py-2 rounded-xl hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Cancel
+                      </button>
+
                       <a
                         href={`/pay/${payment.id}`}
                         target="_blank"
@@ -748,13 +806,9 @@ export default function DashboardPage() {
                       </div>
 
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          payment.status === "PAID"
-                            ? "bg-green-500 text-black"
-                            : payment.status === "EXPIRED"
-                            ? "bg-red-500 text-black"
-                            : "bg-yellow-500 text-black"
-                        }`}
+                        className={`px-3 py-1 rounded-full text-sm font-semibold ${getPaymentStatusClassName(
+                          payment.status
+                        )}`}
                       >
                         {payment.status}
                       </span>
