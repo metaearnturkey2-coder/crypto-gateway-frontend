@@ -498,19 +498,38 @@ export default function DashboardPage() {
       {
         key: "webhook-handler",
         title: "Verify Webhook Signature",
-        description: "Verifies x-webhook-signature before processing events.",
+        description: "Verifies timestamped signatures and rejects old payloads.",
         method: "POST",
         path: "merchant webhook URL",
         value: `const crypto = require("crypto");
 
 app.post("/webhook", express.json(), (req, res) => {
   const signature = req.header("x-webhook-signature");
+  const timestamp = req.header("x-webhook-timestamp");
+  const toleranceSeconds = 300;
+
+  if (!signature || !timestamp) {
+    return res.sendStatus(401);
+  }
+
+  const ageSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
+
+  if (!Number.isFinite(ageSeconds) || ageSeconds > toleranceSeconds) {
+    return res.sendStatus(401);
+  }
+
   const expected = crypto
     .createHmac("sha256", "${webhookSecret}")
-    .update(JSON.stringify(req.body))
+    .update(\`\${timestamp}.\${JSON.stringify(req.body)}\`)
     .digest("hex");
 
-  if (signature !== expected) {
+  const signatureBuffer = Buffer.from(signature, "hex");
+  const expectedBuffer = Buffer.from(expected, "hex");
+  const isValid =
+    signatureBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
+
+  if (!isValid) {
     return res.sendStatus(401);
   }
 
@@ -1088,7 +1107,9 @@ app.post("/webhook", express.json(), (req, res) => {
 
               <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
                 <p className="text-zinc-500 text-xs mb-2">Webhook header</p>
-                <p className="font-mono break-all">x-webhook-signature</p>
+                <p className="font-mono break-all">
+                  x-webhook-signature + x-webhook-timestamp
+                </p>
               </div>
 
               <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
