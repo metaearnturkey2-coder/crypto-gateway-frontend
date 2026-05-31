@@ -216,6 +216,44 @@ export default function DashboardPage() {
     }
   };
 
+  const regenerateWebhookSecret = async () => {
+    const confirmed = window.confirm(
+      "Regenerating your webhook secret will require updating signature verification in your webhook receiver. Continue?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/merchant/webhook-secret/regenerate",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Webhook secret regenerate error");
+        return;
+      }
+
+      setMerchant(data.merchant);
+      setCallbackUrl(data.merchant?.callbackUrl || "");
+      alert(data.message);
+    } catch (error) {
+      console.error(error);
+      alert("Webhook secret regenerate error");
+    }
+  };
+
   const verifyPayment = async (paymentId) => {
     const token = localStorage.getItem("token");
 
@@ -421,6 +459,7 @@ export default function DashboardPage() {
 
   const integrationSnippets = useMemo(() => {
     const apiKey = merchant?.apiKey || "YOUR_API_KEY";
+    const webhookSecret = merchant?.webhookSecret || "YOUR_WEBHOOK_SECRET";
 
     return [
       {
@@ -467,7 +506,7 @@ export default function DashboardPage() {
 app.post("/webhook", express.json(), (req, res) => {
   const signature = req.header("x-webhook-signature");
   const expected = crypto
-    .createHmac("sha256", process.env.WEBHOOK_SECRET)
+    .createHmac("sha256", "${webhookSecret}")
     .update(JSON.stringify(req.body))
     .digest("hex");
 
@@ -486,7 +525,7 @@ app.post("/webhook", express.json(), (req, res) => {
 });`,
       },
     ];
-  }, [merchant?.apiKey]);
+  }, [merchant?.apiKey, merchant?.webhookSecret]);
 
   const activeIntegration =
     integrationSnippets.find(
@@ -874,9 +913,13 @@ app.post("/webhook", express.json(), (req, res) => {
               Webhook Settings
             </h2>
 
+            <p className="text-zinc-400 text-sm mb-4">
+              Configure the receiver URL and verify webhook signatures with your merchant secret.
+            </p>
+
             <form
               onSubmit={saveCallbackUrl}
-              className="flex flex-col md:flex-row gap-4"
+              className="flex flex-col md:flex-row gap-4 mb-5"
             >
               <input
                 type="text"
@@ -893,6 +936,38 @@ app.post("/webhook", express.json(), (req, res) => {
                 Save URL
               </button>
             </form>
+
+            <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
+              <p className="text-zinc-500 text-xs mb-2">Webhook secret</p>
+
+              <div className="flex flex-col md:flex-row gap-3">
+                <input
+                  type="text"
+                  value={merchant?.webhookSecret || ""}
+                  readOnly
+                  className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
+                />
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      merchant?.webhookSecret || ""
+                    );
+                    alert("Webhook secret copied");
+                  }}
+                  className="bg-white text-black px-5 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                >
+                  Copy Secret
+                </button>
+
+                <button
+                  onClick={regenerateWebhookSecret}
+                  className="bg-red-500 text-black px-5 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                >
+                  Regenerate
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
