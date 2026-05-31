@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 const formatTimeLeft = (expiresAt, now) => {
@@ -61,6 +61,9 @@ export default function DashboardPage() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [webhookHistory, setWebhookHistory] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -350,6 +353,36 @@ export default function DashboardPage() {
       alert("Create payment error");
     }
   };
+
+  const filteredPayments = useMemo(() => {
+    const normalizedSearch = paymentSearch.trim().toLowerCase();
+
+    return payments.filter((payment) => {
+      const latestWebhook = payment.webhookEvents?.[0];
+      const matchesStatus =
+        statusFilter === "ALL" || payment.status === statusFilter;
+      const matchesWebhookStatus =
+        webhookStatusFilter === "ALL" ||
+        latestWebhook?.status === webhookStatusFilter ||
+        (webhookStatusFilter === "NONE" && !latestWebhook);
+      const searchableText = [
+        payment.id,
+        payment.orderId,
+        payment.customerEmail,
+        payment.walletAddress,
+        payment.txHash,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return (
+        matchesStatus &&
+        matchesWebhookStatus &&
+        (!normalizedSearch || searchableText.includes(normalizedSearch))
+      );
+    });
+  }, [paymentSearch, payments, statusFilter, webhookStatusFilter]);
 
   useEffect(() => {
     const refreshDashboard = () => {
@@ -649,14 +682,72 @@ export default function DashboardPage() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold mb-4">Payments</h2>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-2xl font-bold">Payments</h2>
+                <p className="text-zinc-500 text-sm">
+                  Showing {filteredPayments.length} of {payments.length}
+                </p>
+              </div>
+
+              <button
+                onClick={() => {
+                  setPaymentSearch("");
+                  setStatusFilter("ALL");
+                  setWebhookStatusFilter("ALL");
+                }}
+                className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+              >
+                Clear Filters
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+              <input
+                type="text"
+                placeholder="Search payment, order, customer, wallet, tx"
+                value={paymentSearch}
+                onChange={(e) => setPaymentSearch(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              >
+                <option value="ALL">All payment statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="PAID">Paid</option>
+                <option value="EXPIRED">Expired</option>
+                <option value="CANCELLED">Cancelled</option>
+              </select>
+
+              <select
+                value={webhookStatusFilter}
+                onChange={(e) => setWebhookStatusFilter(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              >
+                <option value="ALL">All webhook statuses</option>
+                <option value="SUCCESS">Webhook success</option>
+                <option value="PENDING">Webhook pending</option>
+                <option value="FAILED">Webhook failed</option>
+                <option value="NONE">No webhook</option>
+              </select>
+            </div>
 
             <div className="space-y-4">
               {payments.length === 0 && (
                 <p className="text-zinc-400">No payments yet.</p>
               )}
 
-              {payments.map((payment) => (
+              {payments.length > 0 && filteredPayments.length === 0 && (
+                <p className="text-zinc-400">
+                  No payments match the current filters.
+                </p>
+              )}
+
+              {filteredPayments.map((payment) => (
                 <div
                   key={payment.id}
                   className="border border-zinc-800 rounded-xl p-6"
