@@ -49,6 +49,29 @@ const getPaymentStatusClassName = (status) => {
   return "bg-yellow-500 text-black";
 };
 
+const CodeSnippet = ({ title, description, value, copied, onCopy }) => (
+  <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#050505]">
+    <div className="flex items-start justify-between gap-4 border-b border-zinc-800 px-4 py-3">
+      <div>
+        <h3 className="font-semibold">{title}</h3>
+        <p className="text-zinc-500 text-xs mt-1">{description}</p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onCopy}
+        className="shrink-0 bg-white text-black px-4 py-2 rounded-lg text-xs font-semibold hover:opacity-80 transition"
+      >
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+
+    <pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-zinc-200">
+      <code>{value}</code>
+    </pre>
+  </div>
+);
+
 export default function DashboardPage() {
   const [merchant, setMerchant] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -64,6 +87,9 @@ export default function DashboardPage() {
   const [paymentSearch, setPaymentSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
+  const [copiedSnippet, setCopiedSnippet] = useState("");
+  const [activeIntegrationKey, setActiveIntegrationKey] =
+    useState("create-payment");
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -384,6 +410,89 @@ export default function DashboardPage() {
     });
   }, [paymentSearch, payments, statusFilter, webhookStatusFilter]);
 
+  const copySnippet = (name, value) => {
+    navigator.clipboard.writeText(value);
+    setCopiedSnippet(name);
+
+    setTimeout(() => {
+      setCopiedSnippet("");
+    }, 1500);
+  };
+
+  const integrationSnippets = useMemo(() => {
+    const apiKey = merchant?.apiKey || "YOUR_API_KEY";
+
+    return [
+      {
+        key: "create-payment",
+        title: "Create Payment",
+        description: "Creates a checkout session and returns a checkoutUrl.",
+        method: "POST",
+        path: "/api/public/payments/create",
+        value: `curl -X POST http://localhost:5000/api/public/payments/create \\
+  -H "Content-Type: application/json" \\
+  -H "x-api-key: ${apiKey}" \\
+  -d '{
+    "amount": 25,
+    "orderId": "ORDER-1001",
+    "customerEmail": "customer@example.com"
+  }'`,
+      },
+      {
+        key: "status-by-payment",
+        title: "Status by Payment ID",
+        description: "Checks a payment by its gateway payment ID.",
+        method: "GET",
+        path: "/api/public/payments/status/{paymentId}",
+        value: `curl -X GET http://localhost:5000/api/public/payments/status/{paymentId} \\
+  -H "x-api-key: ${apiKey}"`,
+      },
+      {
+        key: "status-by-order",
+        title: "Status by Order ID",
+        description: "Checks a payment by the merchant order ID.",
+        method: "GET",
+        path: "/api/public/payments/status?orderId=ORDER-1001",
+        value: `curl -X GET "http://localhost:5000/api/public/payments/status?orderId=ORDER-1001" \\
+  -H "x-api-key: ${apiKey}"`,
+      },
+      {
+        key: "webhook-handler",
+        title: "Verify Webhook Signature",
+        description: "Verifies x-webhook-signature before processing events.",
+        method: "POST",
+        path: "merchant webhook URL",
+        value: `const crypto = require("crypto");
+
+app.post("/webhook", express.json(), (req, res) => {
+  const signature = req.header("x-webhook-signature");
+  const expected = crypto
+    .createHmac("sha256", process.env.WEBHOOK_SECRET)
+    .update(JSON.stringify(req.body))
+    .digest("hex");
+
+  if (signature !== expected) {
+    return res.sendStatus(401);
+  }
+
+  const event = req.body.event;
+  const payment = req.body.payment;
+
+  if (event === "payment.paid") {
+    // Mark order as paid in your system.
+  }
+
+  res.sendStatus(200);
+});`,
+      },
+    ];
+  }, [merchant?.apiKey]);
+
+  const activeIntegration =
+    integrationSnippets.find(
+      (snippet) => snippet.key === activeIntegrationKey
+    ) || integrationSnippets[0];
+
   useEffect(() => {
     const refreshDashboard = () => {
       fetchDashboard();
@@ -485,203 +594,6 @@ export default function DashboardPage() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">API Key</h2>
-
-            <p className="text-zinc-400 text-sm mb-3">
-              Use this key to create payments from external merchant websites.
-            </p>
-
-            <div className="flex flex-col md:flex-row gap-4">
-              <input
-                type="text"
-                value={merchant?.apiKey || ""}
-                readOnly
-                className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-              />
-
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(merchant?.apiKey || "");
-                  alert("API key copied");
-                }}
-                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
-                Copy API Key
-              </button>
-
-              <button
-                onClick={regenerateApiKey}
-                className="bg-red-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
-                Regenerate
-              </button>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <p className="text-zinc-400 text-sm mb-2">
-                  Create Payment Endpoint
-                </p>
-
-                <div className="flex flex-col md:flex-row gap-3">
-                  <input
-                    type="text"
-                    value="POST http://localhost:5000/api/public/payments/create"
-                    readOnly
-                    className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-                  />
-
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        "http://localhost:5000/api/public/payments/create"
-                      );
-                      alert("Endpoint copied");
-                    }}
-                    className="bg-zinc-800 px-5 py-3 rounded-xl hover:bg-zinc-700 transition"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-zinc-400 text-sm mb-2">
-                  Status Endpoint
-                </p>
-
-                <div className="flex flex-col md:flex-row gap-3">
-                  <input
-                    type="text"
-                    value="GET http://localhost:5000/api/public/payments/status/{paymentId}"
-                    readOnly
-                    className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-                  />
-
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(
-                        "http://localhost:5000/api/public/payments/status/{paymentId}"
-                      );
-                      alert("Status endpoint copied");
-                    }}
-                    className="bg-zinc-800 px-5 py-3 rounded-xl hover:bg-zinc-700 transition"
-                  >
-                    Copy
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-zinc-400 text-sm mb-2">
-                  Required Header
-                </p>
-
-                <input
-                  type="text"
-                  value="x-api-key: YOUR_API_KEY"
-                  readOnly
-                  className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-                />
-              </div>
-
-              <div>
-                <p className="text-zinc-400 text-sm mb-2">
-                  Status by Order ID
-                </p>
-
-                <input
-                  type="text"
-                  value="GET /api/public/payments/status?orderId=ORDER-1001"
-                  readOnly
-                  className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-                />
-              </div>
-
-              <div>
-                <p className="text-zinc-400 text-sm mb-2">
-                  Example Body
-                </p>
-
-                <input
-                  type="text"
-                  value='{ "amount": 25, "orderId": "ORDER-1001", "customerEmail": "customer@example.com" }'
-                  readOnly
-                  className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">
-              Webhook Settings
-            </h2>
-
-            <form
-              onSubmit={saveCallbackUrl}
-              className="flex flex-col md:flex-row gap-4"
-            >
-              <input
-                type="text"
-                placeholder="https://your-site.com/webhook"
-                value={callbackUrl}
-                onChange={(e) => setCallbackUrl(e.target.value)}
-                className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <button
-                type="submit"
-                className="bg-blue-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
-                Save URL
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">
-              Create Payment
-            </h2>
-
-            <form
-              onSubmit={createPayment}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
-            >
-              <input
-                type="number"
-                placeholder="Amount USDT"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <input
-                type="text"
-                placeholder="Order ID"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <input
-                type="email"
-                placeholder="Customer email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <button
-                type="submit"
-                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
-                Create Payment
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-2xl font-bold">Payments</h2>
@@ -915,6 +827,203 @@ export default function DashboardPage() {
               Auto refresh active: payments update every 10 seconds.
             </p>
           </div>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <h2 className="text-2xl font-bold mb-4">
+              Create Payment
+            </h2>
+
+            <form
+              onSubmit={createPayment}
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+            >
+              <input
+                type="number"
+                placeholder="Amount USDT"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder="Order ID"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <input
+                type="email"
+                placeholder="Customer email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <button
+                type="submit"
+                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+              >
+                Create Payment
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <h2 className="text-2xl font-bold mb-4">
+              Webhook Settings
+            </h2>
+
+            <form
+              onSubmit={saveCallbackUrl}
+              className="flex flex-col md:flex-row gap-4"
+            >
+              <input
+                type="text"
+                placeholder="https://your-site.com/webhook"
+                value={callbackUrl}
+                onChange={(e) => setCallbackUrl(e.target.value)}
+                className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <button
+                type="submit"
+                className="bg-blue-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+              >
+                Save URL
+              </button>
+            </form>
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <h2 className="text-2xl font-bold mb-4">API Key</h2>
+
+            <p className="text-zinc-400 text-sm mb-3">
+              Use this key to create payments from external merchant websites.
+            </p>
+
+            <div className="flex flex-col md:flex-row gap-4">
+              <input
+                type="text"
+                value={merchant?.apiKey || ""}
+                readOnly
+                className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
+              />
+
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(merchant?.apiKey || "");
+                  alert("API key copied");
+                }}
+                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+              >
+                Copy API Key
+              </button>
+
+              <button
+                onClick={regenerateApiKey}
+                className="bg-red-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+              >
+                Regenerate
+              </button>
+            </div>
+
+          </div>
+
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl font-bold">
+                  Integration
+                </h2>
+                <p className="text-zinc-400 text-sm mt-2">
+                  Production-ready API examples for merchant checkout flows.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-2 text-xs">
+                {["payment.paid", "payment.cancelled", "payment.expired"].map(
+                  (event) => (
+                    <span
+                      key={event}
+                      className="border border-zinc-700 bg-zinc-950 rounded-lg px-3 py-2 text-zinc-300"
+                    >
+                      {event}
+                    </span>
+                  )
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-5">
+              <div className="space-y-3">
+                {integrationSnippets.map((snippet) => (
+                  <button
+                    key={snippet.key}
+                    type="button"
+                    onClick={() => setActiveIntegrationKey(snippet.key)}
+                    className={`w-full text-left border rounded-xl p-4 transition ${
+                      activeIntegrationKey === snippet.key
+                        ? "border-white bg-zinc-950"
+                        : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-semibold">{snippet.title}</p>
+                      <span
+                        className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
+                          snippet.method === "GET"
+                            ? "bg-blue-500 text-black"
+                            : "bg-green-500 text-black"
+                        }`}
+                      >
+                        {snippet.method}
+                      </span>
+                    </div>
+
+                    <p className="text-zinc-500 text-xs mt-2">
+                      {snippet.description}
+                    </p>
+
+                    <p className="font-mono text-[11px] text-zinc-400 mt-3 break-all">
+                      {snippet.path}
+                    </p>
+                  </button>
+                ))}
+              </div>
+
+              <div className="min-w-0">
+                <CodeSnippet
+                  title={activeIntegration.title}
+                  description={activeIntegration.description}
+                  value={activeIntegration.value}
+                  copied={copiedSnippet === activeIntegration.key}
+                  onCopy={() =>
+                    copySnippet(activeIntegration.key, activeIntegration.value)
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">API header</p>
+                <p className="font-mono break-all">x-api-key</p>
+              </div>
+
+              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Webhook header</p>
+                <p className="font-mono break-all">x-webhook-signature</p>
+              </div>
+
+              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
+                <p className="text-zinc-500 text-xs mb-2">Retry behavior</p>
+                <p>Failed webhooks are retried and can be retried manually.</p>
+              </div>
+            </div>
+          </div>
+
+
         </div>
       </div>
 
