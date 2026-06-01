@@ -52,6 +52,9 @@ export default function AdminPayoutsPage() {
     totalPages: 1,
   });
   const [loading, setLoading] = useState(false);
+  const [selectedPayout, setSelectedPayout] = useState(null);
+  const [selectedAuditLogs, setSelectedAuditLogs] = useState([]);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   const fetchPayouts = useCallback(async (options = {}) => {
     const nextPage = options.page || page;
@@ -107,7 +110,50 @@ export default function AdminPayoutsPage() {
     fetchPayouts({ page: 1 });
   };
 
+  const fetchPayoutAuditLogs = async (payoutId) => {
+    setDetailsLoading(true);
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/admin/payout-requests/${payoutId}/audit-logs`,
+        {
+          headers: {
+            "x-admin-token": adminToken,
+          },
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.message || "Payout audit logs error");
+        return;
+      }
+
+      setSelectedAuditLogs(data.auditLogs || []);
+    } catch (error) {
+      console.error(error);
+      alert("Payout audit logs error");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const openPayoutDetails = (request) => {
+    setSelectedPayout(request);
+    setSelectedAuditLogs([]);
+    fetchPayoutAuditLogs(request.id);
+  };
+
   const updatePayoutStatus = async (payoutId, status) => {
+    const confirmed = window.confirm(
+      `Move this payout request to ${status}?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
     const note = window.prompt(`Optional note for ${status}`, "");
 
     try {
@@ -132,6 +178,10 @@ export default function AdminPayoutsPage() {
 
       if (response.ok) {
         fetchPayouts();
+        if (selectedPayout?.id === payoutId) {
+          setSelectedPayout(data.payoutRequest);
+          fetchPayoutAuditLogs(payoutId);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -299,6 +349,13 @@ export default function AdminPayoutsPage() {
                   </div>
 
                   <div className="flex flex-col gap-3">
+                    <button
+                      onClick={() => openPayoutDetails(request)}
+                      className="bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
+                    >
+                      Details
+                    </button>
+
                     {getAllowedActions(request.status).map((action) => (
                       <button
                         key={action.status}
@@ -355,6 +412,151 @@ export default function AdminPayoutsPage() {
           </div>
         </section>
       </div>
+
+      {selectedPayout && (
+        <div className="fixed inset-0 z-50 bg-black/80 px-4 py-8 overflow-y-auto">
+          <div className="max-w-5xl mx-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+              <div>
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h2 className="text-2xl font-bold">Payout Details</h2>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
+                      selectedPayout.status
+                    )}`}
+                  >
+                    {selectedPayout.status}
+                  </span>
+                </div>
+                <p className="text-zinc-400">
+                  {selectedPayout.amount} {selectedPayout.currency} to{" "}
+                  {selectedPayout.walletAddress}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                {getAllowedActions(selectedPayout.status).map((action) => (
+                  <button
+                    key={action.status}
+                    onClick={() =>
+                      updatePayoutStatus(selectedPayout.id, action.status)
+                    }
+                    className={`${action.className} text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition`}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => {
+                    setSelectedPayout(null);
+                    setSelectedAuditLogs([]);
+                  }}
+                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
+              <section className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <p className="text-zinc-500 text-xs mb-1">Merchant</p>
+                    <p className="font-semibold">
+                      {selectedPayout.merchant?.name}
+                    </p>
+                    <p className="text-zinc-400 break-all">
+                      {selectedPayout.merchant?.email}
+                    </p>
+                  </div>
+
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <p className="text-zinc-500 text-xs mb-1">Amount</p>
+                    <p className="text-xl font-bold">
+                      {selectedPayout.amount} {selectedPayout.currency}
+                    </p>
+                    <p className="text-zinc-400">{selectedPayout.network}</p>
+                  </div>
+
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-zinc-500 text-xs mb-1">
+                          Wallet Address
+                        </p>
+                        <p className="break-all">
+                          {selectedPayout.walletAddress}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            selectedPayout.walletAddress
+                          );
+                          alert("Wallet copied");
+                        }}
+                        className="shrink-0 bg-zinc-800 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <p className="text-zinc-500 text-xs mb-1">Created</p>
+                    <p>{new Date(selectedPayout.createdAt).toLocaleString()}</p>
+                  </div>
+
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                    <p className="text-zinc-500 text-xs mb-1">Processed</p>
+                    <p>
+                      {selectedPayout.processedAt
+                        ? new Date(selectedPayout.processedAt).toLocaleString()
+                        : "Not processed yet"}
+                    </p>
+                  </div>
+
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2">
+                    <p className="text-zinc-500 text-xs mb-1">Note</p>
+                    <p className="break-all">
+                      {selectedPayout.note || "No note provided."}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <aside className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <h3 className="font-bold mb-4">Audit Trail</h3>
+
+                {detailsLoading && (
+                  <p className="text-zinc-400">Loading audit logs...</p>
+                )}
+
+                {!detailsLoading && selectedAuditLogs.length === 0 && (
+                  <p className="text-zinc-400">No audit logs found.</p>
+                )}
+
+                <div className="space-y-3">
+                  {selectedAuditLogs.map((log) => (
+                    <div
+                      key={log.id}
+                      className="border border-zinc-800 rounded-xl p-3 text-sm"
+                    >
+                      <p className="font-semibold">{log.action}</p>
+                      <p className="text-zinc-400 mt-1">{log.message}</p>
+                      <p className="text-zinc-500 text-xs mt-2">
+                        {new Date(log.createdAt).toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </aside>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
