@@ -250,6 +250,7 @@ export default function DashboardPage() {
   const [activeIntegrationKey, setActiveIntegrationKey] =
     useState("create-payment");
   const [activeSection, setActiveSection] = useState("overview");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -865,6 +866,16 @@ app.post("/webhook", express.json(), (req, res) => {
   }, []);
 
   useEffect(() => {
+    const closeOnOutside = (event) => {
+      if (!event.target.closest("[data-user-menu]")) {
+        setUserMenuOpen(false);
+      }
+    };
+    window.addEventListener("click", closeOnOutside);
+    return () => window.removeEventListener("click", closeOnOutside);
+  }, []);
+
+  useEffect(() => {
     const sectionIds = ["overview", "operations", "security", "integration"];
     const onScroll = () => {
       let current = "overview";
@@ -895,7 +906,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <header className="border-b border-zinc-800 bg-zinc-950/70 backdrop-blur">
+      <header className="relative z-50 border-b border-zinc-800 bg-zinc-950/70 backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400" />
@@ -905,16 +916,48 @@ app.post("/webhook", express.json(), (req, res) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="hidden md:inline-flex h-10 items-center rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-300">
-              {merchant?.email}
-            </span>
+          <div className="relative z-[60]" data-user-menu>
             <button
-              onClick={logout}
-              className="h-10 px-4 rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100 font-semibold hover:bg-zinc-800 transition"
+              onClick={() => setUserMenuOpen((v) => !v)}
+              className="h-10 w-10 rounded-full border border-zinc-700 bg-zinc-900 text-zinc-100 font-semibold hover:bg-zinc-800 transition"
+              aria-label="Open user menu"
             >
-              Logout
+              {(merchant?.name?.[0] || merchant?.email?.[0] || "M").toUpperCase()}
             </button>
+
+            {userMenuOpen && (
+              <div className="absolute right-0 mt-2 w-64 rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl overflow-hidden z-[100]">
+                <div className="px-4 py-3 border-b border-zinc-800">
+                  <p className="text-sm font-semibold text-zinc-100 truncate">{merchant?.email}</p>
+                  <p className="text-xs text-zinc-500">Merchant account</p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    window.location.hash = "overview";
+                    setUserMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-900 transition"
+                >
+                  Genel Bakış
+                </button>
+                <button
+                  onClick={() => {
+                    window.location.hash = "security";
+                    setUserMenuOpen(false);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-zinc-200 hover:bg-zinc-900 transition"
+                >
+                  Ayarlar
+                </button>
+                <button
+                  onClick={logout}
+                  className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-zinc-900 transition"
+                >
+                  Çıkış Yap
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </header>
