@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 
 const formatTimeLeft = (expiresAt, now) => {
@@ -65,10 +65,6 @@ const getAuditActionClassName = (action) => {
   return "bg-zinc-700 text-white";
 };
 
-const getApiCallClassName = (success) => {
-  return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
-};
-
 const getPayoutStatusClassName = (status) => {
   if (status === "PAID" || status === "APPROVED") {
     return "bg-green-500 text-black";
@@ -80,49 +76,6 @@ const getPayoutStatusClassName = (status) => {
 
   return "bg-yellow-500 text-black";
 };
-
-const CodeSnippet = ({ title, description, value, copied, onCopy, isLightTheme }) => (
-  <div
-    className={`border rounded-xl overflow-hidden ${
-      isLightTheme
-        ? "border-zinc-300 bg-zinc-100"
-        : "border-zinc-800 bg-[#050505]"
-    }`}
-  >
-    <div
-      className={`flex items-start justify-between gap-4 px-4 py-3 ${
-        isLightTheme ? "border-b border-zinc-300" : "border-b border-zinc-800"
-      }`}
-    >
-      <div>
-        <h3 className="font-semibold">{title}</h3>
-        <p className={`text-xs mt-1 ${isLightTheme ? "text-zinc-600" : "text-zinc-500"}`}>
-          {description}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={onCopy}
-        className={`shrink-0 px-4 py-2 rounded-lg text-xs font-semibold transition ${
-          isLightTheme
-            ? "bg-zinc-900 text-white border border-zinc-900 hover:bg-black"
-            : "bg-white text-black hover:opacity-80"
-        }`}
-      >
-        {copied ? "Copied" : "Copy"}
-      </button>
-    </div>
-
-    <pre
-      className={`max-h-80 overflow-auto p-4 text-xs leading-6 ${
-        isLightTheme ? "text-zinc-800 bg-zinc-50" : "text-zinc-200"
-      }`}
-    >
-      <code>{value}</code>
-    </pre>
-  </div>
-);
 
 const DetailField = ({ label, value, actionLabel, onAction }) => (
   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
@@ -198,25 +151,14 @@ const buildPaymentTimeline = (payment, webhooks) => {
 export default function DashboardPage() {
   const primaryButtonClass =
     "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40";
-  const secondaryButtonClass =
-    "bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40";
   const dangerButtonClass =
     "bg-red-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40";
-  const accentButtonClass =
-    "bg-blue-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40";
   const [merchant, setMerchant] = useState(null);
-  const [payments, setPayments] = useState([]);
   const [paymentStats, setPaymentStats] = useState({
     total: 0,
     paid: 0,
     pending: 0,
     expired: 0,
-  });
-  const [paymentPagination, setPaymentPagination] = useState({
-    page: 1,
-    limit: 3,
-    totalCount: 0,
-    totalPages: 1,
   });
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditPagination, setAuditPagination] = useState({
@@ -247,9 +189,6 @@ export default function DashboardPage() {
     },
     payoutRequests: [],
   });
-  const [amount, setAmount] = useState("");
-  const [orderId, setOrderId] = useState("");
-  const [customerEmail, setCustomerEmail] = useState("");
   const [payoutAmount, setPayoutAmount] = useState("");
   const [payoutWalletAddress, setPayoutWalletAddress] = useState("");
   const [payoutNote, setPayoutNote] = useState("");
@@ -259,20 +198,17 @@ export default function DashboardPage() {
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [webhookHistory, setWebhookHistory] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [paymentSearch, setPaymentSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
-  const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
-  const [paymentPage, setPaymentPage] = useState(1);
   const [auditPage, setAuditPage] = useState(1);
   const [auditActionFilter, setAuditActionFilter] = useState("ALL");
   const [auditTargetTypeFilter, setAuditTargetTypeFilter] = useState("ALL");
-  const [copiedSnippet, setCopiedSnippet] = useState("");
-  const [activeIntegrationKey, setActiveIntegrationKey] =
-    useState("create-payment");
-  const [activeSection, setActiveSection] = useState("overview");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
-  const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    return localStorage.getItem("dashboardTheme") !== "light";
+  });
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -312,11 +248,8 @@ export default function DashboardPage() {
       setCallbackUrl(dashboardData.merchant?.callbackUrl || "");
 
       const paymentParams = new URLSearchParams({
-        page: String(paymentPage),
-        limit: String(paymentPagination.limit),
-        status: statusFilter,
-        webhookStatus: webhookStatusFilter,
-        search: paymentSearch.trim(),
+        page: "1",
+        limit: "3",
       });
 
       const paymentsResponse = await fetch(
@@ -330,7 +263,6 @@ export default function DashboardPage() {
 
       const paymentsData = await paymentsResponse.json();
 
-      setPayments(paymentsData.payments || []);
       setPaymentStats(
         paymentsData.stats || {
           total: 0,
@@ -339,12 +271,6 @@ export default function DashboardPage() {
           expired: 0,
         }
       );
-      setPaymentPagination({
-        page: paymentsData.page || paymentPage,
-        limit: paymentsData.limit || paymentPagination.limit,
-        totalCount: paymentsData.totalCount || 0,
-        totalPages: paymentsData.totalPages || 1,
-      });
 
       const auditParams = new URLSearchParams({
         page: String(auditPage),
@@ -434,11 +360,6 @@ export default function DashboardPage() {
     auditPage,
     auditPagination.limit,
     auditTargetTypeFilter,
-    paymentPage,
-    paymentPagination.limit,
-    paymentSearch,
-    statusFilter,
-    webhookStatusFilter,
   ]);
 
   const saveCallbackUrl = async (e) => {
@@ -668,48 +589,6 @@ export default function DashboardPage() {
     }
   };
 
-  const createPayment = async (e) => {
-
-    e.preventDefault();
-
-    const token = localStorage.getItem("token");
-
-    if (!amount || Number(amount) <= 0) {
-      alert("Please enter a valid amount");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/payments/create",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            amount: Number(amount),
-            orderId: orderId || undefined,
-            customerEmail: customerEmail || undefined,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      alert(data.message);
-
-      setAmount("");
-      setOrderId("");
-      setCustomerEmail("");
-
-      fetchDashboard();
-    } catch (error) {
-      console.error(error);
-      alert("Create payment error");
-    }
-  };
 
   const createPayoutRequest = async (e) => {
     e.preventDefault();
@@ -762,109 +641,6 @@ export default function DashboardPage() {
     }
   };
 
-  const copySnippet = (name, value) => {
-    navigator.clipboard.writeText(value);
-    setCopiedSnippet(name);
-
-    setTimeout(() => {
-      setCopiedSnippet("");
-    }, 1500);
-  };
-
-  const integrationSnippets = useMemo(() => {
-    const apiKey = merchant?.apiKey || "YOUR_API_KEY";
-    const webhookSecret = merchant?.webhookSecret || "YOUR_WEBHOOK_SECRET";
-
-    return [
-      {
-        key: "create-payment",
-        title: "Create Payment",
-        description: "Creates a checkout session and returns a checkoutUrl.",
-        method: "POST",
-        path: "/api/public/payments/create",
-        value: `curl -X POST http://localhost:5000/api/public/payments/create \\
-  -H "Content-Type: application/json" \\
-  -H "x-api-key: ${apiKey}" \\
-  -d '{
-    "amount": 25,
-    "orderId": "ORDER-1001",
-    "customerEmail": "customer@example.com"
-  }'`,
-      },
-      {
-        key: "status-by-payment",
-        title: "Status by Payment ID",
-        description: "Checks a payment by its gateway payment ID.",
-        method: "GET",
-        path: "/api/public/payments/status/{paymentId}",
-        value: `curl -X GET http://localhost:5000/api/public/payments/status/{paymentId} \\
-  -H "x-api-key: ${apiKey}"`,
-      },
-      {
-        key: "status-by-order",
-        title: "Status by Order ID",
-        description: "Checks a payment by the merchant order ID.",
-        method: "GET",
-        path: "/api/public/payments/status?orderId=ORDER-1001",
-        value: `curl -X GET "http://localhost:5000/api/public/payments/status?orderId=ORDER-1001" \\
-  -H "x-api-key: ${apiKey}"`,
-      },
-      {
-        key: "webhook-handler",
-        title: "Verify Webhook Signature",
-        description: "Verifies timestamped signatures and rejects old payloads.",
-        method: "POST",
-        path: "merchant webhook URL",
-        value: `const crypto = require("crypto");
-
-app.post("/webhook", express.json(), (req, res) => {
-  const signature = req.header("x-webhook-signature");
-  const timestamp = req.header("x-webhook-timestamp");
-  const toleranceSeconds = 300;
-
-  if (!signature || !timestamp) {
-    return res.sendStatus(401);
-  }
-
-  const ageSeconds = Math.abs(Date.now() / 1000 - Number(timestamp));
-
-  if (!Number.isFinite(ageSeconds) || ageSeconds > toleranceSeconds) {
-    return res.sendStatus(401);
-  }
-
-  const expected = crypto
-    .createHmac("sha256", "${webhookSecret}")
-    .update(\`\${timestamp}.\${JSON.stringify(req.body)}\`)
-    .digest("hex");
-
-  const signatureBuffer = Buffer.from(signature, "hex");
-  const expectedBuffer = Buffer.from(expected, "hex");
-  const isValid =
-    signatureBuffer.length === expectedBuffer.length &&
-    crypto.timingSafeEqual(signatureBuffer, expectedBuffer);
-
-  if (!isValid) {
-    return res.sendStatus(401);
-  }
-
-  const event = req.body.event;
-  const payment = req.body.payment;
-
-  if (event === "payment.paid") {
-    // Mark order as paid in your system.
-  }
-
-  res.sendStatus(200);
-});`,
-      },
-    ];
-  }, [merchant?.apiKey, merchant?.webhookSecret]);
-
-  const activeIntegration =
-    integrationSnippets.find(
-      (snippet) => snippet.key === activeIntegrationKey
-    ) || integrationSnippets[0];
-
   useEffect(() => {
     const refreshDashboard = () => {
       fetchDashboard();
@@ -888,14 +664,6 @@ app.post("/webhook", express.json(), (req, res) => {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("dashboardTheme");
-    if (stored === "light") {
-      setIsDarkTheme(false);
-      document.documentElement.classList.add("light-dashboard");
-    }
-  }, []);
-
-  useEffect(() => {
     if (isDarkTheme) {
       document.documentElement.classList.remove("light-dashboard");
       localStorage.setItem("dashboardTheme", "dark");
@@ -913,27 +681,6 @@ app.post("/webhook", express.json(), (req, res) => {
     };
     window.addEventListener("click", closeOnOutside);
     return () => window.removeEventListener("click", closeOnOutside);
-  }, []);
-
-  useEffect(() => {
-    const sectionIds = ["overview", "operations", "security", "integration"];
-    const onScroll = () => {
-      let current = "overview";
-      for (const id of sectionIds) {
-        const el = document.getElementById(id);
-        if (!el) {
-          continue;
-        }
-        const top = el.getBoundingClientRect().top;
-        if (top <= 160) {
-          current = id;
-        }
-      }
-      setActiveSection(current);
-    };
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const isLightTheme = !isDarkTheme;
@@ -1048,39 +795,6 @@ app.post("/webhook", express.json(), (req, res) => {
               Welcome {merchant?.name || "Merchant"}
             </p>
           </section>
-          <section
-            className={`sticky top-0 z-20 backdrop-blur rounded-xl p-3 ${
-              isDarkTheme
-                ? "bg-black/90 border border-zinc-800"
-                : "bg-zinc-200/90 border border-zinc-300"
-            }`}
-          >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-              {[
-                ["overview", "Overview"],
-                ["operations", "Operations"],
-                ["security", "Security"],
-                ["integration", "Integration"],
-              ].map(([id, label]) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  className={`rounded-lg px-3 py-2 text-center border transition ${
-                    activeSection === id
-                      ? isDarkTheme
-                        ? "bg-zinc-800 border-zinc-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                        : "bg-white border-zinc-400 text-zinc-900"
-                      : isDarkTheme
-                      ? "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                      : "bg-zinc-100 border-zinc-300 text-zinc-700 hover:bg-white"
-                  }`}
-                >
-                  {label}
-                </a>
-              ))}
-            </div>
-          </section>
-
           <section id="overview" className="scroll-mt-28">
             <div className="mb-4">
               <h2 className="text-xl font-bold">Overview</h2>
@@ -1177,7 +891,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
               <button
                 type="submit"
-                className="bg-white text-black px-6 py-3 rounded-xl font-semibold border border-zinc-700 hover:opacity-80 transition"
+                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
               >
                 Request Payout
               </button>
@@ -1223,701 +937,6 @@ app.post("/webhook", express.json(), (req, res) => {
               </div>
             )}
           </section>
-
-          <div id="operations" className="scroll-mt-28 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-              <div>
-                <h2 className="text-2xl font-bold">Operations</h2>
-                <p className="text-zinc-500 text-sm">
-                  Showing {payments.length} of {paymentPagination.totalCount}
-                  {" "}matching payments
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setPaymentSearch("");
-                  setStatusFilter("ALL");
-                  setWebhookStatusFilter("ALL");
-                  setPaymentPage(1);
-                }}
-                className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
-              >
-                Clear Filters
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-              <input
-                type="text"
-                placeholder="Search payment, order, customer, wallet, tx"
-                value={paymentSearch}
-                onChange={(e) => {
-                  setPaymentSearch(e.target.value);
-                  setPaymentPage(1);
-                }}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setPaymentPage(1);
-                }}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              >
-                <option value="ALL">All payment statuses</option>
-                <option value="PENDING">Pending</option>
-                <option value="PAID">Paid</option>
-                <option value="EXPIRED">Expired</option>
-                <option value="CANCELLED">Cancelled</option>
-              </select>
-
-              <select
-                value={webhookStatusFilter}
-                onChange={(e) => {
-                  setWebhookStatusFilter(e.target.value);
-                  setPaymentPage(1);
-                }}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              >
-                <option value="ALL">All webhook statuses</option>
-                <option value="SUCCESS">Webhook success</option>
-                <option value="PENDING">Webhook pending</option>
-                <option value="FAILED">Webhook failed</option>
-                <option value="NONE">No webhook</option>
-              </select>
-            </div>
-
-            <div className="space-y-4">
-              {paymentStats.total === 0 && (
-                <p className="text-zinc-400">No payments yet.</p>
-              )}
-
-              {paymentStats.total > 0 && payments.length === 0 && (
-                <p className="text-zinc-400">
-                  No payments match the current filters.
-                </p>
-              )}
-
-              <div className="hidden lg:grid grid-cols-[160px_1fr_130px_380px] gap-3 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 border border-zinc-800 rounded-xl bg-zinc-950/70">
-                <span>Amount</span>
-                <span>Payment</span>
-                <span>Status</span>
-                <span>Actions</span>
-              </div>
-
-              {payments.map((payment) => (
-                <div
-                  key={payment.id}
-                  className="border border-zinc-700/60 bg-zinc-900/70 rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
-                >
-                  {(() => {
-                    const latestWebhook = payment.webhookEvents?.[0];
-
-                    return (
-                  <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr_120px_340px] gap-3 lg:items-center">
-                    <div>
-                      <p className="font-semibold text-2xl lg:text-xl">
-                        {payment.amount} {payment.currency}
-                      </p>
-                      <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
-                    </div>
-
-                      <div className="text-sm text-zinc-400 space-y-1">
-                        <p className="break-all">
-                          <span className="text-zinc-500">Payment ID:</span>{" "}
-                          {payment.id}
-                        </p>
-
-                        {payment.orderId && (
-                          <p className="break-all">
-                            <span className="text-zinc-500">Order ID:</span>{" "}
-                            {payment.orderId}
-                          </p>
-                        )}
-
-                        <p className="break-all">
-                          <span className="text-zinc-500">Wallet:</span>{" "}
-                          {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}
-                        </p>
-
-                        <p>
-                          <span className="text-zinc-500">Expires:</span> {formatTimeLeft(payment.expiresAt, now)}
-                        </p>
-
-                        {latestWebhook && (
-                          <div className="pt-2">
-                            <span
-                              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(
-                                latestWebhook.status
-                              )}`}
-                            >
-                              Webhook: {latestWebhook.status}
-                            </span>
-
-                            <p className="mt-2">
-                              <span className="text-zinc-500">
-                                Attempts:
-                              </span>{" "}
-                              {latestWebhook.attempts}/
-                              {latestWebhook.maxAttempts}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                    <div>
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(
-                          payment.status
-                        )}`}
-                      >
-                        {payment.status}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      <div className="grid grid-cols-5 gap-2">
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(payment.walletAddress);
-                            alert("Wallet address copied");
-                          }}
-                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition flex items-center justify-center"
-                        >
-                          Copy Address
-                        </button>
-                        <button
-                          onClick={() => verifyPayment(payment.id)}
-                          disabled={payment.status !== "PENDING"}
-                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
-                        >
-                          Verify
-                        </button>
-                        <button
-                          onClick={() => cancelPayment(payment.id)}
-                          disabled={payment.status !== "PENDING"}
-                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
-                        >
-                          Cancel
-                        </button>
-                        <a
-                          href={`/pay/${payment.id}`}
-                          target="_blank"
-                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition text-center flex items-center justify-center"
-                        >
-                          Checkout
-                        </a>
-                        <button
-                          onClick={() => openPaymentDetails(payment)}
-                          className="h-10 bg-zinc-100 text-zinc-900 px-3 rounded-lg text-xs font-semibold hover:bg-white transition flex items-center justify-center"
-                        >
-                          Details
-                        </button>
-                      </div>
-                      {payment.status === "PENDING" && (
-                        <div className="hidden xl:flex justify-end">
-                          <div className="bg-white p-1.5 rounded-lg">
-                            <QRCodeSVG value={payment.walletAddress} size={72} />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                    );
-                  })()}
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <p className="text-zinc-500 text-sm">
-                Page {paymentPagination.page} of {paymentPagination.totalPages}
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    setPaymentPage((currentPage) =>
-                      Math.max(currentPage - 1, 1)
-                    )
-                  }
-                  disabled={paymentPagination.page <= 1}
-                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Previous
-                </button>
-
-                <button
-                  onClick={() =>
-                    setPaymentPage((currentPage) =>
-                      Math.min(
-                        currentPage + 1,
-                        paymentPagination.totalPages
-                      )
-                    )
-                  }
-                  disabled={
-                    paymentPagination.page >= paymentPagination.totalPages
-                  }
-                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-
-            <p className="text-zinc-500 text-xs mt-4">
-              Auto refresh active: payments update every 10 seconds.
-            </p>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
-            <form
-              onSubmit={createPayment}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
-            >
-              <input
-                type="number"
-                placeholder="Amount USDT"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <input
-                type="text"
-                placeholder="Order ID"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <input
-                type="email"
-                placeholder="Customer email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <button
-                type="submit"
-                className={`${primaryButtonClass} border border-zinc-700`}
-              >
-                Create Payment
-              </button>
-            </form>
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.1fr] gap-6">
-          <div id="security" className="scroll-mt-28 space-y-6">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-              <div>
-                <h2 className="text-2xl font-bold">Activity</h2>
-                <p className="text-zinc-500 text-sm">
-                  Showing {auditLogs.length} of {auditPagination.totalCount}
-                  {" "}matching events.
-                </p>
-              </div>
-
-              <span className="text-zinc-500 text-sm">
-                Page {auditPagination.page} of {auditPagination.totalPages}
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 mb-5">
-              <select
-                value={auditActionFilter}
-                onChange={(e) => {
-                  setAuditActionFilter(e.target.value);
-                  setAuditPage(1);
-                }}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              >
-                <option value="ALL">All actions</option>
-                {auditActions.map((action) => (
-                  <option key={action} value={action}>
-                    {action}
-                  </option>
-                ))}
-              </select>
-
-              <select
-                value={auditTargetTypeFilter}
-                onChange={(e) => {
-                  setAuditTargetTypeFilter(e.target.value);
-                  setAuditPage(1);
-                }}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              >
-                <option value="ALL">All target types</option>
-                {auditTargetTypes.map((targetType) => (
-                  <option key={targetType} value={targetType}>
-                    {targetType}
-                  </option>
-                ))}
-              </select>
-
-              <button
-                onClick={() => {
-                  setAuditActionFilter("ALL");
-                  setAuditTargetTypeFilter("ALL");
-                  setAuditPage(1);
-                }}
-                className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
-              >
-                Clear
-              </button>
-            </div>
-
-            {auditPagination.totalCount === 0 && (
-              <p className="text-zinc-400">No activity recorded yet.</p>
-            )}
-
-            {auditLogs.length > 0 && (
-              <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
-                {auditLogs.map((log) => (
-                  <div
-                    key={log.id}
-                    className="grid grid-cols-1 lg:grid-cols-[180px_1fr_190px] gap-3 bg-zinc-950 p-4 text-sm"
-                  >
-                    <div>
-                      <span
-                        className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getAuditActionClassName(
-                          log.action
-                        )}`}
-                      >
-                        {log.action}
-                      </span>
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="font-semibold">{log.message}</p>
-                      <p className="text-zinc-500 text-xs break-all mt-1">
-                        {log.targetType}
-                        {log.targetId ? `: ${log.targetId}` : ""}
-                      </p>
-                    </div>
-
-                    <p className="text-zinc-500 lg:text-right">
-                      {new Date(log.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-              <p className="text-zinc-500 text-sm">
-                Page {auditPagination.page} of {auditPagination.totalPages}
-              </p>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() =>
-                    setAuditPage((currentPage) => Math.max(currentPage - 1, 1))
-                  }
-                  disabled={auditPagination.page <= 1}
-                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Previous
-                </button>
-
-                <button
-                  onClick={() =>
-                    setAuditPage((currentPage) =>
-                      Math.min(currentPage + 1, auditPagination.totalPages)
-                    )
-                  }
-                  disabled={auditPagination.page >= auditPagination.totalPages}
-                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Next
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
-              <div>
-                <h2 className="text-2xl font-bold">API Usage</h2>
-                <p className="text-zinc-500 text-sm">
-                  Public API request volume and recent integration calls.
-                </p>
-              </div>
-
-              <span className="text-zinc-500 text-sm">Last 24 hours</span>
-            </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Requests</p>
-                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">{apiUsage.summary.total}</p>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Successful</p>
-                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">
-                  {apiUsage.summary.successful}
-                </p>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Failed</p>
-                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">{apiUsage.summary.failed}</p>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Create Calls</p>
-                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">
-                  {apiUsage.summary.createCalls}
-                </p>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Status Calls</p>
-                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">
-                  {apiUsage.summary.statusCalls}
-                </p>
-              </div>
-            </div>
-
-            {apiUsage.recentCalls.length === 0 && (
-              <p className="text-zinc-400">No API requests recorded yet.</p>
-            )}
-
-            {apiUsage.recentCalls.length > 0 && (
-              <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
-                {apiUsage.recentCalls.map((call) => (
-                  <div
-                    key={call.id}
-                    className="grid grid-cols-1 lg:grid-cols-[170px_1fr_110px_190px] gap-3 bg-zinc-950 p-4 text-sm"
-                  >
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${getApiCallClassName(
-                          call.success
-                        )}`}
-                      >
-                        {call.statusCode}
-                      </span>
-                      <span className="text-zinc-500">{call.method}</span>
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="font-semibold">{call.endpoint}</p>
-                      <p className="text-zinc-500 text-xs break-all mt-1">
-                        {call.path}
-                      </p>
-                    </div>
-
-                    <p className="text-zinc-500">{call.durationMs}ms</p>
-
-                    <p className="text-zinc-500 lg:text-right">
-                      {new Date(call.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="mb-5">
-              <h2 className="text-2xl font-bold">Security</h2>
-              <p className="text-zinc-400 text-sm mt-2">
-                Configure your receiver URL and manage webhook credentials.
-              </p>
-            </div>
-
-            <form
-              onSubmit={saveCallbackUrl}
-              className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 mb-6"
-            >
-              <input
-                type="text"
-                placeholder="https://your-site.com/webhook"
-                value={callbackUrl}
-                onChange={(e) => setCallbackUrl(e.target.value)}
-                className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <button
-                type="submit"
-                className="h-12 px-6 rounded-xl border border-zinc-700 bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition"
-              >
-                Save URL
-              </button>
-            </form>
-
-            <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-zinc-500 text-xs uppercase tracking-wide">Webhook Secret</p>
-                <span className="text-zinc-600 text-xs">Sensitive</span>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3">
-                <input
-                  type="text"
-                  value={merchant?.webhookSecret || ""}
-                  readOnly
-                  className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm font-mono"
-                />
-
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(
-                      merchant?.webhookSecret || ""
-                    );
-                    alert("Webhook secret copied");
-                  }}
-                  className="h-12 px-6 rounded-xl border border-zinc-600 bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition"
-                >
-                  Copy Secret
-                </button>
-
-                <button
-                  onClick={regenerateWebhookSecret}
-                  className="h-12 px-6 rounded-xl border border-zinc-700 bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition"
-                >
-                  Regenerate
-                </button>
-              </div>
-            </div>
-          </div>
-          </div>
-
-          <div id="integration" className="scroll-mt-28 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">API Access</h2>
-
-            <p className="text-zinc-400 text-sm mb-3">
-              Use this key to create payments from external merchant websites.
-            </p>
-
-            <div className="flex flex-col md:flex-row gap-4">
-              <input
-                type="text"
-                value={merchant?.apiKey || ""}
-                readOnly
-                className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
-              />
-
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(merchant?.apiKey || "");
-                  alert("API key copied");
-                }}
-                className={`${primaryButtonClass} border border-zinc-700`}
-              >
-                Copy API Key
-              </button>
-
-              <button onClick={regenerateApiKey} className={dangerButtonClass}>
-                Regenerate
-              </button>
-            </div>
-
-          </div>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
-              <div>
-                <h2 className="text-2xl font-bold">
-                  Integration
-                </h2>
-                <p className="text-zinc-400 text-sm mt-2">
-                  Production-ready API examples for merchant checkout flows.
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2 text-xs">
-                {["payment.paid", "payment.cancelled", "payment.expired"].map(
-                  (event) => (
-                    <span
-                      key={event}
-                      className="border border-zinc-700 bg-zinc-950 rounded-lg px-3 py-2 text-zinc-300"
-                    >
-                      {event}
-                    </span>
-                  )
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-5">
-              <div className="space-y-3">
-                {integrationSnippets.map((snippet) => (
-                  <button
-                    key={snippet.key}
-                    type="button"
-                    onClick={() => setActiveIntegrationKey(snippet.key)}
-                    className={`w-full text-left border rounded-xl p-4 transition ${
-                      activeIntegrationKey === snippet.key
-                        ? "border-white bg-zinc-950"
-                        : "border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="font-semibold">{snippet.title}</p>
-                      <span
-                        className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                          snippet.method === "GET"
-                            ? "bg-blue-500 text-black"
-                            : "bg-green-500 text-black"
-                        }`}
-                      >
-                        {snippet.method}
-                      </span>
-                    </div>
-
-                    <p className="text-zinc-500 text-xs mt-2">
-                      {snippet.description}
-                    </p>
-
-                    <p className="font-mono text-[11px] text-zinc-400 mt-3 break-all">
-                      {snippet.path}
-                    </p>
-                  </button>
-                ))}
-              </div>
-
-              <div className="min-w-0">
-                <CodeSnippet
-                  title={activeIntegration.title}
-                  description={activeIntegration.description}
-                  value={activeIntegration.value}
-                  copied={copiedSnippet === activeIntegration.key}
-                  isLightTheme={isLightTheme}
-                  onCopy={() =>
-                    copySnippet(activeIntegration.key, activeIntegration.value)
-                  }
-                />
-              </div>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">API header</p>
-                <p className="font-mono break-all">x-api-key</p>
-              </div>
-
-              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Webhook header</p>
-                <p className="font-mono break-all">
-                  x-webhook-signature + x-webhook-timestamp
-                </p>
-              </div>
-
-              <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Retry behavior</p>
-                <p>Failed webhooks are retried and can be retried manually.</p>
-              </div>
-            </div>
-          </div>
-
 
         </div>
       </div>

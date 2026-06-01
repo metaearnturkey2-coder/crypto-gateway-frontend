@@ -1,0 +1,544 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
+import OverviewShell from "@/components/overview-shell";
+
+const getWebhookStatusClassName = (status) => {
+  if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
+  if (status === "FAILED") return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
+  return "bg-zinc-700/40 text-zinc-200 border border-zinc-500/40";
+};
+
+const getPaymentStatusClassName = (status) => {
+  if (status === "PAID") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
+  if (status === "EXPIRED" || status === "CANCELLED") return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
+  return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
+};
+
+const formatTimeLeft = (expiresAt, now) => {
+  if (!expiresAt) return "No expiration";
+  const diff = new Date(expiresAt).getTime() - now;
+  if (diff <= 0) return "Expired";
+  const totalSeconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+};
+
+export default function BusinessWalletMerchantsPage() {
+  const [loading, setLoading] = useState(true);
+  const [payments, setPayments] = useState([]);
+  const [paymentPagination, setPaymentPagination] = useState({ page: 1, totalCount: 0, totalPages: 1 });
+  const [paymentSearch, setPaymentSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
+  const [paymentPage, setPaymentPage] = useState(1);
+  const [now, setNow] = useState(0);
+  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditPagination, setAuditPagination] = useState({
+    page: 1,
+    limit: 10,
+    totalCount: 0,
+    totalPages: 1,
+  });
+  const [auditActions, setAuditActions] = useState([]);
+  const [auditTargetTypes, setAuditTargetTypes] = useState([]);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditActionFilter, setAuditActionFilter] = useState("ALL");
+  const [auditTargetTypeFilter, setAuditTargetTypeFilter] = useState("ALL");
+  const [newAmount, setNewAmount] = useState("");
+  const [newOrderId, setNewOrderId] = useState("");
+  const [newCustomerEmail, setNewCustomerEmail] = useState("");
+  const [creatingPayment, setCreatingPayment] = useState(false);
+
+  const copyAddress = async (address) => {
+    try {
+      await navigator.clipboard.writeText(address);
+      alert("Wallet address copied");
+    } catch {
+      const temp = document.createElement("textarea");
+      temp.value = address;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+      alert("Wallet address copied");
+    }
+  };
+
+  const fetchOps = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      window.location.href = "/login";
+      return;
+    }
+    const params = new URLSearchParams({ page: String(paymentPage), limit: "3" });
+    if (paymentSearch.trim()) params.set("search", paymentSearch.trim());
+    if (statusFilter !== "ALL") params.set("status", statusFilter);
+    if (webhookStatusFilter !== "ALL") params.set("webhookStatus", webhookStatusFilter);
+
+    const res = await fetch(`http://localhost:5000/api/payments?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    const data = await res.json();
+    setPayments(data.payments || []);
+    setPaymentPagination({
+      page: data.pagination?.page || paymentPage,
+      totalCount: data.pagination?.totalCount ?? data.pagination?.total ?? data.stats?.total ?? 0,
+      totalPages: data.pagination?.totalPages || 1,
+    });
+  }, [paymentPage, paymentSearch, statusFilter, webhookStatusFilter]);
+
+  const getAuditActionClassName = (action) => {
+    if (action.includes("regenerated")) return "bg-red-500 text-black";
+    if (action.includes("cancel")) return "bg-red-500 text-black";
+    if (action.includes("verified") || action.includes("created")) return "bg-green-500 text-black";
+    return "bg-zinc-700 text-white";
+  };
+
+  const fetchActivity = useCallback(async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    const params = new URLSearchParams({
+      page: String(auditPage),
+      limit: String(auditPagination.limit),
+    });
+    if (auditActionFilter !== "ALL") params.set("action", auditActionFilter);
+    if (auditTargetTypeFilter !== "ALL") params.set("targetType", auditTargetTypeFilter);
+
+    const res = await fetch(`http://localhost:5000/api/merchant/audit-logs?${params.toString()}`, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    const data = await res.json();
+    setAuditLogs(data.auditLogs || []);
+    setAuditPagination({
+      page: data.page || auditPage,
+      limit: data.limit || auditPagination.limit,
+      totalCount: data.totalCount || 0,
+      totalPages: data.totalPages || 1,
+    });
+    setAuditActions(data.actions || []);
+    setAuditTargetTypes(data.targetTypes || []);
+  }, [auditActionFilter, auditPage, auditPagination.limit, auditTargetTypeFilter]);
+
+  const createPayment = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const amountNumber = Number(newAmount);
+    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+      alert("Please enter a valid amount");
+      return;
+    }
+
+    setCreatingPayment(true);
+    try {
+      const response = await fetch("http://localhost:5000/api/payments/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: amountNumber,
+          orderId: newOrderId.trim() || undefined,
+          customerEmail: newCustomerEmail.trim() || undefined,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message || "Create payment error");
+        return;
+      }
+
+      alert(data.message || "Payment created");
+      setNewAmount("");
+      setNewOrderId("");
+      setNewCustomerEmail("");
+      setPaymentPage(1);
+      setPaymentSearch("");
+      setStatusFilter("ALL");
+      setWebhookStatusFilter("ALL");
+      await fetchOps();
+      await fetchActivity();
+    } catch {
+      alert("Create payment error");
+    } finally {
+      setCreatingPayment(false);
+    }
+  };
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        await fetchOps();
+        await fetchActivity();
+      } finally {
+        setLoading(false);
+      }
+    };
+    run();
+  }, [fetchActivity, fetchOps]);
+
+  useEffect(() => {
+    const tick = setInterval(() => setNow(Date.now()), 1000);
+    const refresh = setInterval(() => {
+      fetchOps();
+      fetchActivity();
+    }, 10000);
+    return () => {
+      clearInterval(tick);
+      clearInterval(refresh);
+    };
+  }, [fetchActivity, fetchOps]);
+
+  useEffect(() => {
+    setNow(Date.now());
+  }, []);
+
+  return (
+    <OverviewShell>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6 text-white">
+        <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_auto] gap-3">
+          <input
+            type="number"
+            min="0"
+            step="any"
+            placeholder="Amount USDT"
+            value={newAmount}
+            onChange={(e) => setNewAmount(e.target.value)}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          />
+          <input
+            type="text"
+            placeholder="Order ID"
+            value={newOrderId}
+            onChange={(e) => setNewOrderId(e.target.value)}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          />
+          <input
+            type="email"
+            placeholder="Customer email"
+            value={newCustomerEmail}
+            onChange={(e) => setNewCustomerEmail(e.target.value)}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          />
+          <button
+            onClick={createPayment}
+            disabled={creatingPayment}
+            className="h-[50px] rounded-xl bg-zinc-100 text-zinc-900 px-6 font-semibold hover:bg-white transition disabled:opacity-60"
+          >
+            {creatingPayment ? "Creating..." : "Create Payment"}
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10 text-white">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-2xl font-bold">Operations</h2>
+            <p className="text-zinc-500 text-sm">Showing {payments.length} of {paymentPagination.totalCount} matching payments</p>
+          </div>
+          <button
+            onClick={() => {
+              setPaymentSearch("");
+              setStatusFilter("ALL");
+              setWebhookStatusFilter("ALL");
+              setPaymentPage(1);
+            }}
+            className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+          >
+            Clear Filters
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+          <input
+            type="text"
+            placeholder="Search payment, order, customer, wallet, tx"
+            value={paymentSearch}
+            onChange={(e) => {
+              setPaymentSearch(e.target.value);
+              setPaymentPage(1);
+            }}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          />
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPaymentPage(1);
+            }}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          >
+            <option value="ALL">All payment statuses</option>
+            <option value="PENDING">Pending</option>
+            <option value="PAID">Paid</option>
+            <option value="EXPIRED">Expired</option>
+            <option value="CANCELLED">Cancelled</option>
+          </select>
+          <select
+            value={webhookStatusFilter}
+            onChange={(e) => {
+              setWebhookStatusFilter(e.target.value);
+              setPaymentPage(1);
+            }}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          >
+            <option value="ALL">All webhook statuses</option>
+            <option value="SUCCESS">Webhook success</option>
+            <option value="PENDING">Webhook pending</option>
+            <option value="FAILED">Webhook failed</option>
+            <option value="NONE">No webhook</option>
+          </select>
+        </div>
+
+        <div className="space-y-4">
+          <div className="hidden lg:grid grid-cols-[160px_1fr_130px_380px] gap-3 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 border border-zinc-800 rounded-xl bg-zinc-950/70">
+            <span>Amount</span><span>Payment</span><span>Status</span><span>Actions</span>
+          </div>
+
+          {!loading && payments.length === 0 && <p className="text-zinc-400">No payments match the current filters.</p>}
+
+          {payments.map((payment) => {
+            const latestWebhook = payment.webhookEvents?.[0];
+            return (
+              <div key={payment.id} className="border border-zinc-700/60 bg-zinc-900/70 rounded-xl p-4">
+                <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr_120px_340px] gap-3 lg:items-center">
+                  <div>
+                    <p className="font-semibold text-2xl lg:text-xl">{payment.amount} {payment.currency}</p>
+                    <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
+                  </div>
+                  <div className="text-sm text-zinc-400 space-y-1">
+                    <p className="break-all"><span className="text-zinc-500">Payment ID:</span> {payment.id}</p>
+                    {payment.orderId && <p className="break-all"><span className="text-zinc-500">Order ID:</span> {payment.orderId}</p>}
+                    <p className="break-all"><span className="text-zinc-500">Wallet:</span> {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
+                    <p><span className="text-zinc-500">Expires:</span> {formatTimeLeft(payment.expiresAt, now)}</p>
+                    {latestWebhook && (
+                      <div className="pt-2">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook.status)}`}>
+                          Webhook: {latestWebhook.status}
+                        </span>
+                        <p className="mt-2"><span className="text-zinc-500">Attempts:</span> {latestWebhook.attempts}/{latestWebhook.maxAttempts}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
+                  </div>
+                  <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-5 gap-2">
+                      <button onClick={() => copyAddress(payment.walletAddress)} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Address</button>
+                      <button className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40" disabled={payment.status !== "PENDING"}>Verify</button>
+                      <button className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40" disabled={payment.status !== "PENDING"}>Cancel</button>
+                      <a href={`/pay/${payment.id}`} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">Checkout</a>
+                      <button
+                        onClick={() => setSelectedPayment(payment)}
+                        className="h-10 bg-zinc-100 text-zinc-900 px-3 rounded-lg text-xs font-semibold flex items-center justify-center"
+                      >
+                        Details
+                      </button>
+                    </div>
+                    {payment.status === "PENDING" && (
+                      <div className="hidden xl:flex justify-end">
+                        <div className="bg-white p-1.5 rounded-lg"><QRCodeSVG value={payment.walletAddress} size={72} /></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <p className="text-zinc-500 text-sm">Page {paymentPagination.page} of {paymentPagination.totalPages}</p>
+          <div className="flex gap-3">
+            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">Previous</button>
+            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">Next</button>
+          </div>
+        </div>
+        <p className="text-zinc-500 text-xs mt-4">Auto refresh active: payments update every 10 seconds.</p>
+      </div>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+          <div>
+            <h2 className="text-2xl font-bold">Activity</h2>
+            <p className="text-zinc-500 text-sm">Showing {auditLogs.length} of {auditPagination.totalCount} matching events.</p>
+          </div>
+          <span className="text-zinc-500 text-sm">Page {auditPagination.page} of {auditPagination.totalPages}</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 mb-5">
+          <select
+            value={auditActionFilter}
+            onChange={(e) => {
+              setAuditActionFilter(e.target.value);
+              setAuditPage(1);
+            }}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          >
+            <option value="ALL">All actions</option>
+            {auditActions.map((action) => (
+              <option key={action} value={action}>{action}</option>
+            ))}
+          </select>
+
+          <select
+            value={auditTargetTypeFilter}
+            onChange={(e) => {
+              setAuditTargetTypeFilter(e.target.value);
+              setAuditPage(1);
+            }}
+            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+          >
+            <option value="ALL">All target types</option>
+            {auditTargetTypes.map((targetType) => (
+              <option key={targetType} value={targetType}>{targetType}</option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => {
+              setAuditActionFilter("ALL");
+              setAuditTargetTypeFilter("ALL");
+              setAuditPage(1);
+            }}
+            className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
+          >
+            Clear
+          </button>
+        </div>
+
+        {auditPagination.totalCount === 0 && <p className="text-zinc-400">No activity recorded yet.</p>}
+
+        {auditLogs.length > 0 && (
+          <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
+            {auditLogs.map((log) => (
+              <div key={log.id} className="grid grid-cols-1 lg:grid-cols-[180px_1fr_190px] gap-3 bg-zinc-950 p-4 text-sm">
+                <div>
+                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getAuditActionClassName(log.action)}`}>
+                    {log.action}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-semibold">{log.description || `${log.action} from dashboard`}</p>
+                  <p className="text-zinc-500 text-xs break-all mt-1">{log.targetType || log.entityType || "payment"}: {log.targetId || log.entityId || "-"}</p>
+                </div>
+                <p className="text-zinc-500 lg:text-right">
+                  {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <p className="text-zinc-500 text-sm">Page {auditPagination.page} of {auditPagination.totalPages}</p>
+          <div className="flex gap-3">
+            <button onClick={() => setAuditPage((currentPage) => Math.max(currentPage - 1, 1))} disabled={auditPagination.page <= 1} className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+            <button onClick={() => setAuditPage((currentPage) => Math.min(currentPage + 1, auditPagination.totalPages))} disabled={auditPagination.page >= auditPagination.totalPages} className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+          </div>
+        </div>
+      </div>
+
+      {selectedPayment && (
+        <div className="fixed inset-0 z-50 bg-black/80 px-4 py-8 overflow-y-auto">
+          <div className="max-w-6xl mx-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-6 text-white">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+              <div>
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  <h2 className="text-4xl font-bold">Payment Details</h2>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(selectedPayment.status)}`}>
+                    {selectedPayment.status}
+                  </span>
+                </div>
+                <p className="text-zinc-400 text-sm">
+                  {selectedPayment.amount} {selectedPayment.currency}
+                  {selectedPayment.orderId ? ` - ${selectedPayment.orderId}` : ""}
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button className="bg-blue-500 text-black px-4 py-2 rounded-lg font-semibold">Verify Now</button>
+                <button className="bg-red-500 text-black px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <a href={`/pay/${selectedPayment.id}`} target="_blank" className="bg-white text-black px-4 py-2 rounded-lg font-semibold">Checkout</a>
+                <button onClick={() => setSelectedPayment(null)} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">Close</button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
+              <aside className="space-y-4">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <h3 className="font-bold mb-4 text-2xl">Timeline</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <p className="font-semibold">Created</p>
+                      <p className="text-zinc-500 text-xs">{selectedPayment.createdAt ? new Date(selectedPayment.createdAt).toLocaleString() : "-"}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">Awaiting payment</p>
+                      <p className="text-zinc-500 text-xs">Expires {selectedPayment.expiresAt ? new Date(selectedPayment.expiresAt).toLocaleString() : "-"}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <h3 className="font-bold mb-3 text-2xl">Operation Summary</h3>
+                  <div className="space-y-2 text-sm text-zinc-400">
+                    <p><span className="text-zinc-500">Time left:</span> {formatTimeLeft(selectedPayment.expiresAt, now)}</p>
+                    <p><span className="text-zinc-500">Webhook events:</span> {selectedPayment.webhookEvents?.length || 0}</p>
+                    <p><span className="text-zinc-500">Network:</span> {selectedPayment.network}</p>
+                  </div>
+                </div>
+              </aside>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-3 bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <div className="bg-white rounded-lg p-1 w-fit">
+                    <QRCodeSVG value={selectedPayment.walletAddress} size={120} />
+                  </div>
+                  <div>
+                    <p className="text-zinc-500 text-sm">Checkout URL</p>
+                    <p className="break-all mt-1">http://localhost:3000/pay/{selectedPayment.id}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Payment ID</p><p className="break-all">{selectedPayment.id}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Order ID</p><p>{selectedPayment.orderId || "-"}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Customer</p><p className="break-all">{selectedPayment.customerEmail || "-"}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Wallet Address</p><p className="break-all">{selectedPayment.walletAddress}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2"><p className="text-zinc-500 text-xs">Tx Hash</p><p className="break-all">{selectedPayment.txHash || "Not confirmed yet"}</p></div>
+                </div>
+
+                <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                  <h3 className="text-3xl font-bold mb-2">Webhook History</h3>
+                  <p className="text-zinc-400 text-sm">Delivery attempts and retry status for this payment.</p>
+                  {!selectedPayment.webhookEvents?.length ? (
+                    <div className="mt-3 bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-400">No webhook events yet.</div>
+                  ) : (
+                    <div className="mt-3 space-y-2">
+                      {selectedPayment.webhookEvents.map((w, i) => (
+                        <div key={i} className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
+                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(w.status)}`}>{w.status}</span>
+                          <p className="text-zinc-400 text-sm mt-2">{w.event}</p>
+                          <p className="text-zinc-500 text-xs">Attempts: {w.attempts}/{w.maxAttempts}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </OverviewShell>
+  );
+}
