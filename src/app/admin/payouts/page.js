@@ -398,13 +398,13 @@ export default function AdminPayoutsPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-8 py-10 space-y-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-10 space-y-8">
         <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
           <div className="mb-5">
             <h2 className="text-xl font-bold">Access</h2>
             <p className="text-zinc-500 text-sm">Manage admin authentication and active sessions.</p>
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto_auto] gap-3 md:gap-4">
             <input
               type="password"
               placeholder="Internal admin token"
@@ -415,21 +415,21 @@ export default function AdminPayoutsPage() {
 
             <button
               onClick={saveToken}
-              className={primaryButtonClass}
+              className={`${primaryButtonClass} w-full lg:w-auto`}
             >
               Save Token
             </button>
 
             <button
               onClick={clearToken}
-              className={secondaryButtonClass}
+              className={`${secondaryButtonClass} w-full lg:w-auto`}
             >
               Clear Token
             </button>
 
             <button
               onClick={logoutAllSessions}
-              className={dangerButtonClass}
+              className={`${dangerButtonClass} w-full lg:w-auto`}
             >
               Logout All Sessions
             </button>
@@ -545,7 +545,7 @@ export default function AdminPayoutsPage() {
               >
                 <div className="grid grid-cols-1 xl:grid-cols-[180px_1fr_220px] gap-5">
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-xl md:text-2xl font-bold">
                       {request.amount} {request.currency}
                     </p>
                     <p className="text-zinc-500 text-sm">{request.network}</p>
@@ -589,7 +589,7 @@ export default function AdminPayoutsPage() {
                     )}
                   </div>
 
-                  <div className="flex flex-col gap-3">
+                  <div className="flex flex-col sm:flex-row xl:flex-col gap-3">
                     <button
                       onClick={() => openPayoutDetails(request)}
                       className="bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
