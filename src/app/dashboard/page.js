@@ -176,6 +176,14 @@ const buildPaymentTimeline = (payment, webhooks) => {
 };
 
 export default function DashboardPage() {
+  const primaryButtonClass =
+    "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40";
+  const secondaryButtonClass =
+    "bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40";
+  const dangerButtonClass =
+    "bg-red-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40";
+  const accentButtonClass =
+    "bg-blue-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40";
   const [merchant, setMerchant] = useState(null);
   const [payments, setPayments] = useState([]);
   const [paymentStats, setPaymentStats] = useState({
@@ -1040,7 +1048,7 @@ app.post("/webhook", express.json(), (req, res) => {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
               <div>
-                <h2 className="text-2xl font-bold">Payments</h2>
+                <h2 className="text-2xl font-bold">Operations</h2>
                 <p className="text-zinc-500 text-sm">
                   Showing {payments.length} of {paymentPagination.totalCount}
                   {" "}matching payments
@@ -1529,9 +1537,7 @@ app.post("/webhook", express.json(), (req, res) => {
             )}
           </div>
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">
-              Create Payment
-            </h2>
+            <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
 
             <form
               onSubmit={createPayment}
@@ -1561,19 +1567,14 @@ app.post("/webhook", express.json(), (req, res) => {
                 className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               />
 
-              <button
-                type="submit"
-                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
+              <button type="submit" className={primaryButtonClass}>
                 Create Payment
               </button>
             </form>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">
-              Webhook Settings
-            </h2>
+            <h2 className="text-2xl font-bold mb-4">Security</h2>
 
             <p className="text-zinc-400 text-sm mb-4">
               Configure the receiver URL and verify webhook signatures with your merchant secret.
@@ -1591,10 +1592,7 @@ app.post("/webhook", express.json(), (req, res) => {
                 className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               />
 
-              <button
-                type="submit"
-                className="bg-blue-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
+              <button type="submit" className={accentButtonClass}>
                 Save URL
               </button>
             </form>
@@ -1624,7 +1622,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
                 <button
                   onClick={regenerateWebhookSecret}
-                  className="bg-red-500 text-black px-5 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                  className={dangerButtonClass}
                 >
                   Regenerate
                 </button>
@@ -1633,7 +1631,7 @@ app.post("/webhook", express.json(), (req, res) => {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">API Key</h2>
+            <h2 className="text-2xl font-bold mb-4">API Access</h2>
 
             <p className="text-zinc-400 text-sm mb-3">
               Use this key to create payments from external merchant websites.
@@ -1652,15 +1650,12 @@ app.post("/webhook", express.json(), (req, res) => {
                   navigator.clipboard.writeText(merchant?.apiKey || "");
                   alert("API key copied");
                 }}
-                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                className={primaryButtonClass}
               >
                 Copy API Key
               </button>
 
-              <button
-                onClick={regenerateApiKey}
-                className="bg-red-500 text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
-              >
+              <button onClick={regenerateApiKey} className={dangerButtonClass}>
                 Regenerate
               </button>
             </div>
