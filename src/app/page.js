@@ -10,13 +10,19 @@ export default function HomePage() {
       </p>
 
       <div className="flex gap-4">
-        <button className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition">
+        <a
+          href="/register"
+          className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+        >
           Get Started
-        </button>
+        </a>
 
-        <button className="border border-zinc-700 px-6 py-3 rounded-xl hover:bg-zinc-900 transition">
+        <a
+          href="/login"
+          className="border border-zinc-700 px-6 py-3 rounded-xl hover:bg-zinc-900 transition"
+        >
           Documentation
-        </button>
+        </a>
       </div>
     </main>
   );
