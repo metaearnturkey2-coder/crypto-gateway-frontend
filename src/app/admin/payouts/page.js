@@ -159,6 +159,12 @@ export default function AdminPayoutsPage() {
       const loginData = await loginResponse.json();
       if (!loginResponse.ok || !loginData.accessToken) {
         setTokenState("invalid");
+        if (loginResponse.status === 429) {
+          alert(
+            `Too many failed attempts. Try again in ${loginData.retryAfterSeconds || "a while"} seconds.`
+          );
+          return;
+        }
         alert(loginData.message || "Invalid admin token");
         return;
       }
