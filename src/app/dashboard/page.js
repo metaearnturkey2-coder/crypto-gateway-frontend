@@ -1310,6 +1310,42 @@ app.post("/webhook", express.json(), (req, res) => {
             </p>
           </div>
 
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
+            <form
+              onSubmit={createPayment}
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
+            >
+              <input
+                type="number"
+                placeholder="Amount USDT"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <input
+                type="text"
+                placeholder="Order ID"
+                value={orderId}
+                onChange={(e) => setOrderId(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <input
+                type="email"
+                placeholder="Customer email"
+                value={customerEmail}
+                onChange={(e) => setCustomerEmail(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              />
+
+              <button type="submit" className={primaryButtonClass}>
+                Create Payment
+              </button>
+            </form>
+          </div>
+
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.1fr] gap-6">
           <div id="security" className="space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
@@ -1454,28 +1490,28 @@ app.post("/webhook", express.json(), (req, res) => {
 
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Requests</p>
-                <p className="text-2xl font-bold">{apiUsage.summary.total}</p>
+                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Requests</p>
+                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">{apiUsage.summary.total}</p>
               </div>
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Successful</p>
-                <p className="text-2xl font-bold">
+                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Successful</p>
+                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">
                   {apiUsage.summary.successful}
                 </p>
               </div>
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Failed</p>
-                <p className="text-2xl font-bold">{apiUsage.summary.failed}</p>
+                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Failed</p>
+                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">{apiUsage.summary.failed}</p>
               </div>
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Create Calls</p>
-                <p className="text-2xl font-bold">
+                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Create Calls</p>
+                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">
                   {apiUsage.summary.createCalls}
                 </p>
               </div>
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
-                <p className="text-zinc-500 text-xs mb-2">Status Calls</p>
-                <p className="text-2xl font-bold">
+                <p className="text-zinc-500 text-xs mb-2 h-8 flex items-start">Status Calls</p>
+                <p className="text-4xl leading-none font-bold font-mono tabular-nums w-full min-h-[48px] flex items-center justify-center">
                   {apiUsage.summary.statusCalls}
                 </p>
               </div>
@@ -1520,77 +1556,48 @@ app.post("/webhook", express.json(), (req, res) => {
               </div>
             )}
           </div>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
-            <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
-
-            <form
-              onSubmit={createPayment}
-              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4"
-            >
-              <input
-                type="number"
-                placeholder="Amount USDT"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <input
-                type="text"
-                placeholder="Order ID"
-                value={orderId}
-                onChange={(e) => setOrderId(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <input
-                type="email"
-                placeholder="Customer email"
-                value={customerEmail}
-                onChange={(e) => setCustomerEmail(e.target.value)}
-                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-              />
-
-              <button type="submit" className={primaryButtonClass}>
-                Create Payment
-              </button>
-            </form>
-          </div>
           </div>
 
           <div id="integration" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <h2 className="text-2xl font-bold mb-4">Security</h2>
-
-            <p className="text-zinc-400 text-sm mb-4">
-              Configure the receiver URL and verify webhook signatures with your merchant secret.
-            </p>
+            <div className="mb-5">
+              <h2 className="text-2xl font-bold">Security</h2>
+              <p className="text-zinc-400 text-sm mt-2">
+                Configure your receiver URL and manage webhook credentials.
+              </p>
+            </div>
 
             <form
               onSubmit={saveCallbackUrl}
-              className="flex flex-col md:flex-row gap-4 mb-5"
+              className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3 mb-6"
             >
               <input
                 type="text"
                 placeholder="https://your-site.com/webhook"
                 value={callbackUrl}
                 onChange={(e) => setCallbackUrl(e.target.value)}
-                className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+                className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               />
 
-              <button type="submit" className={accentButtonClass}>
+              <button
+                type="submit"
+                className="h-12 px-6 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition"
+              >
                 Save URL
               </button>
             </form>
 
             <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-              <p className="text-zinc-500 text-xs mb-2">Webhook secret</p>
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-zinc-500 text-xs uppercase tracking-wide">Webhook Secret</p>
+                <span className="text-zinc-600 text-xs">Sensitive</span>
+              </div>
 
-              <div className="flex flex-col md:flex-row gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_auto] gap-3">
                 <input
                   type="text"
                   value={merchant?.webhookSecret || ""}
                   readOnly
-                  className="flex-1 p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm"
+                  className="w-full p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none text-sm font-mono"
                 />
 
                 <button
@@ -1600,14 +1607,14 @@ app.post("/webhook", express.json(), (req, res) => {
                     );
                     alert("Webhook secret copied");
                   }}
-                  className={primaryButtonClass}
+                  className="h-12 px-6 rounded-xl border border-zinc-600 bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition"
                 >
                   Copy Secret
                 </button>
 
                 <button
                   onClick={regenerateWebhookSecret}
-                  className={dangerButtonClass}
+                  className="h-12 px-6 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-500 transition"
                 >
                   Regenerate
                 </button>
