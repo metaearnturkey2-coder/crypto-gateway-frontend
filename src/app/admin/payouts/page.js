@@ -63,6 +63,55 @@ export default function AdminPayoutsPage() {
   const [selectedAuditLogs, setSelectedAuditLogs] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [tokenState, setTokenState] = useState("unknown");
+  const baseUrl = "http://localhost:5000";
+
+  const refreshAccessToken = useCallback(async () => {
+    try {
+      const response = await fetch(`${baseUrl}/api/admin/refresh`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await response.json();
+      if (!response.ok || !data.accessToken) {
+        return null;
+      }
+      localStorage.setItem("adminAccessToken", data.accessToken);
+      setAdminAccessToken(data.accessToken);
+      setTokenState("valid");
+      return data.accessToken;
+    } catch (error) {
+      console.error(error);
+      return null;
+    }
+  }, []);
+
+  const adminFetch = useCallback(
+    async (path, options = {}) => {
+      const makeRequest = async (token) =>
+        fetch(`${baseUrl}${path}`, {
+          ...options,
+          headers: {
+            ...(options.headers || {}),
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        });
+
+      let response = await makeRequest(adminAccessToken);
+      if (response.status !== 401) {
+        return response;
+      }
+
+      const nextAccessToken = await refreshAccessToken();
+      if (!nextAccessToken) {
+        return response;
+      }
+
+      response = await makeRequest(nextAccessToken);
+      return response;
+    },
+    [adminAccessToken, refreshAccessToken]
+  );
 
   const verifyAdminToken = useCallback(async (token) => {
     if (!token) {
@@ -71,7 +120,7 @@ export default function AdminPayoutsPage() {
     }
 
     try {
-      const response = await fetch("http://localhost:5000/api/admin/me", {
+      const response = await adminFetch("/api/admin/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -89,7 +138,7 @@ export default function AdminPayoutsPage() {
       setTokenState("invalid");
       return false;
     }
-  }, []);
+  }, [adminFetch]);
 
   const fetchPayouts = useCallback(async (options = {}) => {
     const nextPage = options.page || page;
@@ -109,13 +158,8 @@ export default function AdminPayoutsPage() {
         status: nextStatus,
       });
 
-      const response = await fetch(
-        `http://localhost:5000/api/admin/payout-requests?${params.toString()}`,
-        {
-          headers: {
-            Authorization: `Bearer ${adminAccessToken}`,
-          },
-        }
+      const response = await adminFetch(
+        `/api/admin/payout-requests?${params.toString()}`
       );
 
       const data = await response.json();
@@ -147,11 +191,12 @@ export default function AdminPayoutsPage() {
   const saveToken = async () => {
     localStorage.setItem("adminToken", adminToken);
     try {
-      const loginResponse = await fetch("http://localhost:5000/api/admin/login", {
+      const loginResponse = await fetch(`${baseUrl}/api/admin/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           token: adminToken,
         }),
@@ -187,6 +232,10 @@ export default function AdminPayoutsPage() {
   };
 
   const clearToken = () => {
+    fetch(`${baseUrl}/api/admin/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminAccessToken");
     setAdminToken("");
@@ -207,13 +256,8 @@ export default function AdminPayoutsPage() {
     setDetailsLoading(true);
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/admin/payout-requests/${payoutId}/audit-logs`,
-        {
-          headers: {
-            Authorization: `Bearer ${adminAccessToken}`,
-          },
-        }
+      const response = await adminFetch(
+        `/api/admin/payout-requests/${payoutId}/audit-logs`
       );
 
       const data = await response.json();
@@ -250,13 +294,12 @@ export default function AdminPayoutsPage() {
     const note = window.prompt(`Optional note for ${status}`, "");
 
     try {
-      const response = await fetch(
-        `http://localhost:5000/api/admin/payout-requests/${payoutId}/status`,
+      const response = await adminFetch(
+        `/api/admin/payout-requests/${payoutId}/status`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${adminAccessToken}`,
           },
           body: JSON.stringify({
             status,
