@@ -42,6 +42,13 @@ export default function AdminPayoutsPage() {
 
     return localStorage.getItem("adminToken") || "";
   });
+  const [adminAccessToken, setAdminAccessToken] = useState(() => {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    return localStorage.getItem("adminAccessToken") || "";
+  });
   const [payoutRequests, setPayoutRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [page, setPage] = useState(1);
@@ -66,7 +73,7 @@ export default function AdminPayoutsPage() {
     try {
       const response = await fetch("http://localhost:5000/api/admin/me", {
         headers: {
-          "x-admin-token": token,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -88,7 +95,7 @@ export default function AdminPayoutsPage() {
     const nextPage = options.page || page;
     const nextStatus = options.status || statusFilter;
 
-    if (!adminToken) {
+    if (!adminAccessToken) {
       alert("Admin token is required");
       return;
     }
@@ -106,7 +113,7 @@ export default function AdminPayoutsPage() {
         `http://localhost:5000/api/admin/payout-requests?${params.toString()}`,
         {
           headers: {
-            "x-admin-token": adminToken,
+            Authorization: `Bearer ${adminAccessToken}`,
           },
         }
       );
@@ -135,11 +142,36 @@ export default function AdminPayoutsPage() {
     } finally {
       setLoading(false);
     }
-  }, [adminToken, page, pagination.limit, statusFilter]);
+  }, [adminAccessToken, page, pagination.limit, statusFilter]);
 
   const saveToken = async () => {
     localStorage.setItem("adminToken", adminToken);
-    const isValid = await verifyAdminToken(adminToken);
+    try {
+      const loginResponse = await fetch("http://localhost:5000/api/admin/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          token: adminToken,
+        }),
+      });
+      const loginData = await loginResponse.json();
+      if (!loginResponse.ok || !loginData.accessToken) {
+        setTokenState("invalid");
+        alert(loginData.message || "Invalid admin token");
+        return;
+      }
+      localStorage.setItem("adminAccessToken", loginData.accessToken);
+      setAdminAccessToken(loginData.accessToken);
+    } catch (error) {
+      console.error(error);
+      setTokenState("invalid");
+      alert("Admin login error");
+      return;
+    }
+
+    const isValid = await verifyAdminToken(localStorage.getItem("adminAccessToken") || "");
 
     if (isValid) {
       fetchPayouts({ page: 1 });
@@ -150,7 +182,9 @@ export default function AdminPayoutsPage() {
 
   const clearToken = () => {
     localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminAccessToken");
     setAdminToken("");
+    setAdminAccessToken("");
     setTokenState("unknown");
     setPayoutRequests([]);
     setSelectedPayout(null);
@@ -171,7 +205,7 @@ export default function AdminPayoutsPage() {
         `http://localhost:5000/api/admin/payout-requests/${payoutId}/audit-logs`,
         {
           headers: {
-            "x-admin-token": adminToken,
+            Authorization: `Bearer ${adminAccessToken}`,
           },
         }
       );
@@ -216,7 +250,7 @@ export default function AdminPayoutsPage() {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            "x-admin-token": adminToken,
+            Authorization: `Bearer ${adminAccessToken}`,
           },
           body: JSON.stringify({
             status,
