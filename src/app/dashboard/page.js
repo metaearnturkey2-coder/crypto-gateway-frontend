@@ -194,7 +194,7 @@ export default function DashboardPage() {
   });
   const [paymentPagination, setPaymentPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 3,
     totalCount: 0,
     totalPages: 1,
   });
@@ -874,7 +874,7 @@ app.post("/webhook", express.json(), (req, res) => {
   return (
     <main className="min-h-screen bg-black text-white">
       <header className="border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto px-8 py-5 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Crypto Gateway</h1>
 
@@ -888,7 +888,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
             <button
               onClick={logout}
-              className="bg-red-500 text-black px-5 py-2 rounded-xl font-semibold hover:opacity-80 transition"
+              className="bg-red-500 text-black px-5 py-2 rounded-lg font-semibold hover:opacity-80 transition"
             >
               Logout
             </button>
@@ -896,9 +896,9 @@ app.post("/webhook", express.json(), (req, res) => {
         </div>
       </header>
 
-      <div className="px-8 py-10">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-10">
+      <div className="px-4 md:px-8 py-8 md:py-10">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <section>
             <h1 className="text-4xl font-bold mb-2">
               Merchant Dashboard
             </h1>
@@ -906,9 +906,23 @@ app.post("/webhook", express.json(), (req, res) => {
             <p className="text-zinc-400">
               Welcome {merchant?.name || "Merchant"}
             </p>
-          </div>
+          </section>
+          <section className="sticky top-0 z-20 bg-black/90 backdrop-blur border border-zinc-800 rounded-xl p-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+              <a href="#overview" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Overview</a>
+              <a href="#operations" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Operations</a>
+              <a href="#finance" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Finance</a>
+              <a href="#security" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Security</a>
+              <a href="#integration" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Integration</a>
+            </div>
+          </section>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-10">
+          <section id="overview">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold">Overview</h2>
+              <p className="text-zinc-500 text-sm">Real-time payment performance snapshot.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
               <p className="text-zinc-400 mb-2">Total Payments</p>
               <h2 className="text-3xl font-bold">{paymentStats.total}</h2>
@@ -929,11 +943,12 @@ app.post("/webhook", express.json(), (req, res) => {
               <h2 className="text-3xl font-bold">{paymentStats.expired}</h2>
             </div>
           </div>
+          </section>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <section id="finance" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
               <div>
-                <h2 className="text-2xl font-bold">Balance & Settlements</h2>
+                <h2 className="text-2xl font-bold">Finance</h2>
                 <p className="text-zinc-500 text-sm mt-1">
                   Request manual payouts from confirmed paid volume.
                 </p>
@@ -1043,9 +1058,9 @@ app.post("/webhook", express.json(), (req, res) => {
                 ))}
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <div id="operations" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-2xl font-bold">Operations</h2>
@@ -1122,20 +1137,29 @@ app.post("/webhook", express.json(), (req, res) => {
                 </p>
               )}
 
+              <div className="hidden lg:grid grid-cols-[160px_1fr_130px_380px] gap-3 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 border border-zinc-800 rounded-xl bg-zinc-950/70">
+                <span>Amount</span>
+                <span>Payment</span>
+                <span>Status</span>
+                <span>Actions</span>
+              </div>
+
               {payments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="border border-zinc-800 rounded-xl p-6"
+                  className="border border-zinc-800 bg-zinc-950/60 rounded-xl p-4"
                 >
                   {(() => {
                     const latestWebhook = payment.webhookEvents?.[0];
 
                     return (
-                  <div className="flex flex-col lg:flex-row gap-6 lg:items-start lg:justify-between">
-                    <div className="space-y-3">
-                      <p className="font-semibold text-2xl">
+                  <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr_120px_340px] gap-3 lg:items-center">
+                    <div>
+                      <p className="font-semibold text-2xl lg:text-xl">
                         {payment.amount} {payment.currency}
                       </p>
+                      <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
+                    </div>
 
                       <div className="text-sm text-zinc-400 space-y-1">
                         <p className="break-all">
@@ -1150,41 +1174,13 @@ app.post("/webhook", express.json(), (req, res) => {
                           </p>
                         )}
 
-                        {payment.customerEmail && (
-                          <p className="break-all">
-                            <span className="text-zinc-500">Customer:</span>{" "}
-                            {payment.customerEmail}
-                          </p>
-                        )}
-
-                        <p>
-                          <span className="text-zinc-500">Network:</span>{" "}
-                          {payment.network}
-                        </p>
-
                         <p className="break-all">
                           <span className="text-zinc-500">Wallet:</span>{" "}
-                          {payment.walletAddress}
+                          {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}
                         </p>
 
                         <p>
-                          <span className="text-zinc-500">Created:</span>{" "}
-                          {new Date(payment.createdAt).toLocaleString()}
-                        </p>
-
-                        <p>
-                          <span className="text-zinc-500">Expires:</span>{" "}
-                          {new Date(payment.expiresAt).toLocaleString()}
-                        </p>
-
-                        <p>
-                          <span className="text-zinc-500">Time Left:</span>{" "}
-                          {formatTimeLeft(payment.expiresAt, now)}
-                        </p>
-
-                        <p className="break-all">
-                          <span className="text-zinc-500">Tx Hash:</span>{" "}
-                          {payment.txHash || "Not confirmed yet"}
+                          <span className="text-zinc-500">Expires:</span> {formatTimeLeft(payment.expiresAt, now)}
                         </p>
 
                         {latestWebhook && (
@@ -1204,80 +1200,66 @@ app.post("/webhook", express.json(), (req, res) => {
                               {latestWebhook.attempts}/
                               {latestWebhook.maxAttempts}
                             </p>
-
-                            {(latestWebhook.lastStatusCode ||
-                              latestWebhook.lastError) && (
-                              <p className="break-all">
-                                <span className="text-zinc-500">
-                                  Last result:
-                                </span>{" "}
-                                {latestWebhook.lastStatusCode ||
-                                  latestWebhook.lastError}
-                              </p>
-                            )}
                           </div>
                         )}
                       </div>
 
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            payment.walletAddress
-                          );
-
-                          alert("Wallet address copied");
-                        }}
-                        className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
-                      >
-                        Copy Address
-                      </button>
-                      <button
-                        onClick={() => verifyPayment(payment.id)}
-                        disabled={payment.status !== "PENDING"}
-                        className="bg-blue-500 text-black px-4 py-2 rounded-xl hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Verify Now
-                      </button>
-
-                      <button
-                        onClick={() => cancelPayment(payment.id)}
-                        disabled={payment.status !== "PENDING"}
-                        className="bg-red-500 text-black px-4 py-2 rounded-xl hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Cancel
-                      </button>
-
-                      <a
-                        href={`/pay/${payment.id}`}
-                        target="_blank"
-                        className="bg-white text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition text-center"
-                      >
-                        Open Checkout
-                      </a>
-
-                      <button
-                        onClick={() => openPaymentDetails(payment)}
-                        className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
-                      >
-                        Details
-                      </button>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="bg-white p-3 rounded-2xl">
-                        <QRCodeSVG
-                          value={payment.walletAddress}
-                          size={180}
-                        />
-                      </div>
-
+                    <div>
                       <span
-                        className={`px-3 py-1 rounded-full text-sm font-semibold ${getPaymentStatusClassName(
+                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(
                           payment.status
                         )}`}
                       >
                         {payment.status}
                       </span>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                      <div className="grid grid-cols-5 gap-2">
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(payment.walletAddress);
+                            alert("Wallet address copied");
+                          }}
+                          className="h-10 bg-zinc-800 text-white px-2 rounded-md text-xs font-semibold hover:bg-zinc-700 transition flex items-center justify-center"
+                        >
+                          Copy Address
+                        </button>
+                        <button
+                          onClick={() => verifyPayment(payment.id)}
+                          disabled={payment.status !== "PENDING"}
+                          className="h-10 bg-zinc-800 text-white px-2 rounded-md text-xs font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                        >
+                          Verify
+                        </button>
+                        <button
+                          onClick={() => cancelPayment(payment.id)}
+                          disabled={payment.status !== "PENDING"}
+                          className="h-10 bg-red-600 text-white px-2 rounded-md text-xs font-semibold hover:bg-red-500 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                        >
+                          Cancel
+                        </button>
+                        <a
+                          href={`/pay/${payment.id}`}
+                          target="_blank"
+                          className="h-10 bg-zinc-800 text-white px-2 rounded-md text-xs font-semibold hover:bg-zinc-700 transition text-center flex items-center justify-center"
+                        >
+                          Checkout
+                        </a>
+                        <button
+                          onClick={() => openPaymentDetails(payment)}
+                          className="h-10 bg-blue-600 text-white px-2 rounded-md text-xs font-semibold hover:bg-blue-500 transition flex items-center justify-center"
+                        >
+                          Details
+                        </button>
+                      </div>
+                      {payment.status === "PENDING" && (
+                        <div className="hidden xl:flex justify-end">
+                          <div className="bg-white p-1.5 rounded-lg">
+                            <QRCodeSVG value={payment.walletAddress} size={72} />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                     );
@@ -1328,7 +1310,9 @@ app.post("/webhook", express.json(), (req, res) => {
             </p>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.1fr] gap-6">
+          <div id="security" className="space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <div>
                 <h2 className="text-2xl font-bold">Activity</h2>
@@ -1456,7 +1440,7 @@ app.post("/webhook", express.json(), (req, res) => {
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <div>
                 <h2 className="text-2xl font-bold">API Usage</h2>
@@ -1572,8 +1556,9 @@ app.post("/webhook", express.json(), (req, res) => {
               </button>
             </form>
           </div>
+          </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <div id="integration" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <h2 className="text-2xl font-bold mb-4">Security</h2>
 
             <p className="text-zinc-400 text-sm mb-4">
@@ -1615,7 +1600,7 @@ app.post("/webhook", express.json(), (req, res) => {
                     );
                     alert("Webhook secret copied");
                   }}
-                  className="bg-white text-black px-5 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                  className={primaryButtonClass}
                 >
                   Copy Secret
                 </button>
@@ -1628,6 +1613,7 @@ app.post("/webhook", express.json(), (req, res) => {
                 </button>
               </div>
             </div>
+          </div>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
@@ -1788,7 +1774,7 @@ app.post("/webhook", express.json(), (req, res) => {
                 <button
                   onClick={() => verifyPayment(selectedPayment.id)}
                   disabled={selectedPayment.status !== "PENDING"}
-                  className="bg-blue-500 text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                  className="bg-blue-500 text-black px-4 py-2 rounded-lg font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Verify Now
                 </button>
@@ -1796,7 +1782,7 @@ app.post("/webhook", express.json(), (req, res) => {
                 <button
                   onClick={() => cancelPayment(selectedPayment.id)}
                   disabled={selectedPayment.status !== "PENDING"}
-                  className="bg-red-500 text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                  className="bg-red-500 text-black px-4 py-2 rounded-lg font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Cancel
                 </button>
@@ -1804,7 +1790,7 @@ app.post("/webhook", express.json(), (req, res) => {
                 <a
                   href={`/pay/${selectedPayment.id}`}
                   target="_blank"
-                  className="bg-white text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition"
+                  className="bg-white text-black px-4 py-2 rounded-lg font-semibold hover:opacity-80 transition"
                 >
                   Checkout
                 </a>
@@ -1814,7 +1800,7 @@ app.post("/webhook", express.json(), (req, res) => {
                     setSelectedPayment(null);
                     setWebhookHistory([]);
                   }}
-                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+                  className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold hover:bg-zinc-700 transition"
                 >
                   Close
                 </button>
@@ -1873,6 +1859,35 @@ app.post("/webhook", express.json(), (req, res) => {
               <section className="space-y-6">
                 <div>
                   <h3 className="text-xl font-bold mb-4">Payment Data</h3>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-[160px_1fr] gap-4 items-center">
+                      <div className="flex justify-center">
+                        <div className="bg-white p-2 rounded-xl">
+                          <QRCodeSVG
+                            value={`http://localhost:3000/pay/${selectedPayment.id}`}
+                            size={132}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <p className="text-zinc-500 text-xs">Checkout URL</p>
+                        <p className="break-all text-sm">
+                          {`http://localhost:3000/pay/${selectedPayment.id}`}
+                        </p>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              `http://localhost:3000/pay/${selectedPayment.id}`
+                            );
+                            alert("Checkout URL copied");
+                          }}
+                          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-500 transition"
+                        >
+                          Copy Checkout URL
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <DetailField
                       label="Payment ID"
@@ -1881,17 +1896,6 @@ app.post("/webhook", express.json(), (req, res) => {
                       onAction={() => {
                         navigator.clipboard.writeText(selectedPayment.id);
                         alert("Payment ID copied");
-                      }}
-                    />
-                    <DetailField
-                      label="Checkout URL"
-                      value={`http://localhost:3000/pay/${selectedPayment.id}`}
-                      actionLabel="Copy"
-                      onAction={() => {
-                        navigator.clipboard.writeText(
-                          `http://localhost:3000/pay/${selectedPayment.id}`
-                        );
-                        alert("Checkout URL copied");
                       }}
                     />
                     <DetailField
@@ -2003,7 +2007,7 @@ app.post("/webhook", express.json(), (req, res) => {
                               webhook.status === "SUCCESS" ||
                               webhook.attempts >= webhook.maxAttempts
                             }
-                            className="bg-blue-500 text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
+                            className="bg-blue-500 text-black px-4 py-2 rounded-lg font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
                           >
                             Retry
                           </button>
