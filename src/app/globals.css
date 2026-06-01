@@ -145,3 +145,65 @@ body {
   border-color: #93c5fd !important;
   color: #1e3a8a !important;
 }
+
+/* Activity panel - light mode refinements */
+.light-dashboard #security .bg-zinc-950 {
+  background-color: #f8fafc !important;
+}
+
+.light-dashboard #security .divide-zinc-800 > * + * {
+  border-top-color: #d1d5db !important;
+}
+
+.light-dashboard #security .rounded-full.px-3.py-1 {
+  border: 1px solid transparent !important;
+}
+
+.light-dashboard #security .bg-green-500 {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #86efac !important;
+}
+
+.light-dashboard #security .bg-red-500 {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+}
+
+.light-dashboard #security .bg-zinc-700 {
+  background-color: #e5e7eb !important;
+  color: #374151 !important;
+  border-color: #9ca3af !important;
+}
+
+/* Security actions - light mode premium buttons */
+.light-dashboard #security button {
+  border-radius: 12px !important;
+}
+
+.light-dashboard #security button[type="submit"] {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+  border: 1px solid #111827 !important;
+}
+
+.light-dashboard #security button[type="submit"]:hover {
+  background-color: #000000 !important;
+}
+
+.light-dashboard #security button[class*="border-zinc-600"] {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border-color: #111827 !important;
+}
+
+.light-dashboard #security button[class*="bg-red-600"] {
+  background-color: #111827 !important;
+  color: #f9fafb !important;
+  border: 1px solid #111827 !important;
+}
+
+.light-dashboard #security button[class*="bg-red-600"]:hover {
+  background-color: #000000 !important;
+}

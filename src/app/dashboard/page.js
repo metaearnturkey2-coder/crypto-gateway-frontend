@@ -81,24 +81,44 @@ const getPayoutStatusClassName = (status) => {
   return "bg-yellow-500 text-black";
 };
 
-const CodeSnippet = ({ title, description, value, copied, onCopy }) => (
-  <div className="border border-zinc-800 rounded-xl overflow-hidden bg-[#050505]">
-    <div className="flex items-start justify-between gap-4 border-b border-zinc-800 px-4 py-3">
+const CodeSnippet = ({ title, description, value, copied, onCopy, isLightTheme }) => (
+  <div
+    className={`border rounded-xl overflow-hidden ${
+      isLightTheme
+        ? "border-zinc-300 bg-zinc-100"
+        : "border-zinc-800 bg-[#050505]"
+    }`}
+  >
+    <div
+      className={`flex items-start justify-between gap-4 px-4 py-3 ${
+        isLightTheme ? "border-b border-zinc-300" : "border-b border-zinc-800"
+      }`}
+    >
       <div>
         <h3 className="font-semibold">{title}</h3>
-        <p className="text-zinc-500 text-xs mt-1">{description}</p>
+        <p className={`text-xs mt-1 ${isLightTheme ? "text-zinc-600" : "text-zinc-500"}`}>
+          {description}
+        </p>
       </div>
 
       <button
         type="button"
         onClick={onCopy}
-        className="shrink-0 bg-white text-black px-4 py-2 rounded-lg text-xs font-semibold hover:opacity-80 transition"
+        className={`shrink-0 px-4 py-2 rounded-lg text-xs font-semibold transition ${
+          isLightTheme
+            ? "bg-zinc-900 text-white border border-zinc-900 hover:bg-black"
+            : "bg-white text-black hover:opacity-80"
+        }`}
       >
         {copied ? "Copied" : "Copy"}
       </button>
     </div>
 
-    <pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-zinc-200">
+    <pre
+      className={`max-h-80 overflow-auto p-4 text-xs leading-6 ${
+        isLightTheme ? "text-zinc-800 bg-zinc-50" : "text-zinc-200"
+      }`}
+    >
       <code>{value}</code>
     </pre>
   </div>
@@ -916,6 +936,8 @@ app.post("/webhook", express.json(), (req, res) => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  const isLightTheme = !isDarkTheme;
+
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -1722,7 +1744,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
               <button
                 type="submit"
-                className="h-12 px-6 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-500 transition"
+                className="h-12 px-6 rounded-xl border border-zinc-700 bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition"
               >
                 Save URL
               </button>
@@ -1756,7 +1778,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
                 <button
                   onClick={regenerateWebhookSecret}
-                  className="h-12 px-6 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-500 transition"
+                  className="h-12 px-6 rounded-xl border border-zinc-700 bg-zinc-900 text-white font-semibold hover:bg-zinc-800 transition"
                 >
                   Regenerate
                 </button>
@@ -1865,6 +1887,7 @@ app.post("/webhook", express.json(), (req, res) => {
                   description={activeIntegration.description}
                   value={activeIntegration.value}
                   copied={copiedSnippet === activeIntegration.key}
+                  isLightTheme={isLightTheme}
                   onCopy={() =>
                     copySnippet(activeIntegration.key, activeIntegration.value)
                   }
