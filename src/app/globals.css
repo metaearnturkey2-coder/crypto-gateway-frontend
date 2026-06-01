@@ -24,3 +24,124 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Dashboard light theme overrides */
+.light-dashboard body {
+  background: #e5e7eb;
+  color: #1f2937;
+}
+
+.light-dashboard .bg-black {
+  background-color: #e5e7eb !important;
+}
+
+.light-dashboard .bg-zinc-950,
+.light-dashboard .bg-zinc-950\/70,
+.light-dashboard .bg-zinc-900,
+.light-dashboard .bg-zinc-900\/70,
+.light-dashboard .bg-zinc-900\/90 {
+  background-color: #f3f4f6 !important;
+}
+
+.light-dashboard .border-zinc-800,
+.light-dashboard .border-zinc-700 {
+  border-color: #9ca3af !important;
+}
+
+.light-dashboard .text-white {
+  color: #111827 !important;
+}
+
+.light-dashboard .text-zinc-500,
+.light-dashboard .text-zinc-400,
+.light-dashboard .text-zinc-300,
+.light-dashboard .text-zinc-200 {
+  color: #374151 !important;
+}
+
+.light-dashboard .bg-zinc-800 {
+  background-color: #d1d5db !important;
+  color: #111827 !important;
+}
+
+.light-dashboard [class*="bg-zinc-800"],
+.light-dashboard [class*="bg-zinc-900"],
+.light-dashboard [class*="bg-zinc-950"] {
+  color: #111827 !important;
+}
+
+.light-dashboard [class*="bg-zinc-800"] .text-zinc-500,
+.light-dashboard [class*="bg-zinc-800"] .text-zinc-400,
+.light-dashboard [class*="bg-zinc-800"] .text-zinc-300,
+.light-dashboard [class*="bg-zinc-900"] .text-zinc-500,
+.light-dashboard [class*="bg-zinc-900"] .text-zinc-400,
+.light-dashboard [class*="bg-zinc-900"] .text-zinc-300,
+.light-dashboard [class*="bg-zinc-950"] .text-zinc-500,
+.light-dashboard [class*="bg-zinc-950"] .text-zinc-400,
+.light-dashboard [class*="bg-zinc-950"] .text-zinc-300 {
+  color: #374151 !important;
+}
+
+.light-dashboard [class*="bg-zinc-800"] .text-white,
+.light-dashboard [class*="bg-zinc-900"] .text-white,
+.light-dashboard [class*="bg-zinc-950"] .text-white {
+  color: #111827 !important;
+}
+
+.light-dashboard input,
+.light-dashboard select,
+.light-dashboard textarea {
+  background-color: #e5e7eb !important;
+  color: #111827 !important;
+  border-color: #9ca3af !important;
+}
+
+.light-dashboard ::placeholder {
+  color: #6b7280 !important;
+}
+
+.light-dashboard button[class*="bg-zinc-9"],
+.light-dashboard button[class*="bg-zinc-8"] {
+  color: #111827 !important;
+}
+
+/* Operations cards - light mode contrast fixes */
+.light-dashboard #operations .bg-zinc-900\/70 {
+  background-color: #f8fafc !important;
+  border-color: #9ca3af !important;
+}
+
+.light-dashboard #operations [class*="bg-rose-500/20"] {
+  background-color: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fca5a5 !important;
+}
+
+.light-dashboard #operations [class*="bg-emerald-500/20"] {
+  background-color: #dcfce7 !important;
+  color: #166534 !important;
+  border-color: #86efac !important;
+}
+
+.light-dashboard #operations [class*="bg-amber-400/20"] {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fcd34d !important;
+}
+
+.light-dashboard #operations button,
+.light-dashboard #operations a {
+  color: #111827 !important;
+}
+
+.light-dashboard #operations button[class*="bg-zinc-800"],
+.light-dashboard #operations a[class*="bg-zinc-800"] {
+  background-color: #e5e7eb !important;
+  border-color: #9ca3af !important;
+}
+
+.light-dashboard #operations button[class*="bg-zinc-100"] {
+  background-color: #dbeafe !important;
+  border-color: #93c5fd !important;
+  color: #1e3a8a !important;
+}

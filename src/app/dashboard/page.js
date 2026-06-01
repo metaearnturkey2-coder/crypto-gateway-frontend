@@ -27,26 +27,26 @@ const formatTimeLeft = (expiresAt, now) => {
 
 const getWebhookStatusClassName = (status) => {
   if (status === "SUCCESS") {
-    return "bg-green-500 text-black";
+    return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
   }
 
   if (status === "FAILED") {
-    return "bg-red-500 text-black";
+    return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
   }
 
-  return "bg-zinc-700 text-white";
+  return "bg-zinc-700/40 text-zinc-200 border border-zinc-500/40";
 };
 
 const getPaymentStatusClassName = (status) => {
   if (status === "PAID") {
-    return "bg-green-500 text-black";
+    return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
   }
 
   if (status === "EXPIRED" || status === "CANCELLED") {
-    return "bg-red-500 text-black";
+    return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
   }
 
-  return "bg-yellow-500 text-black";
+  return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
 };
 
 const getAuditActionClassName = (action) => {
@@ -252,6 +252,7 @@ export default function DashboardPage() {
   const [activeSection, setActiveSection] = useState("overview");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
+  const [isDarkTheme, setIsDarkTheme] = useState(true);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -867,6 +868,24 @@ app.post("/webhook", express.json(), (req, res) => {
   }, []);
 
   useEffect(() => {
+    const stored = localStorage.getItem("dashboardTheme");
+    if (stored === "light") {
+      setIsDarkTheme(false);
+      document.documentElement.classList.add("light-dashboard");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isDarkTheme) {
+      document.documentElement.classList.remove("light-dashboard");
+      localStorage.setItem("dashboardTheme", "dark");
+    } else {
+      document.documentElement.classList.add("light-dashboard");
+      localStorage.setItem("dashboardTheme", "light");
+    }
+  }, [isDarkTheme]);
+
+  useEffect(() => {
     const closeOnOutside = (event) => {
       if (!event.target.closest("[data-user-menu]")) {
         setUserMenuOpen(false);
@@ -969,6 +988,21 @@ app.post("/webhook", express.json(), (req, res) => {
                 >
                   Ayarlar
                 </button>
+                <div className="flex items-center justify-between px-4 py-3 border-t border-zinc-800">
+                  <span className="text-sm text-zinc-200">Koyu tema</span>
+                  <button
+                    onClick={() => setIsDarkTheme((v) => !v)}
+                    className={`w-12 h-7 rounded-full transition relative ${
+                      isDarkTheme ? "bg-zinc-600" : "bg-zinc-400"
+                    }`}
+                  >
+                    <span
+                      className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${
+                        isDarkTheme ? "left-6" : "left-1"
+                      }`}
+                    />
+                  </button>
+                </div>
                 <button
                   onClick={logout}
                   className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-zinc-900 transition"
@@ -992,7 +1026,13 @@ app.post("/webhook", express.json(), (req, res) => {
               Welcome {merchant?.name || "Merchant"}
             </p>
           </section>
-          <section className="sticky top-0 z-20 bg-black/90 backdrop-blur border border-zinc-800 rounded-xl p-3">
+          <section
+            className={`sticky top-0 z-20 backdrop-blur rounded-xl p-3 ${
+              isDarkTheme
+                ? "bg-black/90 border border-zinc-800"
+                : "bg-zinc-200/90 border border-zinc-300"
+            }`}
+          >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
               {[
                 ["overview", "Overview"],
@@ -1005,8 +1045,12 @@ app.post("/webhook", express.json(), (req, res) => {
                   href={`#${id}`}
                   className={`rounded-lg px-3 py-2 text-center border transition ${
                     activeSection === id
-                      ? "bg-zinc-800 border-zinc-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
-                      : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      ? isDarkTheme
+                        ? "bg-zinc-800 border-zinc-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                        : "bg-white border-zinc-400 text-zinc-900"
+                      : isDarkTheme
+                      ? "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                      : "bg-zinc-100 border-zinc-300 text-zinc-700 hover:bg-white"
                   }`}
                 >
                   {label}
@@ -1245,7 +1289,7 @@ app.post("/webhook", express.json(), (req, res) => {
               {payments.map((payment) => (
                 <div
                   key={payment.id}
-                  className="border border-zinc-800 bg-zinc-950/60 rounded-xl p-4"
+                  className="border border-zinc-700/60 bg-zinc-900/70 rounded-xl p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                 >
                   {(() => {
                     const latestWebhook = payment.webhookEvents?.[0];
@@ -1319,34 +1363,34 @@ app.post("/webhook", express.json(), (req, res) => {
                             navigator.clipboard.writeText(payment.walletAddress);
                             alert("Wallet address copied");
                           }}
-                          className="h-10 bg-zinc-800 text-white px-2 rounded-md text-xs font-semibold hover:bg-zinc-700 transition flex items-center justify-center"
+                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition flex items-center justify-center"
                         >
                           Copy Address
                         </button>
                         <button
                           onClick={() => verifyPayment(payment.id)}
                           disabled={payment.status !== "PENDING"}
-                          className="h-10 bg-zinc-800 text-white px-2 rounded-md text-xs font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
                         >
                           Verify
                         </button>
                         <button
                           onClick={() => cancelPayment(payment.id)}
                           disabled={payment.status !== "PENDING"}
-                          className="h-10 bg-red-600 text-white px-2 rounded-md text-xs font-semibold hover:bg-red-500 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
+                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40 flex items-center justify-center"
                         >
                           Cancel
                         </button>
                         <a
                           href={`/pay/${payment.id}`}
                           target="_blank"
-                          className="h-10 bg-zinc-800 text-white px-2 rounded-md text-xs font-semibold hover:bg-zinc-700 transition text-center flex items-center justify-center"
+                          className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition text-center flex items-center justify-center"
                         >
                           Checkout
                         </a>
                         <button
                           onClick={() => openPaymentDetails(payment)}
-                          className="h-10 bg-blue-600 text-white px-2 rounded-md text-xs font-semibold hover:bg-blue-500 transition flex items-center justify-center"
+                          className="h-10 bg-zinc-100 text-zinc-900 px-3 rounded-lg text-xs font-semibold hover:bg-white transition flex items-center justify-center"
                         >
                           Details
                         </button>
