@@ -61,6 +61,7 @@ export default function AdminPayoutsPage() {
   const [loading, setLoading] = useState(false);
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [selectedAuditLogs, setSelectedAuditLogs] = useState([]);
+  const [securityEvents, setSecurityEvents] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [tokenState, setTokenState] = useState("unknown");
   const baseUrl = "http://localhost:5000";
@@ -226,6 +227,7 @@ export default function AdminPayoutsPage() {
 
     if (isValid) {
       fetchPayouts({ page: 1 });
+      fetchSecurityEvents();
     } else {
       alert("Invalid admin token");
     }
@@ -244,6 +246,7 @@ export default function AdminPayoutsPage() {
     setPayoutRequests([]);
     setSelectedPayout(null);
     setSelectedAuditLogs([]);
+    setSecurityEvents([]);
     setPagination({
       page: 1,
       limit: 10,
@@ -301,6 +304,22 @@ export default function AdminPayoutsPage() {
       setDetailsLoading(false);
     }
   };
+
+  const fetchSecurityEvents = useCallback(async () => {
+    if (!adminAccessToken) {
+      return;
+    }
+
+    try {
+      const response = await adminFetch("/api/admin/security-events");
+      const data = await response.json();
+      if (response.ok) {
+        setSecurityEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [adminAccessToken, adminFetch]);
 
   const openPayoutDetails = (request) => {
     setSelectedPayout(request);
@@ -481,6 +500,12 @@ export default function AdminPayoutsPage() {
               >
                 Refresh
               </button>
+              <button
+                onClick={fetchSecurityEvents}
+                className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
+              >
+                Security Events
+              </button>
             </div>
           </div>
 
@@ -603,6 +628,29 @@ export default function AdminPayoutsPage() {
                 Next
               </button>
             </div>
+          </div>
+        </section>
+        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold">Security Events</h3>
+            <span className="text-zinc-500 text-sm">Last 50 events</span>
+          </div>
+          {securityEvents.length === 0 && (
+            <p className="text-zinc-400">No security events yet.</p>
+          )}
+          <div className="space-y-2">
+            {securityEvents.map((event) => (
+              <div key={event.id} className="border border-zinc-800 rounded-xl p-3 text-sm">
+                <p>
+                  <span className="font-semibold">{event.event}</span>{" "}
+                  <span className="text-zinc-300">{event.status}</span>{" "}
+                  <span className="text-zinc-500">{event.reason || "-"}</span>
+                </p>
+                <p className="text-zinc-500 text-xs">
+                  {event.ipAddress || "unknown ip"} - {new Date(event.createdAt).toLocaleString()}
+                </p>
+              </div>
+            ))}
           </div>
         </section>
       </div>
