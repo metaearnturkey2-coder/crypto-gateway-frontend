@@ -251,6 +251,7 @@ export default function DashboardPage() {
     useState("create-payment");
   const [activeSection, setActiveSection] = useState("overview");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [copiedUid, setCopiedUid] = useState(false);
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -930,6 +931,24 @@ app.post("/webhook", express.json(), (req, res) => {
                 <div className="px-4 py-3 border-b border-zinc-800">
                   <p className="text-sm font-semibold text-zinc-100 truncate">{merchant?.email}</p>
                   <p className="text-xs text-zinc-500">Merchant account</p>
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <p className="text-xs text-zinc-500 truncate">
+                      UID: {merchant?.id || "-"}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (!merchant?.id) {
+                          return;
+                        }
+                        navigator.clipboard.writeText(merchant.id);
+                        setCopiedUid(true);
+                        setTimeout(() => setCopiedUid(false), 1200);
+                      }}
+                      className="text-xs px-2 py-1 rounded-md border border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800 transition"
+                    >
+                      {copiedUid ? "Copied" : "Copy"}
+                    </button>
+                  </div>
                 </div>
 
                 <button
