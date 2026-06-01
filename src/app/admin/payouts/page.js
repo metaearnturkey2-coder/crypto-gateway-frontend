@@ -55,6 +55,34 @@ export default function AdminPayoutsPage() {
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [selectedAuditLogs, setSelectedAuditLogs] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [tokenState, setTokenState] = useState("unknown");
+
+  const verifyAdminToken = useCallback(async (token) => {
+    if (!token) {
+      setTokenState("invalid");
+      return false;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/admin/me", {
+        headers: {
+          "x-admin-token": token,
+        },
+      });
+
+      if (!response.ok) {
+        setTokenState("invalid");
+        return false;
+      }
+
+      setTokenState("valid");
+      return true;
+    } catch (error) {
+      console.error(error);
+      setTokenState("invalid");
+      return false;
+    }
+  }, []);
 
   const fetchPayouts = useCallback(async (options = {}) => {
     const nextPage = options.page || page;
@@ -85,6 +113,10 @@ export default function AdminPayoutsPage() {
 
       const data = await response.json();
 
+      if (response.status === 401) {
+        setTokenState("invalid");
+      }
+
       if (!response.ok) {
         alert(data.message || "Admin payouts error");
         return;
@@ -105,9 +137,30 @@ export default function AdminPayoutsPage() {
     }
   }, [adminToken, page, pagination.limit, statusFilter]);
 
-  const saveToken = () => {
+  const saveToken = async () => {
     localStorage.setItem("adminToken", adminToken);
-    fetchPayouts({ page: 1 });
+    const isValid = await verifyAdminToken(adminToken);
+
+    if (isValid) {
+      fetchPayouts({ page: 1 });
+    } else {
+      alert("Invalid admin token");
+    }
+  };
+
+  const clearToken = () => {
+    localStorage.removeItem("adminToken");
+    setAdminToken("");
+    setTokenState("unknown");
+    setPayoutRequests([]);
+    setSelectedPayout(null);
+    setSelectedAuditLogs([]);
+    setPagination({
+      page: 1,
+      limit: 10,
+      totalCount: 0,
+      totalPages: 1,
+    });
   };
 
   const fetchPayoutAuditLogs = async (payoutId) => {
@@ -228,6 +281,31 @@ export default function AdminPayoutsPage() {
             >
               Save Token
             </button>
+
+            <button
+              onClick={clearToken}
+              className="bg-zinc-800 px-6 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
+            >
+              Clear Token
+            </button>
+          </div>
+
+          <div className="mt-3">
+            <span
+              className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                tokenState === "valid"
+                  ? "bg-green-500 text-black"
+                  : tokenState === "invalid"
+                  ? "bg-red-500 text-black"
+                  : "bg-zinc-700 text-white"
+              }`}
+            >
+              {tokenState === "valid"
+                ? "Token verified"
+                : tokenState === "invalid"
+                ? "Token not verified"
+                : "Token not checked"}
+            </span>
           </div>
         </section>
 
