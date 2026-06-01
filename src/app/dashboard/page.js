@@ -249,6 +249,7 @@ export default function DashboardPage() {
   const [copiedSnippet, setCopiedSnippet] = useState("");
   const [activeIntegrationKey, setActiveIntegrationKey] =
     useState("create-payment");
+  const [activeSection, setActiveSection] = useState("overview");
 
   const logout = () => {
     localStorage.removeItem("token");
@@ -863,6 +864,27 @@ app.post("/webhook", express.json(), (req, res) => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const sectionIds = ["overview", "operations", "security", "integration"];
+    const onScroll = () => {
+      let current = "overview";
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (!el) {
+          continue;
+        }
+        const top = el.getBoundingClientRect().top;
+        if (top <= 160) {
+          current = id;
+        }
+      }
+      setActiveSection(current);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center">
@@ -910,10 +932,24 @@ app.post("/webhook", express.json(), (req, res) => {
           </section>
           <section className="sticky top-0 z-20 bg-black/90 backdrop-blur border border-zinc-800 rounded-xl p-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-              <a href="#overview" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Overview</a>
-              <a href="#operations" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Operations</a>
-              <a href="#security" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Security</a>
-              <a href="#integration" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Integration</a>
+              {[
+                ["overview", "Overview"],
+                ["operations", "Operations"],
+                ["security", "Security"],
+                ["integration", "Integration"],
+              ].map(([id, label]) => (
+                <a
+                  key={id}
+                  href={`#${id}`}
+                  className={`rounded-lg px-3 py-2 text-center border transition ${
+                    activeSection === id
+                      ? "bg-zinc-800 border-zinc-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                      : "bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+                  }`}
+                >
+                  {label}
+                </a>
+              ))}
             </div>
           </section>
 
