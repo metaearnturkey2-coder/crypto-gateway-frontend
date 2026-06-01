@@ -252,6 +252,32 @@ export default function AdminPayoutsPage() {
     });
   };
 
+  const logoutAllSessions = async () => {
+    if (!adminAccessToken) {
+      alert("Admin token is required");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "This will revoke all admin sessions. Continue?"
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await adminFetch("/api/admin/logout-all", {
+        method: "POST",
+      });
+      const data = await response.json();
+      alert(data.message || "All sessions revoked");
+      clearToken();
+    } catch (error) {
+      console.error(error);
+      alert("Logout all sessions error");
+    }
+  };
+
   const fetchPayoutAuditLogs = async (payoutId) => {
     setDetailsLoading(true);
 
@@ -370,6 +396,13 @@ export default function AdminPayoutsPage() {
               className="bg-zinc-800 px-6 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
             >
               Clear Token
+            </button>
+
+            <button
+              onClick={logoutAllSessions}
+              className="bg-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-500 transition"
+            >
+              Logout All Sessions
             </button>
           </div>
 
