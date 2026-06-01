@@ -873,22 +873,23 @@ app.post("/webhook", express.json(), (req, res) => {
 
   return (
     <main className="min-h-screen bg-black text-white">
-      <header className="border-b border-zinc-800">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-5 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Crypto Gateway</h1>
-
-            <p className="text-zinc-500 text-sm">Merchant Panel</p>
+      <header className="border-b border-zinc-800 bg-zinc-950/70 backdrop-blur">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400" />
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight">Crypto Gateway</h1>
+              <p className="text-zinc-500 text-xs uppercase tracking-wide">Merchant Panel</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <p className="text-zinc-400 hidden md:block">
+          <div className="flex items-center gap-3">
+            <span className="hidden md:inline-flex h-10 items-center rounded-lg border border-zinc-700 bg-zinc-900 px-3 text-sm text-zinc-300">
               {merchant?.email}
-            </p>
-
+            </span>
             <button
               onClick={logout}
-              className="bg-red-500 text-black px-5 py-2 rounded-lg font-semibold hover:opacity-80 transition"
+              className="h-10 px-4 rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100 font-semibold hover:bg-zinc-800 transition"
             >
               Logout
             </button>
@@ -908,16 +909,15 @@ app.post("/webhook", express.json(), (req, res) => {
             </p>
           </section>
           <section className="sticky top-0 z-20 bg-black/90 backdrop-blur border border-zinc-800 rounded-xl p-3">
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
               <a href="#overview" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Overview</a>
               <a href="#operations" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Operations</a>
-              <a href="#finance" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Finance</a>
               <a href="#security" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Security</a>
               <a href="#integration" className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-center">Integration</a>
             </div>
           </section>
 
-          <section id="overview">
+          <section id="overview" className="scroll-mt-28">
             <div className="mb-4">
               <h2 className="text-xl font-bold">Overview</h2>
               <p className="text-zinc-500 text-sm">Real-time payment performance snapshot.</p>
@@ -945,7 +945,7 @@ app.post("/webhook", express.json(), (req, res) => {
           </div>
           </section>
 
-          <section id="finance" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <section id="finance" className="scroll-mt-28 bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-2xl font-bold">Finance</h2>
@@ -1060,7 +1060,7 @@ app.post("/webhook", express.json(), (req, res) => {
             )}
           </section>
 
-          <div id="operations" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <div id="operations" className="scroll-mt-28 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
               <div>
                 <h2 className="text-2xl font-bold">Operations</h2>
@@ -1347,7 +1347,7 @@ app.post("/webhook", express.json(), (req, res) => {
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.1fr] gap-6">
-          <div id="security" className="space-y-6">
+          <div id="security" className="scroll-mt-28 space-y-6">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
               <div>
@@ -1558,7 +1558,7 @@ app.post("/webhook", express.json(), (req, res) => {
           </div>
           </div>
 
-          <div id="integration" className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
             <div className="mb-5">
               <h2 className="text-2xl font-bold">Security</h2>
               <p className="text-zinc-400 text-sm mt-2">
@@ -1623,7 +1623,7 @@ app.post("/webhook", express.json(), (req, res) => {
           </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
+          <div id="integration" className="scroll-mt-28 bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4">API Access</h2>
 
             <p className="text-zinc-400 text-sm mb-3">
