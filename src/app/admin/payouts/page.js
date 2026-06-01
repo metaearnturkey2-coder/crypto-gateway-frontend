@@ -35,6 +35,12 @@ const getAllowedActions = (status) => {
 };
 
 export default function AdminPayoutsPage() {
+  const primaryButtonClass =
+    "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:opacity-40 disabled:cursor-not-allowed";
+  const secondaryButtonClass =
+    "bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition disabled:opacity-40 disabled:cursor-not-allowed";
+  const dangerButtonClass =
+    "bg-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-500 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const [adminToken, setAdminToken] = useState(() => {
     if (typeof window === "undefined") {
       return "";
@@ -392,8 +398,12 @@ export default function AdminPayoutsPage() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-8 py-10">
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-8">
+      <div className="max-w-7xl mx-auto px-8 py-10 space-y-8">
+        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+          <div className="mb-5">
+            <h2 className="text-xl font-bold">Access</h2>
+            <p className="text-zinc-500 text-sm">Manage admin authentication and active sessions.</p>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4">
             <input
               type="password"
@@ -405,21 +415,21 @@ export default function AdminPayoutsPage() {
 
             <button
               onClick={saveToken}
-              className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+              className={primaryButtonClass}
             >
               Save Token
             </button>
 
             <button
               onClick={clearToken}
-              className="bg-zinc-800 px-6 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
+              className={secondaryButtonClass}
             >
               Clear Token
             </button>
 
             <button
               onClick={logoutAllSessions}
-              className="bg-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-500 transition"
+              className={dangerButtonClass}
             >
               Logout All Sessions
             </button>
@@ -444,7 +454,12 @@ export default function AdminPayoutsPage() {
           </div>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <section>
+          <div className="mb-4">
+            <h2 className="text-xl font-bold">Overview</h2>
+            <p className="text-zinc-500 text-sm">Live snapshot of payout workload.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <p className="text-zinc-500 text-sm mb-2">Matching Requests</p>
             <p className="text-3xl font-bold">{pagination.totalCount}</p>
@@ -463,14 +478,15 @@ export default function AdminPayoutsPage() {
               {pagination.page}/{pagination.totalPages}
             </p>
           </div>
+          </div>
         </section>
 
         <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-2xl font-bold">Payout Requests</h2>
+              <h2 className="text-2xl font-bold">Operations</h2>
               <p className="text-zinc-500 text-sm">
-                Showing {payoutRequests.length} of {pagination.totalCount}
+                Payout queue and status operations. Showing {payoutRequests.length} of {pagination.totalCount}
               </p>
             </div>
 
@@ -496,20 +512,26 @@ export default function AdminPayoutsPage() {
 
               <button
                 onClick={() => fetchPayouts()}
-                className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
+                className={secondaryButtonClass}
               >
                 Refresh
               </button>
               <button
                 onClick={fetchSecurityEvents}
-                className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
+                className={secondaryButtonClass}
               >
                 Security Events
               </button>
             </div>
           </div>
 
-          {loading && <p className="text-zinc-400">Loading payouts...</p>}
+          {loading && (
+            <div className="space-y-3">
+              <div className="h-12 rounded-xl bg-zinc-800/70 animate-pulse" />
+              <div className="h-12 rounded-xl bg-zinc-800/50 animate-pulse" />
+              <div className="h-12 rounded-xl bg-zinc-800/40 animate-pulse" />
+            </div>
+          )}
 
           {!loading && payoutRequests.length === 0 && (
             <p className="text-zinc-400">No payout requests found.</p>
@@ -632,7 +654,7 @@ export default function AdminPayoutsPage() {
         </section>
         <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">Security Events</h3>
+            <h3 className="text-xl font-bold">Security</h3>
             <span className="text-zinc-500 text-sm">Last 50 events</span>
           </div>
           {securityEvents.length === 0 && (
