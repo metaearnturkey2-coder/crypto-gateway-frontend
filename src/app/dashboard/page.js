@@ -1177,7 +1177,7 @@ app.post("/webhook", express.json(), (req, res) => {
 
               <button
                 type="submit"
-                className="bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition"
+                className="bg-white text-black px-6 py-3 rounded-xl font-semibold border border-zinc-700 hover:opacity-80 transition"
               >
                 Request Payout
               </button>
@@ -1504,7 +1504,10 @@ app.post("/webhook", express.json(), (req, res) => {
                 className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               />
 
-              <button type="submit" className={primaryButtonClass}>
+              <button
+                type="submit"
+                className={`${primaryButtonClass} border border-zinc-700`}
+              >
                 Create Payment
               </button>
             </form>
@@ -1807,7 +1810,7 @@ app.post("/webhook", express.json(), (req, res) => {
                   navigator.clipboard.writeText(merchant?.apiKey || "");
                   alert("API key copied");
                 }}
-                className={primaryButtonClass}
+                className={`${primaryButtonClass} border border-zinc-700`}
               >
                 Copy API Key
               </button>

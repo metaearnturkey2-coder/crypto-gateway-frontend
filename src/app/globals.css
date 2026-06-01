@@ -52,6 +52,11 @@ body {
   color: #111827 !important;
 }
 
+.light-dashboard .text-zinc-100,
+.light-dashboard .text-zinc-50 {
+  color: #111827 !important;
+}
+
 .light-dashboard .text-zinc-500,
 .light-dashboard .text-zinc-400,
 .light-dashboard .text-zinc-300,
