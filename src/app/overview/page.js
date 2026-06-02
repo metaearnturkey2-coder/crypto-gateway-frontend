@@ -177,6 +177,7 @@ export default function OverviewPage() {
   const onboardingSteps = [
     {
       title: "Create business account",
+      shortTitle: "Account",
       description: "Merchant profile and authenticated dashboard access are ready.",
       done: Boolean(merchant?.id),
       href: "/overview",
@@ -184,6 +185,7 @@ export default function OverviewPage() {
     },
     {
       title: "Add webhook URL",
+      shortTitle: "Webhook",
       description: "Send payment status updates to your own system automatically.",
       done: Boolean(merchant?.callbackUrl),
       href: "/settings/security",
@@ -191,6 +193,7 @@ export default function OverviewPage() {
     },
     {
       title: "Prepare API access",
+      shortTitle: "API",
       description: "Review the public payment API access used to create checkouts.",
       done: Boolean(merchant?.apiKey),
       href: "/business-wallet/api-docs",
@@ -198,6 +201,7 @@ export default function OverviewPage() {
     },
     {
       title: "Create first payment",
+      shortTitle: "Payment",
       description: "Use a test order to verify checkout and customer payment flow.",
       done: Number(paymentStats.total || 0) > 0,
       href: "/business-wallet/merchants",
@@ -205,6 +209,7 @@ export default function OverviewPage() {
     },
     {
       title: "Run integration test",
+      shortTitle: "Test",
       description: "Confirm that API traffic or a webhook test can be completed.",
       done: Number(apiUsage.total || 0) > 0 || webhookTestCompleted,
       href: "/business-wallet/api-docs",
@@ -213,6 +218,20 @@ export default function OverviewPage() {
   ];
   const completedOnboardingSteps = onboardingSteps.filter((step) => step.done).length;
   const onboardingProgress = Math.round((completedOnboardingSteps / onboardingSteps.length) * 100);
+  const nextOnboardingStep = onboardingSteps.find((step) => !step.done);
+  const nextOnboardingStepIndex = onboardingSteps.findIndex((step) => !step.done);
+  const onboardingComplete = !nextOnboardingStep;
+  const setupStatus = nextOnboardingStep
+    ? {
+        label: "Setup in progress",
+        description: "Complete the next required step before production use.",
+        className: "border-amber-400/40 bg-amber-400/10 text-amber-200",
+      }
+    : {
+        label: "Ready",
+        description: "",
+        className: "border-emerald-400/40 bg-emerald-400/10 text-emerald-200",
+      };
 
   useEffect(() => {
     const loadPrices = async () => {
@@ -301,65 +320,107 @@ export default function OverviewPage() {
           </div>
         </div>
 
-        <section className="mt-6 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-5 md:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900">
+          <div className={`${onboardingComplete ? "" : "border-b border-zinc-800"} px-5 py-5 md:px-6`}>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Onboarding Checklist</p>
-              <h2 className="mt-1 text-2xl font-semibold text-white">Go-live readiness</h2>
-              <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-                Complete the core integration steps before accepting production payments.
-              </p>
+              <div className="flex flex-wrap items-center gap-4">
+                <h2 className="text-xl font-semibold text-white">Merchant setup</h2>
+                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${setupStatus.className}`}>
+                  {onboardingComplete
+                    ? `${setupStatus.label} · ${completedOnboardingSteps}/${onboardingSteps.length} completed`
+                    : setupStatus.label}
+                </span>
+              </div>
+              {setupStatus.description && (
+                <p className="mt-2 max-w-2xl text-sm text-zinc-400">{setupStatus.description}</p>
+              )}
             </div>
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 lg:min-w-[190px]">
-              <div className="flex items-end justify-between gap-3">
-                <p className="text-sm font-semibold text-zinc-400">Progress</p>
-                <p className="text-2xl font-bold text-white">{onboardingProgress}%</p>
-              </div>
-              <div className="mt-3 h-2 rounded-full bg-zinc-800">
-                <div
-                  className="h-full rounded-full bg-emerald-400 transition-all"
-                  style={{ width: `${onboardingProgress}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs font-semibold text-zinc-500">
-                {completedOnboardingSteps}/{onboardingSteps.length} completed
-              </p>
+            <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-center lg:w-auto">
+              {onboardingComplete ? (
+                <div className="flex flex-wrap gap-3 lg:justify-end">
+                  {onboardingSteps.map((step) => (
+                    <div
+                      key={step.title}
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/5 px-3 py-1.5 text-xs font-semibold text-emerald-200"
+                    >
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300/80" />
+                      {step.shortTitle}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 sm:min-w-[220px]">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Progress</p>
+                    <p className="text-sm font-semibold text-zinc-200">{onboardingProgress}%</p>
+                  </div>
+                  <div className="mt-3 h-1.5 rounded-full bg-zinc-800">
+                    <div className="h-full rounded-full bg-amber-300 transition-all" style={{ width: `${onboardingProgress}%` }} />
+                  </div>
+                  <p className="mt-2 text-xs font-semibold text-zinc-500">
+                    {completedOnboardingSteps}/{onboardingSteps.length} completed
+                  </p>
+                </div>
+              )}
+            </div>
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-5">
+          {nextOnboardingStep ? (
+            <div className="mx-5 mt-5 flex flex-col gap-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 md:mx-6 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/80">Next recommended action</p>
+                <h3 className="mt-1 text-lg font-semibold text-white">{nextOnboardingStep.title}</h3>
+                <p className="mt-1 max-w-2xl text-sm text-zinc-400">{nextOnboardingStep.description}</p>
+              </div>
+              <Link
+                href={nextOnboardingStep.href}
+                className="flex h-10 shrink-0 items-center justify-center rounded-lg bg-amber-200 px-4 text-sm font-semibold text-amber-950 transition hover:bg-amber-100"
+              >
+                {nextOnboardingStep.action}
+              </Link>
+            </div>
+          ) : null}
+
+          {!onboardingComplete && (
+          <div className="px-5 py-3 md:px-6">
+          <div className="grid grid-cols-1 divide-y divide-zinc-800 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
             {onboardingSteps.map((step, index) => (
               <Link
                 key={step.title}
                 href={step.href}
-                className="group flex min-h-[170px] flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-zinc-600 hover:bg-black"
+                className={`group flex min-h-[126px] flex-col justify-between py-4 transition lg:px-4 ${
+                  index === nextOnboardingStepIndex
+                    ? "bg-zinc-950/80 hover:bg-zinc-950"
+                    : step.done
+                    ? "hover:bg-zinc-950/60"
+                    : "opacity-60 hover:bg-zinc-950/40"
+                }`}
               >
                 <div>
-                  <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="mb-2 flex items-center justify-between gap-3">
                     <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold ${
+                      className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                         step.done
                           ? "border-emerald-400/50 bg-emerald-400/15 text-emerald-300"
+                          : index === nextOnboardingStepIndex
+                          ? "border-amber-300/50 bg-amber-300/15 text-amber-200"
                           : "border-zinc-700 bg-zinc-900 text-zinc-400"
                       }`}
                     >
-                      {step.done ? "OK" : index + 1}
-                    </span>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        step.done ? "bg-emerald-400/15 text-emerald-300" : "bg-zinc-800 text-zinc-400"
-                      }`}
-                    >
-                      {step.done ? "Done" : "Next"}
+                      {step.done ? "Done" : index === nextOnboardingStepIndex ? "Next" : `Step ${index + 1}`}
                     </span>
                   </div>
-                  <h3 className="text-base font-semibold leading-snug text-white">{step.title}</h3>
-                  <p className="mt-2 text-sm leading-5 text-zinc-500">{step.description}</p>
+                  <h3 className="text-sm font-semibold leading-snug text-white">{step.title}</h3>
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-zinc-500">{step.description}</p>
                 </div>
-                <p className="mt-4 text-sm font-semibold text-zinc-300 group-hover:text-white">{step.action}</p>
+                <p className="mt-3 text-xs font-semibold text-zinc-300 group-hover:text-white">{step.action}</p>
               </Link>
             ))}
           </div>
+          </div>
+          )}
         </section>
 
         <section className="mt-6">
