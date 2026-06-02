@@ -27,6 +27,11 @@ const formatTimeLeft = (expiresAt, now) => {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 };
 
+const MIN_PAYMENT_AMOUNT = 0.01;
+const MAX_PAYMENT_AMOUNT = 1000000;
+const ORDER_ID_PATTERN = /^[A-Za-z0-9._:-]+$/;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function BusinessWalletMerchantsPage() {
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState([]);
@@ -139,8 +144,36 @@ export default function BusinessWalletMerchantsPage() {
     if (!token) return;
 
     const amountNumber = Number(newAmount);
-    if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
+    if (!Number.isFinite(amountNumber)) {
       setNotice({ type: "error", message: "Please enter a valid amount." });
+      return;
+    }
+
+    if (amountNumber < MIN_PAYMENT_AMOUNT || amountNumber > MAX_PAYMENT_AMOUNT) {
+      setNotice({
+        type: "error",
+        message: `Amount must be between ${MIN_PAYMENT_AMOUNT} and ${MAX_PAYMENT_AMOUNT} USDT.`,
+      });
+      return;
+    }
+
+    if (String(newAmount).split(".")[1]?.length > 2) {
+      setNotice({ type: "error", message: "Amount can have at most 2 decimal places." });
+      return;
+    }
+
+    const trimmedOrderId = newOrderId.trim();
+    if (trimmedOrderId && (trimmedOrderId.length > 80 || !ORDER_ID_PATTERN.test(trimmedOrderId))) {
+      setNotice({
+        type: "error",
+        message: "Order ID can use up to 80 letters, numbers, dots, dashes, underscores, and colons.",
+      });
+      return;
+    }
+
+    const trimmedCustomerEmail = newCustomerEmail.trim();
+    if (trimmedCustomerEmail && (trimmedCustomerEmail.length > 254 || !EMAIL_PATTERN.test(trimmedCustomerEmail))) {
+      setNotice({ type: "error", message: "Customer email must be a valid email address." });
       return;
     }
 
@@ -155,13 +188,16 @@ export default function BusinessWalletMerchantsPage() {
         },
         body: JSON.stringify({
           amount: amountNumber,
-          orderId: newOrderId.trim() || undefined,
-          customerEmail: newCustomerEmail.trim() || undefined,
+          orderId: trimmedOrderId || undefined,
+          customerEmail: trimmedCustomerEmail || undefined,
         }),
       });
       const data = await response.json();
       if (!response.ok) {
-        setNotice({ type: "error", message: data.message || "Create payment error." });
+        setNotice({
+          type: "error",
+          message: data.errors?.join(" ") || data.message || "Create payment error.",
+        });
         return;
       }
 
@@ -275,8 +311,9 @@ export default function BusinessWalletMerchantsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_auto] gap-3">
           <input
             type="number"
-            min="0"
-            step="any"
+            min={MIN_PAYMENT_AMOUNT}
+            max={MAX_PAYMENT_AMOUNT}
+            step="0.01"
             placeholder="Amount USDT"
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
@@ -285,6 +322,7 @@ export default function BusinessWalletMerchantsPage() {
           <input
             type="text"
             placeholder="Order ID"
+            maxLength={80}
             value={newOrderId}
             onChange={(e) => setNewOrderId(e.target.value)}
             className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
@@ -292,6 +330,7 @@ export default function BusinessWalletMerchantsPage() {
           <input
             type="email"
             placeholder="Customer email"
+            maxLength={254}
             value={newCustomerEmail}
             onChange={(e) => setNewCustomerEmail(e.target.value)}
             className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
@@ -304,6 +343,9 @@ export default function BusinessWalletMerchantsPage() {
             {creatingPayment ? "Creating..." : "Create Payment"}
           </button>
         </div>
+        <p className="mt-3 text-xs text-zinc-500">
+          Amount: 0.01-1,000,000 USDT, max 2 decimals. Order ID: letters, numbers, dots, dashes, underscores, and colons.
+        </p>
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10 text-white">
