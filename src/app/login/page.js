@@ -41,6 +41,12 @@ export default function LoginPage() {
         return;
       }
 
+      if (response.status === 429 && data.retryAfterSeconds) {
+        const minutes = Math.ceil(Number(data.retryAfterSeconds) / 60);
+        setMessage(`Too many login attempts. Please try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+        return;
+      }
+
       setMessage(data.message || "Login failed");
     } catch (error) {
       console.error(error);

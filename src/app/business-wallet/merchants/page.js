@@ -117,6 +117,7 @@ export default function BusinessWalletMerchantsPage() {
   const [notice, setNotice] = useState(null);
   const [paymentAction, setPaymentAction] = useState(null);
   const [webhookAction, setWebhookAction] = useState(null);
+  const [verificationResult, setVerificationResult] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
   const copyText = async (value, label) => {
@@ -291,10 +292,31 @@ export default function BusinessWalletMerchantsPage() {
         return;
       }
 
-      setNotice({
-        type: "success",
-        message: data.message || `Payment ${action} completed.`,
-      });
+      if (action === "verify" && data.underpaid) {
+        setVerificationResult({
+          paymentId,
+          type: "underpaid",
+          ...data.underpaid,
+        });
+        setNotice({
+          type: "error",
+          message: `Transaction found but amount is short. Received ${data.underpaid.amountReceived} USDT, missing ${data.underpaid.amountMissing} USDT.`,
+        });
+      } else {
+        setVerificationResult(
+          action === "verify" && data.payment?.status === "PAID"
+            ? {
+                paymentId,
+                type: "paid",
+                txHash: data.payment.txHash,
+              }
+            : null
+        );
+        setNotice({
+          type: "success",
+          message: data.message || `Payment ${action} completed.`,
+        });
+      }
       setConfirmAction(null);
 
       if (selectedPayment?.id === paymentId && data.payment) {
@@ -794,6 +816,31 @@ export default function BusinessWalletMerchantsPage() {
                   </div>
                 </div>
               )}
+
+            {verificationResult?.paymentId === selectedPayment.id && (
+              <div
+                className={`mb-6 rounded-xl border p-4 text-sm ${
+                  verificationResult.type === "underpaid"
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-100"
+                    : "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
+                }`}
+              >
+                <p className="font-semibold">
+                  {verificationResult.type === "underpaid"
+                    ? "Underpaid transaction detected"
+                    : "Payment verification succeeded"}
+                </p>
+                {verificationResult.type === "underpaid" ? (
+                  <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
+                    <p>Received: {verificationResult.amountReceived} USDT</p>
+                    <p>Missing: {verificationResult.amountMissing} USDT</p>
+                    <p className="break-all">Tx: {verificationResult.txHash}</p>
+                  </div>
+                ) : (
+                  <p className="mt-2 break-all">Tx: {verificationResult.txHash || "-"}</p>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
               <aside className="space-y-4">
