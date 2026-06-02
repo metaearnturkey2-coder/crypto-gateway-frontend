@@ -39,6 +39,28 @@ const canRetryWebhook = (webhook) =>
   webhook.status !== "SUCCESS" &&
   Number(webhook.attempts || 0) < Number(webhook.maxAttempts || 0);
 
+const getWebhookSummary = (events = []) => {
+  const latest = events[0] || null;
+  const successful = events.filter((event) => event.status === "SUCCESS").length;
+  const failed = events.filter((event) => event.status === "FAILED").length;
+  const pending = events.filter((event) => event.status === "PENDING").length;
+
+  return {
+    latest,
+    successful,
+    failed,
+    pending,
+    total: events.length,
+  };
+};
+
+const getWebhookStatusMessage = (webhook) => {
+  if (!webhook) return "No delivery attempts recorded yet.";
+  if (webhook.status === "SUCCESS") return "Delivered to the merchant callback URL.";
+  if (webhook.status === "FAILED") return "Delivery failed after the available attempts.";
+  return "Delivery is pending or waiting for retry.";
+};
+
 const getActivityMeta = (action) => {
   if (action?.includes("webhook")) {
     return {
@@ -894,12 +916,52 @@ export default function BusinessWalletMerchantsPage() {
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                  <h3 className="text-3xl font-bold mb-2">Webhook History</h3>
-                  <p className="text-zinc-400 text-sm">Delivery attempts and retry status for this payment.</p>
+                  {(() => {
+                    const webhookSummary = getWebhookSummary(selectedPayment.webhookEvents || []);
+
+                    return (
+                      <>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="text-2xl font-bold">Webhook delivery</h3>
+                      <p className="mt-1 text-zinc-400 text-sm">
+                        {getWebhookStatusMessage(webhookSummary.latest)}
+                      </p>
+                    </div>
+                    <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                      webhookSummary.latest
+                        ? getWebhookStatusClassName(webhookSummary.latest.status)
+                        : "border border-zinc-700 bg-zinc-950 text-zinc-400"
+                    }`}>
+                      {webhookSummary.latest?.status || "NO EVENTS"}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                      <p className="text-xs text-zinc-500">Events</p>
+                      <p className="mt-1 text-lg font-semibold">{webhookSummary.total}</p>
+                    </div>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                      <p className="text-xs text-zinc-500">Successful</p>
+                      <p className="mt-1 text-lg font-semibold text-emerald-300">{webhookSummary.successful}</p>
+                    </div>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                      <p className="text-xs text-zinc-500">Pending</p>
+                      <p className="mt-1 text-lg font-semibold text-amber-200">{webhookSummary.pending}</p>
+                    </div>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+                      <p className="text-xs text-zinc-500">Failed</p>
+                      <p className="mt-1 text-lg font-semibold text-rose-300">{webhookSummary.failed}</p>
+                    </div>
+                  </div>
+
                   {!selectedPayment.webhookEvents?.length ? (
-                    <div className="mt-3 bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-400">No webhook events yet.</div>
+                    <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-400">
+                      No webhook events yet. A webhook is created after a payment status event is sent.
+                    </div>
                   ) : (
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-4 space-y-3">
                       {selectedPayment.webhookEvents.map((webhook) => (
                         <div key={webhook.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
                           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
@@ -910,13 +972,19 @@ export default function BusinessWalletMerchantsPage() {
                               </div>
                               <p className="mt-2 break-all text-sm text-zinc-400">{webhook.url || "No callback URL recorded"}</p>
                             </div>
-                            <button
-                              onClick={() => retryWebhook(selectedPayment.id, webhook.id)}
-                              disabled={!canRetryWebhook(webhook) || webhookAction?.webhookId === webhook.id}
-                              className="h-10 rounded-lg border border-zinc-700 px-4 text-xs font-semibold text-zinc-100 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
-                            >
-                              {webhookAction?.webhookId === webhook.id ? "Retrying..." : "Retry"}
-                            </button>
+                            {canRetryWebhook(webhook) ? (
+                              <button
+                                onClick={() => retryWebhook(selectedPayment.id, webhook.id)}
+                                disabled={webhookAction?.webhookId === webhook.id}
+                                className="h-10 rounded-lg bg-amber-200 px-4 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                {webhookAction?.webhookId === webhook.id ? "Retrying..." : "Retry delivery"}
+                              </button>
+                            ) : (
+                              <span className="inline-flex h-10 items-center rounded-lg border border-zinc-800 px-4 text-xs font-semibold text-zinc-500">
+                                No action
+                              </span>
+                            )}
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
@@ -948,6 +1016,9 @@ export default function BusinessWalletMerchantsPage() {
                       ))}
                     </div>
                   )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
