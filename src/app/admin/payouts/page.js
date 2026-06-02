@@ -74,6 +74,8 @@ export default function AdminPayoutsPage() {
   const [savingToken, setSavingToken] = useState(false);
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [statusNote, setStatusNote] = useState("");
+  const [settlementTxHash, setSettlementTxHash] = useState("");
   const baseUrl = API_BASE_URL;
 
   const showNotice = (type, message) => {
@@ -360,7 +362,30 @@ export default function AdminPayoutsPage() {
     fetchPayoutAuditLogs(request.id);
   };
 
+  const openStatusConfirm = (payoutId, status) => {
+    setStatusNote("");
+    setSettlementTxHash("");
+    setConfirmAction({
+      type: "payoutStatus",
+      payoutId,
+      status,
+    });
+  };
+
   const updatePayoutStatus = async (payoutId, status) => {
+    const trimmedTxHash = settlementTxHash.trim();
+    const trimmedNote = statusNote.trim();
+
+    if (status === "PAID" && !trimmedTxHash) {
+      showNotice("error", "Settlement tx hash is required.");
+      return;
+    }
+
+    if (status === "REJECTED" && !trimmedNote) {
+      showNotice("error", "Reject reason is required.");
+      return;
+    }
+
     try {
       const response = await adminFetch(
         `/api/admin/payout-requests/${payoutId}/status`,
@@ -371,6 +396,9 @@ export default function AdminPayoutsPage() {
           },
           body: JSON.stringify({
             status,
+            txHash: trimmedTxHash || undefined,
+            rejectReason: status === "REJECTED" ? trimmedNote : undefined,
+            note: status !== "REJECTED" ? trimmedNote || undefined : undefined,
           }),
         }
       );
@@ -384,6 +412,8 @@ export default function AdminPayoutsPage() {
 
       showNotice("success", data.message || `Payout moved to ${status}.`);
       setConfirmAction(null);
+      setStatusNote("");
+      setSettlementTxHash("");
       fetchPayouts();
       if (selectedPayout?.id === payoutId) {
         setSelectedPayout(data.payoutRequest);
@@ -661,13 +691,7 @@ export default function AdminPayoutsPage() {
                     {getAllowedActions(request.status).map((action) => (
                       <button
                         key={action.status}
-                        onClick={() =>
-                          setConfirmAction({
-                            type: "payoutStatus",
-                            payoutId: request.id,
-                            status: action.status,
-                          })
-                        }
+                        onClick={() => openStatusConfirm(request.id, action.status)}
                         className={`${action.className} text-black px-4 py-3 rounded-xl font-semibold hover:opacity-80 transition`}
                       >
                         {action.label}
@@ -687,6 +711,32 @@ export default function AdminPayoutsPage() {
                       <p className="mb-3">
                         Move this payout request to {confirmAction.status}?
                       </p>
+                      {confirmAction.status === "PAID" && (
+                        <input
+                          type="text"
+                          value={settlementTxHash}
+                          onChange={(e) => setSettlementTxHash(e.target.value)}
+                          placeholder="Settlement tx hash"
+                          className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                        />
+                      )}
+                      {confirmAction.status === "REJECTED" && (
+                        <textarea
+                          value={statusNote}
+                          onChange={(e) => setStatusNote(e.target.value)}
+                          placeholder="Reject reason"
+                          className="mb-3 min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                        />
+                      )}
+                      {confirmAction.status === "APPROVED" && (
+                        <input
+                          type="text"
+                          value={statusNote}
+                          onChange={(e) => setStatusNote(e.target.value)}
+                          placeholder="Optional admin note"
+                          className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                        />
+                      )}
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={() =>
@@ -794,9 +844,7 @@ export default function AdminPayoutsPage() {
                 {getAllowedActions(selectedPayout.status).map((action) => (
                   <button
                     key={action.status}
-                    onClick={() =>
-                      updatePayoutStatus(selectedPayout.id, action.status)
-                    }
+                    onClick={() => openStatusConfirm(selectedPayout.id, action.status)}
                     className={`${action.className} text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition`}
                   >
                     {action.label}
@@ -814,6 +862,60 @@ export default function AdminPayoutsPage() {
                 </button>
               </div>
             </div>
+
+            {confirmAction?.type === "payoutStatus" &&
+              confirmAction.payoutId === selectedPayout.id && (
+                <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+                  <p className="mb-3">
+                    Move this payout request to {confirmAction.status}?
+                  </p>
+                  {confirmAction.status === "PAID" && (
+                    <input
+                      type="text"
+                      value={settlementTxHash}
+                      onChange={(e) => setSettlementTxHash(e.target.value)}
+                      placeholder="Settlement tx hash"
+                      className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    />
+                  )}
+                  {confirmAction.status === "REJECTED" && (
+                    <textarea
+                      value={statusNote}
+                      onChange={(e) => setStatusNote(e.target.value)}
+                      placeholder="Reject reason"
+                      className="mb-3 min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    />
+                  )}
+                  {confirmAction.status === "APPROVED" && (
+                    <input
+                      type="text"
+                      value={statusNote}
+                      onChange={(e) => setStatusNote(e.target.value)}
+                      placeholder="Optional admin note"
+                      className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    />
+                  )}
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() =>
+                        updatePayoutStatus(
+                          confirmAction.payoutId,
+                          confirmAction.status
+                        )
+                      }
+                      className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80"
+                    >
+                      Confirm status change
+                    </button>
+                    <button
+                      onClick={() => setConfirmAction(null)}
+                      className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6">
               <section className="space-y-4">
