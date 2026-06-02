@@ -56,6 +56,10 @@ function payoutStatusClass(status) {
   return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
 }
 
+const MIN_PAYOUT_AMOUNT = 1;
+const MAX_PAYOUT_AMOUNT = 1000000;
+const TRON_ADDRESS_PATTERN = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+
 export default function BusinessWalletPage() {
   const [loading, setLoading] = useState(true);
   const [paymentStats, setPaymentStats] = useState({
@@ -168,12 +172,38 @@ export default function BusinessWalletPage() {
   const createPayoutRequest = async (e) => {
     e.preventDefault();
     const numericAmount = Number(amount);
-    if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
+    const available = Number(settlements.summary.available || 0);
+
+    if (!Number.isFinite(numericAmount)) {
       setNotice({ type: "error", message: "Please enter a valid payout amount." });
       return;
     }
+
+    if (numericAmount < MIN_PAYOUT_AMOUNT || numericAmount > MAX_PAYOUT_AMOUNT) {
+      setNotice({
+        type: "error",
+        message: `Payout amount must be between ${MIN_PAYOUT_AMOUNT} and ${MAX_PAYOUT_AMOUNT} USDT.`,
+      });
+      return;
+    }
+
+    if (String(amount).split(".")[1]?.length > 2) {
+      setNotice({ type: "error", message: "Payout amount can have at most 2 decimal places." });
+      return;
+    }
+
+    if (numericAmount > available) {
+      setNotice({ type: "error", message: "Payout amount exceeds available balance." });
+      return;
+    }
+
     if (!walletAddress.trim()) {
       setNotice({ type: "error", message: "Please enter a payout wallet address." });
+      return;
+    }
+
+    if (!TRON_ADDRESS_PATTERN.test(walletAddress.trim())) {
+      setNotice({ type: "error", message: "Please enter a valid TRON wallet address." });
       return;
     }
 
@@ -193,7 +223,10 @@ export default function BusinessWalletPage() {
       });
     const data = await response.json();
     if (!response.ok) {
-      setNotice({ type: "error", message: data.message || "Payout request failed." });
+      setNotice({
+        type: "error",
+        message: data.errors?.join(" ") || data.message || "Payout request failed.",
+      });
       return;
     }
 
@@ -316,11 +349,23 @@ export default function BusinessWalletPage() {
           </div>
 
           <form onSubmit={createPayoutRequest} className="grid grid-cols-1 lg:grid-cols-[160px_1fr_1fr_auto] gap-3 mb-4">
-            <input type="number" placeholder="Amount" value={amount} onChange={(e) => setAmount(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
+            <input
+              type="number"
+              min={MIN_PAYOUT_AMOUNT}
+              max={Math.min(Number(settlements.summary.available || 0), MAX_PAYOUT_AMOUNT)}
+              step="0.01"
+              placeholder="Amount"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none"
+            />
             <input type="text" placeholder="TRC20 payout wallet address" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
             <input type="text" placeholder="Optional note" value={note} onChange={(e) => setNote(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
             <button className="px-6 py-3 rounded-xl bg-black text-white font-semibold">Request Payout</button>
           </form>
+          <p className="mb-4 text-sm text-zinc-500">
+            Minimum payout is {MIN_PAYOUT_AMOUNT} USDT. Available now: {settlements.summary.available} {settlements.summary.currency}. Use a valid TRC20 wallet address.
+          </p>
 
           <div className="rounded-xl border border-zinc-200 overflow-hidden">
             {settlements.payoutRequests.length === 0 ? (
