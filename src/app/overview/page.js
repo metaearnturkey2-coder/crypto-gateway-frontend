@@ -7,6 +7,19 @@ import { apiUrl } from "@/lib/api";
 
 export default function OverviewPage() {
   const [loading, setLoading] = useState(true);
+  const [merchant, setMerchant] = useState(null);
+  const [paymentStats, setPaymentStats] = useState({
+    total: 0,
+    paid: 0,
+    pending: 0,
+    expired: 0,
+  });
+  const [apiUsage, setApiUsage] = useState({
+    total: 0,
+    createCalls: 0,
+    statusCalls: 0,
+  });
+  const [webhookTestCompleted, setWebhookTestCompleted] = useState(false);
   const [available, setAvailable] = useState(0);
   const [grossPaid, setGrossPaid] = useState(0);
   const [reserved, setReserved] = useState(0);
@@ -101,11 +114,47 @@ export default function OverviewPage() {
       }
 
       try {
-        const res = await fetch(apiUrl("/api/merchant/dashboard"), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
-        const summary = data?.settlements?.summary;
+        const [dashboardRes, settlementsRes, paymentsRes, apiUsageRes, webhookTestRes] = await Promise.all([
+          fetch(apiUrl("/api/merchant/dashboard"), {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch(apiUrl("/api/merchant/settlements"), {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch(apiUrl("/api/payments?limit=1"), {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch(apiUrl("/api/merchant/api-usage"), {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+          fetch(apiUrl("/api/merchant/audit-logs?action=webhook.test&limit=1"), {
+            headers: { Authorization: `Bearer ${token}` },
+            cache: "no-store",
+          }),
+        ]);
+
+        if ([dashboardRes, settlementsRes, paymentsRes, apiUsageRes, webhookTestRes].some((response) => response.status === 401)) {
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+          return;
+        }
+
+        const dashboardData = dashboardRes.ok ? await dashboardRes.json() : {};
+        const settlementsData = settlementsRes.ok ? await settlementsRes.json() : {};
+        const paymentsData = paymentsRes.ok ? await paymentsRes.json() : {};
+        const apiUsageData = apiUsageRes.ok ? await apiUsageRes.json() : {};
+        const webhookTestData = webhookTestRes.ok ? await webhookTestRes.json() : {};
+
+        setMerchant(dashboardData?.merchant || null);
+        setPaymentStats(paymentsData?.stats || { total: 0, paid: 0, pending: 0, expired: 0 });
+        setApiUsage(apiUsageData?.summary || { total: 0, createCalls: 0, statusCalls: 0 });
+        setWebhookTestCompleted(Number(webhookTestData?.totalCount || webhookTestData?.count || 0) > 0);
+
+        const summary = settlementsData?.summary;
         if (summary) {
           setAvailable(Number(summary.available || 0));
           setGrossPaid(Number(summary.grossPaid || 0));
@@ -124,6 +173,46 @@ export default function OverviewPage() {
 
     load();
   }, []);
+
+  const onboardingSteps = [
+    {
+      title: "Create business account",
+      description: "Merchant profile and authenticated dashboard access are ready.",
+      done: Boolean(merchant?.id),
+      href: "/overview",
+      action: "Dashboard",
+    },
+    {
+      title: "Add webhook URL",
+      description: "Send payment status updates to your own system automatically.",
+      done: Boolean(merchant?.callbackUrl),
+      href: "/settings/security",
+      action: merchant?.callbackUrl ? "Webhook settings" : "Add URL",
+    },
+    {
+      title: "Prepare API access",
+      description: "Review the public payment API access used to create checkouts.",
+      done: Boolean(merchant?.apiKey),
+      href: "/business-wallet/api-docs",
+      action: "API docs",
+    },
+    {
+      title: "Create first payment",
+      description: "Use a test order to verify checkout and customer payment flow.",
+      done: Number(paymentStats.total || 0) > 0,
+      href: "/business-wallet/merchants",
+      action: "Create payment",
+    },
+    {
+      title: "Run integration test",
+      description: "Confirm that API traffic or a webhook test can be completed.",
+      done: Number(apiUsage.total || 0) > 0 || webhookTestCompleted,
+      href: "/business-wallet/api-docs",
+      action: "Test now",
+    },
+  ];
+  const completedOnboardingSteps = onboardingSteps.filter((step) => step.done).length;
+  const onboardingProgress = Math.round((completedOnboardingSteps / onboardingSteps.length) * 100);
 
   useEffect(() => {
     const loadPrices = async () => {
@@ -211,6 +300,67 @@ export default function OverviewPage() {
             </div>
           </div>
         </div>
+
+        <section className="mt-6 rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-5 md:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">Onboarding Checklist</p>
+              <h2 className="mt-1 text-2xl font-semibold text-white">Go-live readiness</h2>
+              <p className="mt-2 max-w-2xl text-sm text-zinc-400">
+                Complete the core integration steps before accepting production payments.
+              </p>
+            </div>
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 lg:min-w-[190px]">
+              <div className="flex items-end justify-between gap-3">
+                <p className="text-sm font-semibold text-zinc-400">Progress</p>
+                <p className="text-2xl font-bold text-white">{onboardingProgress}%</p>
+              </div>
+              <div className="mt-3 h-2 rounded-full bg-zinc-800">
+                <div
+                  className="h-full rounded-full bg-emerald-400 transition-all"
+                  style={{ width: `${onboardingProgress}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs font-semibold text-zinc-500">
+                {completedOnboardingSteps}/{onboardingSteps.length} completed
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-5">
+            {onboardingSteps.map((step, index) => (
+              <Link
+                key={step.title}
+                href={step.href}
+                className="group flex min-h-[170px] flex-col justify-between rounded-xl border border-zinc-800 bg-zinc-950 p-4 transition hover:border-zinc-600 hover:bg-black"
+              >
+                <div>
+                  <div className="mb-4 flex items-center justify-between gap-3">
+                    <span
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full border text-sm font-bold ${
+                        step.done
+                          ? "border-emerald-400/50 bg-emerald-400/15 text-emerald-300"
+                          : "border-zinc-700 bg-zinc-900 text-zinc-400"
+                      }`}
+                    >
+                      {step.done ? "OK" : index + 1}
+                    </span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        step.done ? "bg-emerald-400/15 text-emerald-300" : "bg-zinc-800 text-zinc-400"
+                      }`}
+                    >
+                      {step.done ? "Done" : "Next"}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-semibold leading-snug text-white">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-5 text-zinc-500">{step.description}</p>
+                </div>
+                <p className="mt-4 text-sm font-semibold text-zinc-300 group-hover:text-white">{step.action}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
 
         <section className="mt-6">
           <h3 className="text-2xl font-semibold text-zinc-900 mb-4">Assets</h3>
