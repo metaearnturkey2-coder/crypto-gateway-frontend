@@ -27,6 +27,18 @@ const formatTimeLeft = (expiresAt, now) => {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 };
 
+const formatDateTime = (value) => {
+  if (!value) return "-";
+  return new Date(value).toLocaleString();
+};
+
+const getCheckoutUrl = (payment) => payment.checkoutUrl || `/pay/${payment.id}`;
+
+const canRetryWebhook = (webhook) =>
+  webhook &&
+  webhook.status !== "SUCCESS" &&
+  Number(webhook.attempts || 0) < Number(webhook.maxAttempts || 0);
+
 const MIN_PAYMENT_AMOUNT = 0.01;
 const MAX_PAYMENT_AMOUNT = 1000000;
 const ORDER_ID_PATTERN = /^[A-Za-z0-9._:-]+$/;
@@ -60,20 +72,21 @@ export default function BusinessWalletMerchantsPage() {
   const [creatingPayment, setCreatingPayment] = useState(false);
   const [notice, setNotice] = useState(null);
   const [paymentAction, setPaymentAction] = useState(null);
+  const [webhookAction, setWebhookAction] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  const copyAddress = async (address) => {
+  const copyText = async (value, label) => {
     try {
-      await navigator.clipboard.writeText(address);
-      setNotice({ type: "success", message: "Wallet address copied." });
+      await navigator.clipboard.writeText(value);
+      setNotice({ type: "success", message: `${label} copied.` });
     } catch {
       const temp = document.createElement("textarea");
-      temp.value = address;
+      temp.value = value;
       document.body.appendChild(temp);
       temp.select();
       document.execCommand("copy");
       document.body.removeChild(temp);
-      setNotice({ type: "success", message: "Wallet address copied." });
+      setNotice({ type: "success", message: `${label} copied.` });
     }
   };
 
@@ -83,7 +96,7 @@ export default function BusinessWalletMerchantsPage() {
       window.location.href = "/login";
       return;
     }
-    const params = new URLSearchParams({ page: String(paymentPage), limit: "3" });
+    const params = new URLSearchParams({ page: String(paymentPage), limit: "10" });
     if (paymentSearch.trim()) params.set("search", paymentSearch.trim());
     if (statusFilter !== "ALL") params.set("status", statusFilter);
     if (webhookStatusFilter !== "ALL") params.set("webhookStatus", webhookStatusFilter);
@@ -264,6 +277,75 @@ export default function BusinessWalletMerchantsPage() {
     }
   };
 
+  const openPaymentDetails = async (payment) => {
+    const token = localStorage.getItem("token");
+    setSelectedPayment(payment);
+    if (!token) return;
+
+    try {
+      const response = await fetch(apiUrl(`/api/payments/${payment.id}`), {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      });
+      const data = await response.json();
+      if (response.ok && data.payment) {
+        setSelectedPayment(data.payment);
+      }
+    } catch {
+      setNotice({ type: "error", message: "Payment details could not be refreshed." });
+    }
+  };
+
+  const refreshSelectedPayment = async (paymentId) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const response = await fetch(apiUrl(`/api/payments/${paymentId}`), {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (response.ok && data.payment) {
+      setSelectedPayment(data.payment);
+    }
+  };
+
+  const retryWebhook = async (paymentId, webhookId) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setWebhookAction({ paymentId, webhookId });
+    setNotice(null);
+
+    try {
+      const response = await fetch(apiUrl(`/api/payments/${paymentId}/webhooks/${webhookId}/retry`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice({
+          type: "error",
+          message: data.message || "Webhook retry failed.",
+        });
+        return;
+      }
+
+      setNotice({
+        type: "success",
+        message: data.message || "Webhook retry attempted.",
+      });
+      await refreshSelectedPayment(paymentId);
+      await fetchOps();
+      await fetchActivity();
+    } catch {
+      setNotice({ type: "error", message: "Webhook retry failed." });
+    } finally {
+      setWebhookAction(null);
+    }
+  };
+
   useEffect(() => {
     const run = async () => {
       try {
@@ -409,7 +491,7 @@ export default function BusinessWalletMerchantsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="hidden lg:grid grid-cols-[160px_1fr_130px_380px] gap-3 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 border border-zinc-800 rounded-xl bg-zinc-950/70">
+          <div className="hidden lg:grid grid-cols-[160px_1fr_130px_460px] gap-3 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 border border-zinc-800 rounded-xl bg-zinc-950/70">
             <span>Amount</span><span>Payment</span><span>Status</span><span>Actions</span>
           </div>
 
@@ -419,7 +501,7 @@ export default function BusinessWalletMerchantsPage() {
             const latestWebhook = payment.webhookEvents?.[0];
             return (
               <div key={payment.id} className="border border-zinc-700/60 bg-zinc-900/70 rounded-xl p-4">
-                <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr_120px_340px] gap-3 lg:items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr_120px_460px] gap-3 lg:items-center">
                   <div>
                     <p className="font-semibold text-2xl lg:text-xl">{payment.amount} {payment.currency}</p>
                     <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
@@ -428,6 +510,7 @@ export default function BusinessWalletMerchantsPage() {
                     <p className="break-all"><span className="text-zinc-500">Payment ID:</span> {payment.id}</p>
                     {payment.orderId && <p className="break-all"><span className="text-zinc-500">Order ID:</span> {payment.orderId}</p>}
                     <p className="break-all"><span className="text-zinc-500">Wallet:</span> {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
+                    <p><span className="text-zinc-500">Created:</span> {formatDateTime(payment.createdAt)}</p>
                     <p><span className="text-zinc-500">Expires:</span> {formatTimeLeft(payment.expiresAt, now)}</p>
                     {latestWebhook && (
                       <div className="pt-2">
@@ -442,8 +525,8 @@ export default function BusinessWalletMerchantsPage() {
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
                   </div>
                   <div className="flex flex-col gap-3">
-                    <div className="grid grid-cols-5 gap-2">
-                      <button onClick={() => copyAddress(payment.walletAddress)} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Address</button>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
+                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Wallet</button>
                       <button
                         onClick={() => runPaymentAction(payment.id, "verify")}
                         className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
@@ -458,9 +541,10 @@ export default function BusinessWalletMerchantsPage() {
                       >
                         Cancel
                       </button>
-                      <a href={`/pay/${payment.id}`} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">Checkout</a>
+                      <button onClick={() => copyText(getCheckoutUrl(payment), "Checkout link")} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Link</button>
+                      <a href={getCheckoutUrl(payment)} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">Checkout</a>
                       <button
-                        onClick={() => setSelectedPayment(payment)}
+                        onClick={() => openPaymentDetails(payment)}
                         className="h-10 bg-zinc-100 text-zinc-900 px-3 rounded-lg text-xs font-semibold flex items-center justify-center"
                       >
                         Details
@@ -621,7 +705,8 @@ export default function BusinessWalletMerchantsPage() {
                 >
                   Cancel
                 </button>
-                <a href={`/pay/${selectedPayment.id}`} target="_blank" className="bg-white text-black px-4 py-2 rounded-lg font-semibold">Checkout</a>
+                <button onClick={() => copyText(getCheckoutUrl(selectedPayment), "Checkout link")} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">Copy Link</button>
+                <a href={getCheckoutUrl(selectedPayment)} target="_blank" className="bg-white text-black px-4 py-2 rounded-lg font-semibold">Checkout</a>
                 <button onClick={() => setSelectedPayment(null)} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">Close</button>
               </div>
             </div>
@@ -653,11 +738,11 @@ export default function BusinessWalletMerchantsPage() {
                   <div className="space-y-4">
                     <div>
                       <p className="font-semibold">Created</p>
-                      <p className="text-zinc-500 text-xs">{selectedPayment.createdAt ? new Date(selectedPayment.createdAt).toLocaleString() : "-"}</p>
+                      <p className="text-zinc-500 text-xs">{formatDateTime(selectedPayment.createdAt)}</p>
                     </div>
                     <div>
                       <p className="font-semibold">Awaiting payment</p>
-                      <p className="text-zinc-500 text-xs">Expires {selectedPayment.expiresAt ? new Date(selectedPayment.expiresAt).toLocaleString() : "-"}</p>
+                      <p className="text-zinc-500 text-xs">Expires {formatDateTime(selectedPayment.expiresAt)}</p>
                     </div>
                   </div>
                 </div>
@@ -679,7 +764,13 @@ export default function BusinessWalletMerchantsPage() {
                   </div>
                   <div>
                     <p className="text-zinc-500 text-sm">Checkout URL</p>
-                    <p className="break-all mt-1">http://localhost:3000/pay/{selectedPayment.id}</p>
+                    <p className="break-all mt-1">{getCheckoutUrl(selectedPayment)}</p>
+                    <button
+                      onClick={() => copyText(getCheckoutUrl(selectedPayment), "Checkout link")}
+                      className="mt-3 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-800"
+                    >
+                      Copy checkout link
+                    </button>
                   </div>
                 </div>
 
@@ -698,11 +789,50 @@ export default function BusinessWalletMerchantsPage() {
                     <div className="mt-3 bg-zinc-950 border border-zinc-800 rounded-xl p-4 text-zinc-400">No webhook events yet.</div>
                   ) : (
                     <div className="mt-3 space-y-2">
-                      {selectedPayment.webhookEvents.map((w, i) => (
-                        <div key={i} className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                          <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(w.status)}`}>{w.status}</span>
-                          <p className="text-zinc-400 text-sm mt-2">{w.event}</p>
-                          <p className="text-zinc-500 text-xs">Attempts: {w.attempts}/{w.maxAttempts}</p>
+                      {selectedPayment.webhookEvents.map((webhook) => (
+                        <div key={webhook.id} className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+                          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>{webhook.status}</span>
+                                <span className="text-xs text-zinc-500">{webhook.event}</span>
+                              </div>
+                              <p className="mt-2 break-all text-sm text-zinc-400">{webhook.url || "No callback URL recorded"}</p>
+                            </div>
+                            <button
+                              onClick={() => retryWebhook(selectedPayment.id, webhook.id)}
+                              disabled={!canRetryWebhook(webhook) || webhookAction?.webhookId === webhook.id}
+                              className="h-10 rounded-lg border border-zinc-700 px-4 text-xs font-semibold text-zinc-100 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {webhookAction?.webhookId === webhook.id ? "Retrying..." : "Retry"}
+                            </button>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+                              <p className="text-zinc-500">Attempts</p>
+                              <p className="mt-1 font-semibold text-zinc-100">{webhook.attempts}/{webhook.maxAttempts}</p>
+                            </div>
+                            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+                              <p className="text-zinc-500">Last status</p>
+                              <p className="mt-1 font-semibold text-zinc-100">{webhook.lastStatusCode || "-"}</p>
+                            </div>
+                            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+                              <p className="text-zinc-500">Next retry</p>
+                              <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.nextRetryAt)}</p>
+                            </div>
+                            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
+                              <p className="text-zinc-500">Delivered</p>
+                              <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.deliveredAt)}</p>
+                            </div>
+                          </div>
+
+                          {webhook.lastError && (
+                            <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-100">
+                              <p className="font-semibold">Last error</p>
+                              <p className="mt-1 break-all">{webhook.lastError}</p>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
