@@ -45,6 +45,7 @@ const getCheckoutState = (status) => {
       label: "Payment confirmed",
       title: "Payment Complete",
       message: "Your transaction has been confirmed. You can close this page.",
+      tone: "success",
       badgeClassName: "bg-green-500 text-black",
       panelClassName: "border-green-500/40 bg-green-500/10",
       canPay: false,
@@ -56,6 +57,7 @@ const getCheckoutState = (status) => {
       label: "Payment expired",
       title: "Payment Expired",
       message: "This checkout session is no longer accepting payments.",
+      tone: "danger",
       badgeClassName: "bg-red-500 text-black",
       panelClassName: "border-red-500/40 bg-red-500/10",
       canPay: false,
@@ -67,6 +69,7 @@ const getCheckoutState = (status) => {
       label: "Payment cancelled",
       title: "Payment Cancelled",
       message: "This payment was cancelled by the merchant.",
+      tone: "danger",
       badgeClassName: "bg-red-500 text-black",
       panelClassName: "border-red-500/40 bg-red-500/10",
       canPay: false,
@@ -77,10 +80,17 @@ const getCheckoutState = (status) => {
     label: "Awaiting payment",
     title: "Complete Payment",
     message: "Send the exact amount on the selected network before time runs out.",
+    tone: "pending",
     badgeClassName: "bg-yellow-500 text-black",
     panelClassName: "border-yellow-500/40 bg-yellow-500/10",
     canPay: true,
   };
+};
+
+const getStepClassName = (active, complete) => {
+  if (complete) return "border-green-500/40 bg-green-500/10 text-green-100";
+  if (active) return "border-yellow-500/40 bg-yellow-500/10 text-yellow-100";
+  return "border-zinc-800 bg-zinc-950 text-zinc-400";
 };
 
 export default function PaymentCheckoutPage() {
@@ -90,7 +100,7 @@ export default function PaymentCheckoutPage() {
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(0);
-  const [copied, setCopied] = useState(false);
+  const [copiedKey, setCopiedKey] = useState("");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
 
@@ -123,12 +133,12 @@ export default function PaymentCheckoutPage() {
     setChecking(false);
   };
 
-  const copyWalletAddress = () => {
-    navigator.clipboard.writeText(payment.walletAddress);
-    setCopied(true);
+  const copyText = async (value, key) => {
+    await navigator.clipboard.writeText(String(value));
+    setCopiedKey(key);
 
     setTimeout(() => {
-      setCopied(false);
+      setCopiedKey("");
     }, 1500);
   };
 
@@ -177,6 +187,7 @@ export default function PaymentCheckoutPage() {
   const isPayable =
     checkoutState.canPay &&
     (!payment.expiresAt || new Date(payment.expiresAt).getTime() > now);
+  const amountLabel = `${payment.amount} ${payment.currency}`;
 
   return (
     <main className="min-h-screen bg-black text-white px-5 py-8 md:py-12">
@@ -205,6 +216,11 @@ export default function PaymentCheckoutPage() {
               Only send {payment.currency} on {payment.network}. Sending a different asset or network may result in loss of funds.
             </p>
           )}
+          {!isPayable && (
+            <p className="text-sm text-zinc-300 mt-1">
+              Do not send funds to this address unless the merchant creates a new checkout session.
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
@@ -216,11 +232,23 @@ export default function PaymentCheckoutPage() {
             >
               <QRCodeSVG value={payment.walletAddress} size={230} />
             </div>
+            {!isPayable && (
+              <p className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
+                This QR code is disabled for the current payment status.
+              </p>
+            )}
 
             <p className="text-zinc-400 text-sm">Amount due</p>
             <p className="text-4xl font-bold mt-1">
-              {payment.amount} {payment.currency}
+              {amountLabel}
             </p>
+            <button
+              onClick={() => copyText(payment.amount, "amount")}
+              disabled={!isPayable}
+              className="mt-3 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {copiedKey === "amount" ? "Amount Copied" : "Copy Amount"}
+            </button>
 
             <div className="mt-5 grid grid-cols-2 gap-3 text-left">
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
@@ -238,6 +266,21 @@ export default function PaymentCheckoutPage() {
           </section>
 
           <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
+            <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className={`rounded-xl border p-4 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
+                <p className="text-xs uppercase tracking-wide opacity-70">Step 1</p>
+                <p className="mt-1 font-semibold">Copy amount</p>
+              </div>
+              <div className={`rounded-xl border p-4 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
+                <p className="text-xs uppercase tracking-wide opacity-70">Step 2</p>
+                <p className="mt-1 font-semibold">Send on {payment.network}</p>
+              </div>
+              <div className={`rounded-xl border p-4 ${getStepClassName(payment.status === "PAID", payment.status === "PAID")}`}>
+                <p className="text-xs uppercase tracking-wide opacity-70">Step 3</p>
+                <p className="mt-1 font-semibold">Confirmation</p>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
                 <p className="text-zinc-500 text-xs mb-1">Status</p>
@@ -284,11 +327,11 @@ export default function PaymentCheckoutPage() {
                 </div>
 
                 <button
-                  onClick={copyWalletAddress}
+                  onClick={() => copyText(payment.walletAddress, "wallet")}
                   disabled={!isPayable}
                   className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {copied ? "Copied" : "Copy Address"}
+                  {copiedKey === "wallet" ? "Copied" : "Copy Address"}
                 </button>
               </div>
 
@@ -307,11 +350,18 @@ export default function PaymentCheckoutPage() {
               </button>
 
               <button
-                onClick={copyWalletAddress}
+                onClick={() => copyText(payment.walletAddress, "wallet-bottom")}
                 disabled={!isPayable}
                 className="bg-zinc-800 px-5 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {copied ? "Address Copied" : "Copy Wallet"}
+                {copiedKey === "wallet-bottom" ? "Address Copied" : "Copy Wallet"}
+              </button>
+
+              <button
+                onClick={() => copyText(payment.id, "payment-id")}
+                className="bg-zinc-800 px-5 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
+              >
+                {copiedKey === "payment-id" ? "ID Copied" : "Copy Payment ID"}
               </button>
             </div>
           </section>
