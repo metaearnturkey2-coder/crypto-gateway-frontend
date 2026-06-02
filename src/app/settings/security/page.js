@@ -19,6 +19,19 @@ function Notice({ notice }) {
   );
 }
 
+const readJsonResponse = async (response) => {
+  const text = await response.text();
+  if (!text) return {};
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      message: text.slice(0, 240),
+    };
+  }
+};
+
 const BLOCKED_WEBHOOK_HOSTS = ["localhost", "localhost.localdomain", "0.0.0.0", "127.", "10.", "192.168."];
 
 const validateWebhookUrlInput = (value) => {
@@ -73,7 +86,7 @@ export default function SecuritySettingsPage() {
       const response = await fetch(apiUrl("/api/merchant/dashboard"), {
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
+      const data = await readJsonResponse(response);
       if (!response.ok) {
         showNotice("error", data.message || "Merchant data error");
         return;
@@ -103,7 +116,7 @@ export default function SecuritySettingsPage() {
     setSaving(true);
     setNotice(null);
     try {
-      const response = await fetch(apiUrl("/api/merchant/webhook-url"), {
+      let response = await fetch(apiUrl("/api/merchant/webhook-url"), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -111,7 +124,19 @@ export default function SecuritySettingsPage() {
         },
         body: JSON.stringify({ webhookUrl }),
       });
-      const data = await response.json();
+
+      if (response.status === 404) {
+        response = await fetch(apiUrl("/api/merchant/callback-url"), {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ callbackUrl: webhookUrl }),
+        });
+      }
+
+      const data = await readJsonResponse(response);
       if (!response.ok) {
         showNotice("error", data.errors?.join(" ") || data.message || "Webhook URL save error");
         return;
@@ -123,8 +148,8 @@ export default function SecuritySettingsPage() {
         webhookUrl: data.webhookUrl || data.callbackUrl || webhookUrl,
       }));
       setWebhookTestResult(null);
-    } catch {
-      showNotice("error", "Webhook URL save error");
+    } catch (error) {
+      showNotice("error", `Webhook URL save error: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -142,7 +167,7 @@ export default function SecuritySettingsPage() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
+      const data = await readJsonResponse(response);
       setWebhookTestResult(data);
 
       if (!response.ok) {
@@ -151,8 +176,8 @@ export default function SecuritySettingsPage() {
       }
 
       showNotice("success", data.message || "Webhook test delivered");
-    } catch {
-      showNotice("error", "Webhook test failed");
+    } catch (error) {
+      showNotice("error", `Webhook test failed: ${error.message}`);
     } finally {
       setTestingWebhook(false);
     }
@@ -169,7 +194,7 @@ export default function SecuritySettingsPage() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
+      const data = await readJsonResponse(response);
       if (!response.ok) {
         showNotice("error", data.message || "Webhook secret regenerate error");
         return;
@@ -203,7 +228,7 @@ export default function SecuritySettingsPage() {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
+      const data = await readJsonResponse(response);
       if (!response.ok) {
         showNotice("error", data.message || "API key regenerate error");
         return;
