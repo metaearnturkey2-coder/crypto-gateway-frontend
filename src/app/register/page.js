@@ -45,6 +45,15 @@ export default function RegisterPage() {
         return;
       }
 
+      if (response.status === 429 && data.retryAfterSeconds) {
+        const minutes = Math.ceil(Number(data.retryAfterSeconds) / 60);
+        setMessage({
+          type: "error",
+          text: `Too many registration attempts. Please try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+        });
+        return;
+      }
+
       setMessage({
         type: "error",
         text: data.message || "Register failed",
