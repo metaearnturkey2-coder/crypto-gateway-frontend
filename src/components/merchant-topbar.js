@@ -27,9 +27,11 @@ export default function MerchantTopbar() {
 
   useEffect(() => {
     if (isDarkTheme) {
+      document.documentElement.classList.add("dark-dashboard");
       document.documentElement.classList.remove("light-dashboard");
       localStorage.setItem("dashboardTheme", "dark");
     } else {
+      document.documentElement.classList.remove("dark-dashboard");
       document.documentElement.classList.add("light-dashboard");
       localStorage.setItem("dashboardTheme", "light");
     }

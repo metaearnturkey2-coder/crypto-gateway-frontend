@@ -128,6 +128,21 @@ export default function BusinessWalletApiDocsPage() {
           </div>
         </div>
 
+        <div className="mb-5 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="mb-2 text-xs text-zinc-500">Amount limits</p>
+            <p>0.01 to 1,000,000 USDT, max 2 decimal places.</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="mb-2 text-xs text-zinc-500">Order ID</p>
+            <p>Optional, max 80 chars: letters, numbers, dot, dash, underscore, colon.</p>
+          </div>
+          <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <p className="mb-2 text-xs text-zinc-500">Customer email</p>
+            <p>Optional, must be a valid email address, max 254 chars.</p>
+          </div>
+        </div>
+
         {(() => {
           const snippets = [
             {
@@ -162,6 +177,24 @@ export default function BusinessWalletApiDocsPage() {
               path: "/api/public/payments/status?orderId=ORDER-1001",
               value: `curl -X GET "${API_BASE_URL}/api/public/payments/status?orderId=ORDER-1001" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
+            },
+            {
+              key: "invalid-request",
+              title: "Invalid Request Response",
+              method: "400",
+              description: "Validation errors are returned as a message plus an errors array.",
+              path: "POST /api/public/payments/create",
+              value: `HTTP/1.1 400 Bad Request
+Content-Type: application/json
+
+{
+  "message": "Invalid payment request",
+  "errors": [
+    "Amount must be at least 0.01",
+    "Order ID can only contain letters, numbers, dots, dashes, underscores, and colons",
+    "Customer email must be a valid email address"
+  ]
+}`,
             },
             {
               key: "verify-webhook-node",
@@ -275,7 +308,11 @@ http_response_code(200);`,
                       <div className="flex items-center justify-between gap-3">
                         <p className="font-semibold">{snippet.title}</p>
                         <span className={`rounded-md px-2 py-1 text-[11px] font-semibold ${
-                          snippet.method === "GET" ? "bg-blue-500 text-black" : "bg-green-500 text-black"
+                          snippet.method === "GET"
+                            ? "bg-blue-500 text-black"
+                            : snippet.method === "400"
+                            ? "bg-red-500 text-black"
+                            : "bg-green-500 text-black"
                         }`}>
                           {snippet.method}
                         </span>

@@ -44,30 +44,58 @@ export default function BusinessWalletPage() {
       window.location.href = "/login";
       return;
     }
-    const paymentsRes = await fetch(apiUrl(`/api/payments?limit=50&t=${Date.now()}`), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const paymentsData = await paymentsRes.json();
-    setPaymentStats(
-      paymentsData.stats || { total: 0, paid: 0, pending: 0, expired: 0 }
-    );
 
-    const settlementsRes = await fetch(apiUrl(`/api/merchant/settlements?t=${Date.now()}`), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const settlementsData = await settlementsRes.json();
-    setSettlements({
-      summary: settlementsData.summary || {
-        network: "TRC20",
-        currency: "USDT",
-        available: 0,
-        grossPaid: 0,
-        reservedForPayouts: 0,
-      },
-      payoutRequests: settlementsData.payoutRequests || [],
-    });
+    try {
+      const [paymentsRes, settlementsRes] = await Promise.all([
+        fetch(apiUrl(`/api/payments?limit=50&t=${Date.now()}`), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+        fetch(apiUrl(`/api/merchant/settlements?t=${Date.now()}`), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
+      ]);
+
+      if (paymentsRes.status === 401 || settlementsRes.status === 401) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+        return;
+      }
+
+      const paymentsData = await paymentsRes.json();
+      const settlementsData = await settlementsRes.json();
+
+      if (!paymentsRes.ok || !settlementsRes.ok) {
+        setNotice({
+          type: "error",
+          message:
+            paymentsData.message ||
+            settlementsData.message ||
+            "Business wallet data could not be refreshed.",
+        });
+        return;
+      }
+
+      setPaymentStats(
+        paymentsData.stats || { total: 0, paid: 0, pending: 0, expired: 0 }
+      );
+      setSettlements({
+        summary: settlementsData.summary || {
+          network: "TRC20",
+          currency: "USDT",
+          available: 0,
+          grossPaid: 0,
+          reservedForPayouts: 0,
+        },
+        payoutRequests: settlementsData.payoutRequests || [],
+      });
+    } catch {
+      setNotice({
+        type: "error",
+        message: "Business wallet data could not be refreshed.",
+      });
+    }
   };
 
   useEffect(() => {

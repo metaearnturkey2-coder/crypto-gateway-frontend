@@ -25,6 +25,64 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Dashboard dark theme overrides */
+.dark-dashboard body {
+  background: #09090b;
+  color: #f4f4f5;
+}
+
+.dark-dashboard .dashboard-shell.bg-zinc-100,
+.dark-dashboard .dashboard-shell .bg-zinc-100,
+.dark-dashboard .dashboard-shell .bg-zinc-50,
+.dark-dashboard .dashboard-shell .bg-white,
+.dark-dashboard .dashboard-shell .bg-white\/70,
+.dark-dashboard .dashboard-shell [class*="bg-[#"] {
+  background-color: #18181b !important;
+}
+
+.dark-dashboard .dashboard-shell .border-zinc-200,
+.dark-dashboard .dashboard-shell .border-zinc-300 {
+  border-color: #3f3f46 !important;
+}
+
+.dark-dashboard .dashboard-shell.text-zinc-900,
+.dark-dashboard .dashboard-shell .text-zinc-900,
+.dark-dashboard .dashboard-shell .text-zinc-800,
+.dark-dashboard .dashboard-shell .text-zinc-700 {
+  color: #f4f4f5 !important;
+}
+
+.dark-dashboard .dashboard-shell .text-zinc-600,
+.dark-dashboard .dashboard-shell .text-zinc-500,
+.dark-dashboard .dashboard-shell .text-zinc-400 {
+  color: #a1a1aa !important;
+}
+
+.dark-dashboard .dashboard-shell .bg-zinc-900 {
+  background-color: #09090b !important;
+}
+
+.dark-dashboard .dashboard-shell .bg-zinc-800 {
+  background-color: #27272a !important;
+}
+
+.dark-dashboard .dashboard-shell .hover\:bg-zinc-100:hover,
+.dark-dashboard .dashboard-shell .hover\:bg-white:hover {
+  background-color: #27272a !important;
+}
+
+.dark-dashboard .dashboard-shell input,
+.dark-dashboard .dashboard-shell select,
+.dark-dashboard .dashboard-shell textarea {
+  background-color: #27272a !important;
+  color: #f4f4f5 !important;
+  border-color: #52525b !important;
+}
+
+.dark-dashboard .dashboard-shell ::placeholder {
+  color: #a1a1aa !important;
+}
+
 /* Dashboard light theme overrides */
 .light-dashboard body {
   background: #e5e7eb;

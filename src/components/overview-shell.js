@@ -23,8 +23,15 @@ export default function OverviewShell({ children }) {
     return () => window.removeEventListener("click", close);
   }, []);
 
+  useEffect(() => {
+    return () => {
+      document.documentElement.classList.remove("dark-dashboard");
+      document.documentElement.classList.remove("light-dashboard");
+    };
+  }, []);
+
   return (
-    <main className="min-h-screen bg-zinc-100 text-zinc-900">
+    <main className="dashboard-shell min-h-screen bg-zinc-100 text-zinc-900">
       <MerchantTopbar />
 
       <nav className="relative z-40 bg-white border-b border-zinc-200">
