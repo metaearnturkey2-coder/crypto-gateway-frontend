@@ -39,6 +39,50 @@ const canRetryWebhook = (webhook) =>
   webhook.status !== "SUCCESS" &&
   Number(webhook.attempts || 0) < Number(webhook.maxAttempts || 0);
 
+const getActivityMeta = (action) => {
+  if (action?.includes("webhook")) {
+    return {
+      label: "Webhook",
+      className: "bg-sky-400/15 text-sky-200 border border-sky-300/30",
+    };
+  }
+  if (action?.includes("payment")) {
+    return {
+      label: "Payment",
+      className: "bg-emerald-400/15 text-emerald-200 border border-emerald-300/30",
+    };
+  }
+  if (action?.includes("api_key") || action?.includes("secret")) {
+    return {
+      label: "Security",
+      className: "bg-red-400/15 text-red-200 border border-red-300/30",
+    };
+  }
+  if (action?.includes("callback")) {
+    return {
+      label: "Settings",
+      className: "bg-amber-400/15 text-amber-100 border border-amber-300/30",
+    };
+  }
+  return {
+    label: "Activity",
+    className: "bg-zinc-700/50 text-zinc-100 border border-zinc-500/40",
+  };
+};
+
+const formatActivityAction = (action) =>
+  String(action || "activity")
+    .split(".")
+    .map((part) => part.replace(/_/g, " "))
+    .join(" / ");
+
+const formatMetadataValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+};
+
 const MIN_PAYMENT_AMOUNT = 0.01;
 const MAX_PAYMENT_AMOUNT = 1000000;
 const ORDER_ID_PATTERN = /^[A-Za-z0-9._:-]+$/;
@@ -118,13 +162,6 @@ export default function BusinessWalletMerchantsPage() {
       totalPages: data.pagination?.totalPages || data.totalPages || 1,
     });
   }, [paymentPage, paymentSearch, statusFilter, webhookStatusFilter]);
-
-  const getAuditActionClassName = (action) => {
-    if (action.includes("regenerated")) return "bg-red-500 text-black";
-    if (action.includes("cancel")) return "bg-red-500 text-black";
-    if (action.includes("verified") || action.includes("created")) return "bg-green-500 text-black";
-    return "bg-zinc-700 text-white";
-  };
 
   const fetchActivity = useCallback(async () => {
     const token = localStorage.getItem("token");
@@ -645,22 +682,49 @@ export default function BusinessWalletMerchantsPage() {
 
         {auditLogs.length > 0 && (
           <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
-            {auditLogs.map((log) => (
-              <div key={log.id} className="grid grid-cols-1 lg:grid-cols-[180px_1fr_190px] gap-3 bg-zinc-950 p-4 text-sm">
-                <div>
-                  <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getAuditActionClassName(log.action)}`}>
-                    {log.action}
-                  </span>
+            {auditLogs.map((log) => {
+              const activityMeta = getActivityMeta(log.action);
+              const metadataEntries = Object.entries(log.metadata || {}).slice(0, 4);
+              const isPaymentLog = (log.targetType || log.entityType) === "payment" && log.targetId;
+
+              return (
+                <div key={log.id} className="grid grid-cols-1 lg:grid-cols-[180px_1fr_220px] gap-4 bg-zinc-950 p-4 text-sm">
+                  <div>
+                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
+                      {activityMeta.label}
+                    </span>
+                    <p className="mt-2 text-xs capitalize text-zinc-500">{formatActivityAction(log.action)}</p>
+                  </div>
+                  <div>
+                    <p className="font-semibold">{log.message || log.description || `${formatActivityAction(log.action)} from dashboard`}</p>
+                    <p className="text-zinc-500 text-xs break-all mt-1">{log.targetType || log.entityType || "merchant"}: {log.targetId || log.entityId || "-"}</p>
+                    {metadataEntries.length > 0 && (
+                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {metadataEntries.map(([key, value]) => (
+                          <div key={key} className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
+                            <p className="text-[11px] uppercase text-zinc-500">{key}</p>
+                            <p className="mt-1 break-all text-xs text-zinc-200">{formatMetadataValue(value)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-3 lg:items-end">
+                    <p className="text-zinc-500 lg:text-right">
+                      {formatDateTime(log.createdAt)}
+                    </p>
+                    {isPaymentLog && (
+                      <button
+                        onClick={() => openPaymentDetails({ id: log.targetId })}
+                        className="w-fit rounded-lg border border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-800"
+                      >
+                        Payment details
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold">{log.description || `${log.action} from dashboard`}</p>
-                  <p className="text-zinc-500 text-xs break-all mt-1">{log.targetType || log.entityType || "payment"}: {log.targetId || log.entityId || "-"}</p>
-                </div>
-                <p className="text-zinc-500 lg:text-right">
-                  {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
