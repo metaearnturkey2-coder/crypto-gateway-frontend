@@ -159,6 +159,13 @@ export default function AdminPayoutsPage() {
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [selectedAuditLogs, setSelectedAuditLogs] = useState([]);
   const [securityEvents, setSecurityEvents] = useState([]);
+  const [adminSessions, setAdminSessions] = useState([]);
+  const [adminSessionSummary, setAdminSessionSummary] = useState({
+    total: 0,
+    active: 0,
+    revoked: 0,
+    expired: 0,
+  });
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [tokenState, setTokenState] = useState("unknown");
   const [savingToken, setSavingToken] = useState(false);
@@ -186,6 +193,13 @@ export default function AdminPayoutsPage() {
     setSelectedPayout(null);
     setSelectedAuditLogs([]);
     setSecurityEvents([]);
+    setAdminSessions([]);
+    setAdminSessionSummary({
+      total: 0,
+      active: 0,
+      revoked: 0,
+      expired: 0,
+    });
     setPagination({
       page: 1,
       limit: 10,
@@ -374,6 +388,7 @@ export default function AdminPayoutsPage() {
     if (isValid) {
       fetchPayouts({ page: 1, accessToken: localStorage.getItem("adminAccessToken") || "" });
       fetchSecurityEvents(localStorage.getItem("adminAccessToken") || "");
+      fetchAdminSessions(localStorage.getItem("adminAccessToken") || "");
       showNotice("success", "Admin session verified.");
     } else {
       resetAdminSession("invalid");
@@ -463,6 +478,33 @@ export default function AdminPayoutsPage() {
       const data = await response.json();
       if (response.ok) {
         setSecurityEvents(data.events || []);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  }, [adminAccessToken, adminFetch]);
+
+  const fetchAdminSessions = useCallback(async (accessTokenOverride) => {
+    const accessToken = accessTokenOverride || adminAccessToken;
+    if (!accessToken) {
+      return;
+    }
+
+    try {
+      const response = await adminFetch("/api/admin/sessions", {
+        accessToken,
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setAdminSessions(data.sessions || []);
+        setAdminSessionSummary(
+          data.summary || {
+            total: 0,
+            active: 0,
+            revoked: 0,
+            expired: 0,
+          }
+        );
       }
     } catch (error) {
       console.error(error);
@@ -690,7 +732,17 @@ export default function AdminPayoutsPage() {
             </div>
 
             <div className="border-t border-zinc-800 bg-zinc-950 p-6 lg:border-l lg:border-t-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Guarded data</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Guarded data</p>
+                {tokenState === "valid" && (
+                  <button
+                    onClick={() => fetchAdminSessions()}
+                    className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs font-semibold text-zinc-300 hover:bg-zinc-900"
+                  >
+                    Refresh
+                  </button>
+                )}
+              </div>
               <div className="mt-4 space-y-3 text-sm">
                 {["Payout requests", "Settlement actions", "Audit trail", "Security events"].map((item) => (
                   <div key={item} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black px-4 py-3">
@@ -701,6 +753,47 @@ export default function AdminPayoutsPage() {
                   </div>
                 ))}
               </div>
+
+              {tokenState === "valid" && (
+                <div className="mt-5 rounded-xl border border-zinc-800 bg-black p-4">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-100">Admin sessions</p>
+                      <p className="text-xs text-zinc-500">Latest 20 refresh sessions</p>
+                    </div>
+                    <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-200">
+                      {adminSessionSummary.active} active
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-2">
+                      <p className="text-zinc-500">Revoked</p>
+                      <p className="mt-1 font-bold text-zinc-200">{adminSessionSummary.revoked}</p>
+                    </div>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-2">
+                      <p className="text-zinc-500">Expired</p>
+                      <p className="mt-1 font-bold text-zinc-200">{adminSessionSummary.expired}</p>
+                    </div>
+                    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-2">
+                      <p className="text-zinc-500">Total</p>
+                      <p className="mt-1 font-bold text-zinc-200">{adminSessionSummary.total}</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    {adminSessions.slice(0, 3).map((session) => (
+                      <div key={session.id} className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-semibold text-zinc-300">{session.status}</span>
+                          <span className="text-zinc-500">{new Date(session.createdAt).toLocaleString()}</span>
+                        </div>
+                        <p className="mt-1 text-zinc-600">Expires {new Date(session.expiresAt).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
