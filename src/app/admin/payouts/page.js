@@ -70,13 +70,64 @@ const getAuditMetadataEntries = (metadata = {}) => {
     .map((key) => [key, metadata[key]]);
 };
 
+const formatSecurityEvent = (event) =>
+  String(event || "security_event")
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const getSecurityStatusClassName = (status) => {
+  if (status === "SUCCESS") {
+    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
+  }
+
+  if (status === "FAILED" || status === "ERROR") {
+    return "border-red-500/30 bg-red-500/10 text-red-200";
+  }
+
+  if (status === "BLOCKED") {
+    return "border-amber-500/30 bg-amber-500/10 text-amber-200";
+  }
+
+  return "border-zinc-700 bg-zinc-950 text-zinc-300";
+};
+
+const getPayoutAuditSummary = (request) => {
+  const metadata = request.latestAuditLog?.metadata || {};
+
+  if (request.status === "PAID" && metadata.txHash) {
+    return {
+      label: "Settlement tx",
+      value: metadata.txHash,
+      className: "border-blue-500/30 bg-blue-500/10 text-blue-100",
+    };
+  }
+
+  if (request.status === "REJECTED" && (metadata.rejectReason || request.note)) {
+    return {
+      label: "Reject reason",
+      value: metadata.rejectReason || request.note,
+      className: "border-red-500/30 bg-red-500/10 text-red-100",
+    };
+  }
+
+  if (request.latestAuditLog) {
+    return {
+      label: "Latest action",
+      value: formatAuditAction(request.latestAuditLog.action),
+      className: "border-zinc-700 bg-zinc-950 text-zinc-300",
+    };
+  }
+
+  return null;
+};
+
 export default function AdminPayoutsPage() {
   const primaryButtonClass =
-    "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:opacity-40 disabled:cursor-not-allowed";
+    "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const secondaryButtonClass =
-    "bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition disabled:opacity-40 disabled:cursor-not-allowed";
+    "border border-zinc-700 bg-zinc-900 px-4 py-3 rounded-xl font-semibold text-zinc-100 hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const dangerButtonClass =
-    "bg-red-600 px-6 py-3 rounded-xl font-semibold hover:bg-red-500 transition disabled:opacity-40 disabled:cursor-not-allowed";
+    "border border-red-500/40 bg-red-500/10 px-6 py-3 rounded-xl font-semibold text-red-200 hover:bg-red-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const [adminToken, setAdminToken] = useState(() => {
     if (typeof window === "undefined") {
       return "";
@@ -93,6 +144,7 @@ export default function AdminPayoutsPage() {
   });
   const [payoutRequests, setPayoutRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [auditSummaryFilter, setAuditSummaryFilter] = useState("ALL");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -464,18 +516,49 @@ export default function AdminPayoutsPage() {
     return payoutRequests.reduce((sum, request) => sum + request.amount, 0);
   }, [payoutRequests]);
 
+  const visiblePayoutRequests = useMemo(() => {
+    if (auditSummaryFilter === "SETTLED_TX") {
+      return payoutRequests.filter((request) => Boolean(request.latestAuditLog?.metadata?.txHash));
+    }
+
+    if (auditSummaryFilter === "REJECT_REASON") {
+      return payoutRequests.filter((request) =>
+        Boolean(request.latestAuditLog?.metadata?.rejectReason || request.note)
+      );
+    }
+
+    return payoutRequests;
+  }, [auditSummaryFilter, payoutRequests]);
+
+  const securitySummary = useMemo(() => {
+    return securityEvents.reduce(
+      (summary, event) => {
+        if (event.status === "SUCCESS") summary.success += 1;
+        if (event.status === "FAILED" || event.status === "ERROR") summary.failed += 1;
+        if (event.status === "BLOCKED") summary.blocked += 1;
+        return summary;
+      },
+      {
+        success: 0,
+        failed: 0,
+        blocked: 0,
+      }
+    );
+  }, [securityEvents]);
+
   return (
     <main className="min-h-screen bg-black text-white">
-      <header className="border-b border-zinc-800">
+      <header className="border-b border-zinc-800 bg-zinc-950/70">
         <div className="max-w-7xl mx-auto px-8 py-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">Admin Payouts</h1>
-            <p className="text-zinc-500 text-sm">Internal settlement operations</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Internal console</p>
+            <h1 className="mt-1 text-2xl font-bold">Admin Payouts</h1>
+            <p className="text-zinc-500 text-sm">Protected settlement review and payout processing.</p>
           </div>
 
           <a
             href="/dashboard"
-            className="w-fit bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+            className="w-fit rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800 transition"
           >
             Merchant Dashboard
           </a>
@@ -495,45 +578,91 @@ export default function AdminPayoutsPage() {
           </div>
         )}
 
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-          <div className="mb-5">
-            <h2 className="text-xl font-bold">Access</h2>
-            <p className="text-zinc-500 text-sm">
-              Enter the current internal admin token from the backend environment.
-              Saved browser sessions are cleared automatically when the token is invalid or expired.
-            </p>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto_auto] gap-3 md:gap-4">
-            <input
-              type="password"
-              placeholder="Internal admin token"
-              value={adminToken}
-              onChange={(e) => setAdminToken(e.target.value)}
-              className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
-            />
+        <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
+          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_.8fr]">
+            <div className="p-6">
+              <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold">Restricted Access</h2>
+                  <p className="mt-1 max-w-2xl text-sm text-zinc-500">
+                    Verify the current internal admin token before settlement data is loaded. Saved sessions are revoked automatically when they become invalid.
+                  </p>
+                </div>
+                <span
+                  className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
+                    tokenState === "valid"
+                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                      : tokenState === "invalid"
+                      ? "border-red-500/40 bg-red-500/10 text-red-200"
+                      : "border-zinc-700 bg-zinc-800 text-zinc-300"
+                  }`}
+                >
+                  {tokenState === "valid"
+                    ? "Verified session"
+                    : tokenState === "invalid"
+                    ? "Verification failed"
+                    : "Awaiting verification"}
+                </span>
+              </div>
 
-            <button
-              onClick={saveToken}
-              disabled={savingToken}
-              className={`${primaryButtonClass} w-full lg:w-auto`}
-            >
-              {savingToken ? "Verifying..." : "Verify Token"}
-            </button>
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto]">
+                <input
+                  type="password"
+                  placeholder="Internal admin token"
+                  value={adminToken}
+                  onChange={(e) => setAdminToken(e.target.value)}
+                  className="h-12 rounded-xl border border-zinc-700 bg-zinc-950 px-4 text-zinc-100 outline-none focus:border-zinc-500"
+                />
 
-            <button
-              onClick={clearToken}
-              className={`${secondaryButtonClass} w-full lg:w-auto`}
-            >
-              Clear Token
-            </button>
+                <button
+                  onClick={saveToken}
+                  disabled={savingToken}
+                  className={`${primaryButtonClass} h-12 w-full lg:w-auto`}
+                >
+                  {savingToken ? "Verifying..." : "Verify Token"}
+                </button>
 
-            <button
-              onClick={() => setConfirmAction({ type: "logoutAll" })}
-              disabled={!adminAccessToken}
-              className={`${dangerButtonClass} w-full lg:w-auto`}
-            >
-              Logout All Sessions
-            </button>
+                <button
+                  onClick={clearToken}
+                  className={`${secondaryButtonClass} h-12 w-full lg:w-auto`}
+                >
+                  Clear
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <p className="text-xs text-zinc-500">
+                  Access tokens are short-lived. Refresh sessions are stored as httpOnly cookies.
+                </p>
+                <button
+                  onClick={() => setConfirmAction({ type: "logoutAll" })}
+                  disabled={!adminAccessToken}
+                  className={`${dangerButtonClass} w-full md:w-auto`}
+                >
+                  Revoke All Sessions
+                </button>
+              </div>
+
+              {tokenState === "invalid" && (
+                <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                  Use the latest INTERNAL_ADMIN_TOKEN value. Old saved sessions are no longer trusted.
+                </p>
+              )}
+            </div>
+
+            <div className="border-t border-zinc-800 bg-zinc-950 p-6 lg:border-l lg:border-t-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Guarded data</p>
+              <div className="mt-4 space-y-3 text-sm">
+                {["Payout requests", "Settlement actions", "Audit trail", "Security events"].map((item) => (
+                  <div key={item} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black px-4 py-3">
+                    <span className="text-zinc-300">{item}</span>
+                    <span className={tokenState === "valid" ? "text-emerald-300" : "text-zinc-600"}>
+                      {tokenState === "valid" ? "unlocked" : "locked"}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           {confirmAction?.type === "logoutAll" && (
@@ -555,31 +684,10 @@ export default function AdminPayoutsPage() {
               </div>
             </div>
           )}
-
-          <div className="mt-3">
-            <span
-              className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
-                tokenState === "valid"
-                  ? "bg-green-500 text-black"
-                  : tokenState === "invalid"
-                  ? "bg-red-500 text-black"
-                  : "bg-zinc-700 text-white"
-              }`}
-            >
-              {tokenState === "valid"
-                ? "Token verified"
-                : tokenState === "invalid"
-                ? "Token not verified"
-                : "Token not checked"}
-            </span>
-            {tokenState === "invalid" && (
-              <p className="mt-2 text-sm text-red-300">
-                Use the latest INTERNAL_ADMIN_TOKEN value. Old saved sessions are no longer trusted.
-              </p>
-            )}
-          </div>
         </section>
 
+        {tokenState === "valid" && (
+          <>
         <section>
           <div className="mb-4">
             <h2 className="text-xl font-bold">Overview</h2>
@@ -612,7 +720,7 @@ export default function AdminPayoutsPage() {
             <div>
               <h2 className="text-2xl font-bold">Operations</h2>
               <p className="text-zinc-500 text-sm">
-                Payout queue and status operations. Showing {payoutRequests.length} of {pagination.totalCount}
+                Payout queue and status operations. Showing {visiblePayoutRequests.length} of {pagination.totalCount}
               </p>
             </div>
 
@@ -634,6 +742,16 @@ export default function AdminPayoutsPage() {
                     {status === "ALL" ? "All statuses" : status}
                   </option>
                 ))}
+              </select>
+
+              <select
+                value={auditSummaryFilter}
+                onChange={(e) => setAuditSummaryFilter(e.target.value)}
+                className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+              >
+                <option value="ALL">All audit summaries</option>
+                <option value="SETTLED_TX">Has settlement tx</option>
+                <option value="REJECT_REASON">Has reject reason</option>
               </select>
 
               <button
@@ -659,12 +777,15 @@ export default function AdminPayoutsPage() {
             </div>
           )}
 
-          {!loading && payoutRequests.length === 0 && (
+          {!loading && visiblePayoutRequests.length === 0 && (
             <p className="text-zinc-400">No payout requests found.</p>
           )}
 
           <div className="space-y-4">
-            {payoutRequests.map((request) => (
+            {visiblePayoutRequests.map((request) => {
+              const auditSummary = getPayoutAuditSummary(request);
+
+              return (
               <div
                 key={request.id}
                 className="border border-zinc-800 rounded-xl p-5"
@@ -702,6 +823,12 @@ export default function AdminPayoutsPage() {
                         <span className="text-zinc-500">Note:</span>{" "}
                         {request.note}
                       </p>
+                    )}
+                    {auditSummary && (
+                      <div className={`rounded-xl border p-3 ${auditSummary.className}`}>
+                        <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{auditSummary.label}</p>
+                        <p className="mt-1 break-all text-sm">{auditSummary.value}</p>
+                      </div>
                     )}
                     <p>
                       <span className="text-zinc-500">Created:</span>{" "}
@@ -794,7 +921,8 @@ export default function AdminPayoutsPage() {
                     </div>
                   )}
               </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -829,29 +957,65 @@ export default function AdminPayoutsPage() {
             </div>
           </div>
         </section>
-        <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">Security</h3>
-            <span className="text-zinc-500 text-sm">Last 50 events</span>
+        <section className="mt-8 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Admin security</p>
+              <h3 className="mt-1 text-xl font-bold">Security Events</h3>
+              <p className="mt-1 text-sm text-zinc-500">
+                Login, refresh, protected API access, and session revocation activity.
+              </p>
+            </div>
+            <span className="w-fit rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-400">
+              Last 50 events
+            </span>
           </div>
+
+          <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/70">Successful</p>
+              <p className="mt-2 text-2xl font-bold text-emerald-100">{securitySummary.success}</p>
+            </div>
+            <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-red-200/70">Failed</p>
+              <p className="mt-2 text-2xl font-bold text-red-100">{securitySummary.failed}</p>
+            </div>
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/70">Blocked</p>
+              <p className="mt-2 text-2xl font-bold text-amber-100">{securitySummary.blocked}</p>
+            </div>
+          </div>
+
           {securityEvents.length === 0 && (
             <p className="text-zinc-400">No security events yet.</p>
           )}
-          <div className="space-y-2">
+          <div className="space-y-3">
             {securityEvents.map((event) => (
-              <div key={event.id} className="border border-zinc-800 rounded-xl p-3 text-sm">
-                <p>
-                  <span className="font-semibold">{event.event}</span>{" "}
-                  <span className="text-zinc-300">{event.status}</span>{" "}
-                  <span className="text-zinc-500">{event.reason || "-"}</span>
-                </p>
-                <p className="text-zinc-500 text-xs">
-                  {event.ipAddress || "unknown ip"} - {new Date(event.createdAt).toLocaleString()}
-                </p>
+              <div
+                key={event.id}
+                className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-black p-4 text-sm md:grid-cols-[1fr_auto]"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-zinc-100">{formatSecurityEvent(event.event)}</span>
+                    <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getSecurityStatusClassName(event.status)}`}>
+                      {event.status}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-zinc-500">
+                    {event.reason ? event.reason.replace(/_/g, " ") : "No reason attached"}
+                  </p>
+                </div>
+                <div className="text-left text-xs text-zinc-500 md:text-right">
+                  <p>{event.ipAddress || "unknown ip"}</p>
+                  <p className="mt-1">{new Date(event.createdAt).toLocaleString()}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
+          </>
+        )}
       </div>
 
       {selectedPayout && (
