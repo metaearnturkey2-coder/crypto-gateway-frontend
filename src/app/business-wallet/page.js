@@ -4,6 +4,48 @@ import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
 
+const getActivityMeta = (action) => {
+  if (action?.includes("webhook")) {
+    return {
+      label: "Webhook",
+      className: "border-sky-200 bg-sky-50 text-sky-700",
+      critical: action?.includes("retry") || action?.includes("test"),
+    };
+  }
+  if (action?.includes("payment")) {
+    return {
+      label: "Payment",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      critical: false,
+    };
+  }
+  if (action?.includes("api_key") || action?.includes("secret")) {
+    return {
+      label: "Security",
+      className: "border-red-200 bg-red-50 text-red-700",
+      critical: true,
+    };
+  }
+  if (action?.includes("callback")) {
+    return {
+      label: "Settings",
+      className: "border-amber-200 bg-amber-50 text-amber-700",
+      critical: false,
+    };
+  }
+  return {
+    label: "Activity",
+    className: "border-zinc-200 bg-zinc-100 text-zinc-700",
+    critical: false,
+  };
+};
+
+const formatActivityAction = (action) =>
+  String(action || "activity")
+    .split(".")
+    .map((part) => part.replace(/_/g, " "))
+    .join(" / ");
+
 function payoutStatusClass(status) {
   if (status === "PAID" || status === "APPROVED") {
     return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
@@ -32,6 +74,7 @@ export default function BusinessWalletPage() {
     },
     payoutRequests: [],
   });
+  const [recentActivity, setRecentActivity] = useState([]);
 
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
@@ -46,7 +89,7 @@ export default function BusinessWalletPage() {
     }
 
     try {
-      const [paymentsRes, settlementsRes] = await Promise.all([
+      const [paymentsRes, settlementsRes, activityRes] = await Promise.all([
         fetch(apiUrl(`/api/payments?limit=50&t=${Date.now()}`), {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
@@ -55,9 +98,13 @@ export default function BusinessWalletPage() {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",
         }),
+        fetch(apiUrl(`/api/merchant/audit-logs?limit=5&t=${Date.now()}`), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        }),
       ]);
 
-      if (paymentsRes.status === 401 || settlementsRes.status === 401) {
+      if (paymentsRes.status === 401 || settlementsRes.status === 401 || activityRes.status === 401) {
         localStorage.removeItem("token");
         window.location.href = "/login";
         return;
@@ -65,13 +112,15 @@ export default function BusinessWalletPage() {
 
       const paymentsData = await paymentsRes.json();
       const settlementsData = await settlementsRes.json();
+      const activityData = await activityRes.json();
 
-      if (!paymentsRes.ok || !settlementsRes.ok) {
+      if (!paymentsRes.ok || !settlementsRes.ok || !activityRes.ok) {
         setNotice({
           type: "error",
           message:
             paymentsData.message ||
             settlementsData.message ||
+            activityData.message ||
             "Business wallet data could not be refreshed.",
         });
         return;
@@ -90,6 +139,7 @@ export default function BusinessWalletPage() {
         },
         payoutRequests: settlementsData.payoutRequests || [],
       });
+      setRecentActivity(activityData.auditLogs || []);
     } catch {
       setNotice({
         type: "error",
@@ -186,6 +236,58 @@ export default function BusinessWalletPage() {
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">Pending Payments</p><p className="text-4xl font-bold">{paymentStats.pending}</p></div>
             <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">Expired Payments</p><p className="text-4xl font-bold">{paymentStats.expired}</p></div>
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white p-6">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">Recent Activity</h2>
+              <p className="text-zinc-500">Latest payment, webhook, and security events.</p>
+            </div>
+            <a
+              href="/business-wallet/merchants"
+              className="w-fit rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
+            >
+              View all activity
+            </a>
+          </div>
+
+          {recentActivity.some((log) => getActivityMeta(log.action).critical) && (
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Recent webhook or security activity needs review.
+            </div>
+          )}
+
+          {recentActivity.length === 0 ? (
+            <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-500">
+              No activity recorded yet.
+            </p>
+          ) : (
+            <div className="divide-y divide-zinc-200 rounded-xl border border-zinc-200">
+              {recentActivity.map((log) => {
+                const activityMeta = getActivityMeta(log.action);
+
+                return (
+                  <div key={log.id} className="grid grid-cols-1 gap-3 p-4 md:grid-cols-[120px_1fr_180px] md:items-center">
+                    <div>
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
+                        {activityMeta.label}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-zinc-900">{log.message || formatActivityAction(log.action)}</p>
+                      <p className="mt-1 break-all text-xs text-zinc-500">
+                        {formatActivityAction(log.action)} · {log.targetType || "merchant"}: {log.targetId || "-"}
+                      </p>
+                    </div>
+                    <p className="text-zinc-500 md:text-right">
+                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
