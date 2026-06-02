@@ -25,6 +25,8 @@ export default function SecuritySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [webhookTestResult, setWebhookTestResult] = useState(null);
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
 
@@ -49,7 +51,7 @@ export default function SecuritySettingsPage() {
         return;
       }
       setMerchant(data.merchant || null);
-      setWebhookUrl(data.merchant?.webhookUrl || "");
+      setWebhookUrl(data.merchant?.callbackUrl || data.merchant?.webhookUrl || "");
     } catch {
       showNotice("error", "Merchant data error");
     } finally {
@@ -81,11 +83,44 @@ export default function SecuritySettingsPage() {
         return;
       }
       showNotice("success", "Webhook URL updated");
-      setMerchant((prev) => ({ ...prev, webhookUrl: data.webhookUrl || webhookUrl }));
+      setMerchant((prev) => ({
+        ...prev,
+        callbackUrl: data.callbackUrl || data.webhookUrl || webhookUrl,
+        webhookUrl: data.webhookUrl || data.callbackUrl || webhookUrl,
+      }));
+      setWebhookTestResult(null);
     } catch {
       showNotice("error", "Webhook URL save error");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const testWebhook = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    setTestingWebhook(true);
+    setNotice(null);
+    setWebhookTestResult(null);
+
+    try {
+      const response = await fetch(apiUrl("/api/merchant/webhook-test"), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      setWebhookTestResult(data);
+
+      if (!response.ok) {
+        showNotice("error", data.message || "Webhook test failed");
+        return;
+      }
+
+      showNotice("success", data.message || "Webhook test delivered");
+    } catch {
+      showNotice("error", "Webhook test failed");
+    } finally {
+      setTestingWebhook(false);
     }
   };
 
@@ -170,7 +205,34 @@ export default function SecuritySettingsPage() {
             >
               {saving ? "Saving..." : "Save URL"}
             </button>
+            <button
+              onClick={testWebhook}
+              disabled={loading || testingWebhook || !webhookUrl.trim()}
+              className="rounded-xl border border-zinc-600 bg-zinc-900 px-6 py-3 font-semibold text-zinc-100 hover:bg-zinc-800 disabled:opacity-60"
+            >
+              {testingWebhook ? "Testing..." : "Test Webhook"}
+            </button>
           </div>
+
+          {webhookTestResult && (
+            <div
+              className={`mt-4 rounded-xl border p-4 text-sm ${
+                webhookTestResult.success
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
+                  : "border-red-500/30 bg-red-500/10 text-red-100"
+              }`}
+            >
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                <p className="font-semibold">{webhookTestResult.message || "Webhook test completed"}</p>
+                <span className="rounded-full border border-current px-3 py-1 text-xs">
+                  HTTP {webhookTestResult.statusCode || "-"}
+                </span>
+              </div>
+              {webhookTestResult.error && (
+                <p className="mt-2 break-all text-xs opacity-80">{webhookTestResult.error}</p>
+              )}
+            </div>
+          )}
 
           <div className="mt-6 rounded-xl border border-zinc-800 bg-black/40 p-4">
             <div className="flex items-center justify-between mb-3">

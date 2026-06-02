@@ -8,6 +8,7 @@ export default function MerchantTopbar() {
   const [copiedUid, setCopiedUid] = useState(false);
   const [merchant, setMerchant] = useState(null);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
+  const [themeReady, setThemeReady] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -23,9 +24,12 @@ export default function MerchantTopbar() {
   useEffect(() => {
     const stored = localStorage.getItem("dashboardTheme");
     if (stored === "light") setIsDarkTheme(false);
+    setThemeReady(true);
   }, []);
 
   useEffect(() => {
+    if (!themeReady) return;
+
     if (isDarkTheme) {
       document.documentElement.classList.add("dark-dashboard");
       document.documentElement.classList.remove("light-dashboard");
@@ -35,7 +39,7 @@ export default function MerchantTopbar() {
       document.documentElement.classList.add("light-dashboard");
       localStorage.setItem("dashboardTheme", "light");
     }
-  }, [isDarkTheme]);
+  }, [isDarkTheme, themeReady]);
 
   useEffect(() => {
     const closeOnOutside = (event) => {

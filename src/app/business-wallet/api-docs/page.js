@@ -120,7 +120,7 @@ export default function BusinessWalletApiDocsPage() {
             <p className="text-zinc-400 text-sm mt-2">Production-ready API examples for merchant checkout flows.</p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            {["payment.paid", "payment.cancelled", "payment.expired"].map((event) => (
+            {["payment.paid", "payment.cancelled", "payment.expired", "webhook.test"].map((event) => (
               <span key={event} className="border border-zinc-700 bg-zinc-950 rounded-lg px-3 py-2 text-zinc-300">
                 {event}
               </span>
@@ -197,6 +197,61 @@ Content-Type: application/json
 }`,
             },
             {
+              key: "save-webhook-url",
+              title: "Save Webhook URL",
+              method: "PUT",
+              description: "Stores the merchant callback URL used for payment and test webhooks.",
+              path: "/api/merchant/webhook-url",
+              value: `curl -X PUT ${API_BASE_URL}/api/merchant/webhook-url \\
+-H "Content-Type: application/json" \\
+-H "Authorization: Bearer your_dashboard_token" \\
+-d '{
+  "webhookUrl": "https://your-site.com/webhooks/crypto-gateway"
+}'`,
+            },
+            {
+              key: "test-webhook",
+              title: "Send Test Webhook",
+              method: "POST",
+              description: "Sends a signed webhook.test event to the saved callback URL.",
+              path: "/api/merchant/webhook-test",
+              value: `curl -X POST ${API_BASE_URL}/api/merchant/webhook-test \\
+-H "Authorization: Bearer your_dashboard_token"
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "message": "Test webhook delivered successfully",
+  "statusCode": 200,
+  "success": true,
+  "event": "webhook.test"
+}` ,
+            },
+            {
+              key: "retry-webhook",
+              title: "Retry Payment Webhook",
+              method: "POST",
+              description: "Retries a pending or failed webhook delivery from a payment detail record.",
+              path: "/api/payments/{paymentId}/webhooks/{webhookId}/retry",
+              value: `curl -X POST ${API_BASE_URL}/api/payments/{paymentId}/webhooks/{webhookId}/retry \\
+-H "Authorization: Bearer your_dashboard_token"
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "message": "Webhook retry attempted",
+  "webhook": {
+    "id": "webhook_id",
+    "status": "SUCCESS",
+    "attempts": 2,
+    "lastStatusCode": 200,
+    "deliveredAt": "2026-06-02T12:00:00.000Z"
+  }
+}` ,
+            },
+            {
               key: "verify-webhook-node",
               title: "Verify Webhook in Node.js",
               method: "POST",
@@ -241,7 +296,7 @@ app.post(
     }
 
     const event = JSON.parse(rawBody);
-    // event.event: payment.paid, payment.cancelled, payment.expired
+    // event.event: payment.paid, payment.cancelled, payment.expired, webhook.test
     // event.payment.id, event.payment.status, event.payment.txHash
 
     return res.sendStatus(200);
@@ -281,7 +336,7 @@ if (!hash_equals($expected, $signature)) {
 }
 
 $event = json_decode($rawBody, true);
-// $event['event']: payment.paid, payment.cancelled, payment.expired
+// $event['event']: payment.paid, payment.cancelled, payment.expired, webhook.test
 // $event['payment']['id'], status, txHash
 
 http_response_code(200);`,

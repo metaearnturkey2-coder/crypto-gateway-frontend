@@ -89,82 +89,82 @@ body {
   color: #1f2937;
 }
 
-.light-dashboard .bg-black {
+.light-dashboard .dashboard-shell .bg-black {
   background-color: #e5e7eb !important;
 }
 
-.light-dashboard .bg-zinc-950,
-.light-dashboard .bg-zinc-950\/70,
-.light-dashboard .bg-zinc-900,
-.light-dashboard .bg-zinc-900\/70,
-.light-dashboard .bg-zinc-900\/90 {
+.light-dashboard .dashboard-shell .bg-zinc-950,
+.light-dashboard .dashboard-shell .bg-zinc-950\/70,
+.light-dashboard .dashboard-shell .bg-zinc-900,
+.light-dashboard .dashboard-shell .bg-zinc-900\/70,
+.light-dashboard .dashboard-shell .bg-zinc-900\/90 {
   background-color: #f3f4f6 !important;
 }
 
-.light-dashboard .border-zinc-800,
-.light-dashboard .border-zinc-700 {
+.light-dashboard .dashboard-shell .border-zinc-800,
+.light-dashboard .dashboard-shell .border-zinc-700 {
   border-color: #9ca3af !important;
 }
 
-.light-dashboard .text-white {
+.light-dashboard .dashboard-shell .text-white {
   color: #111827 !important;
 }
 
-.light-dashboard .text-zinc-100,
-.light-dashboard .text-zinc-50 {
+.light-dashboard .dashboard-shell .text-zinc-100,
+.light-dashboard .dashboard-shell .text-zinc-50 {
   color: #111827 !important;
 }
 
-.light-dashboard .text-zinc-500,
-.light-dashboard .text-zinc-400,
-.light-dashboard .text-zinc-300,
-.light-dashboard .text-zinc-200 {
+.light-dashboard .dashboard-shell .text-zinc-500,
+.light-dashboard .dashboard-shell .text-zinc-400,
+.light-dashboard .dashboard-shell .text-zinc-300,
+.light-dashboard .dashboard-shell .text-zinc-200 {
   color: #374151 !important;
 }
 
-.light-dashboard .bg-zinc-800 {
+.light-dashboard .dashboard-shell .bg-zinc-800 {
   background-color: #d1d5db !important;
   color: #111827 !important;
 }
 
-.light-dashboard [class*="bg-zinc-800"],
-.light-dashboard [class*="bg-zinc-900"],
-.light-dashboard [class*="bg-zinc-950"] {
+.light-dashboard .dashboard-shell [class*="bg-zinc-800"],
+.light-dashboard .dashboard-shell [class*="bg-zinc-900"],
+.light-dashboard .dashboard-shell [class*="bg-zinc-950"] {
   color: #111827 !important;
 }
 
-.light-dashboard [class*="bg-zinc-800"] .text-zinc-500,
-.light-dashboard [class*="bg-zinc-800"] .text-zinc-400,
-.light-dashboard [class*="bg-zinc-800"] .text-zinc-300,
-.light-dashboard [class*="bg-zinc-900"] .text-zinc-500,
-.light-dashboard [class*="bg-zinc-900"] .text-zinc-400,
-.light-dashboard [class*="bg-zinc-900"] .text-zinc-300,
-.light-dashboard [class*="bg-zinc-950"] .text-zinc-500,
-.light-dashboard [class*="bg-zinc-950"] .text-zinc-400,
-.light-dashboard [class*="bg-zinc-950"] .text-zinc-300 {
+.light-dashboard .dashboard-shell [class*="bg-zinc-800"] .text-zinc-500,
+.light-dashboard .dashboard-shell [class*="bg-zinc-800"] .text-zinc-400,
+.light-dashboard .dashboard-shell [class*="bg-zinc-800"] .text-zinc-300,
+.light-dashboard .dashboard-shell [class*="bg-zinc-900"] .text-zinc-500,
+.light-dashboard .dashboard-shell [class*="bg-zinc-900"] .text-zinc-400,
+.light-dashboard .dashboard-shell [class*="bg-zinc-900"] .text-zinc-300,
+.light-dashboard .dashboard-shell [class*="bg-zinc-950"] .text-zinc-500,
+.light-dashboard .dashboard-shell [class*="bg-zinc-950"] .text-zinc-400,
+.light-dashboard .dashboard-shell [class*="bg-zinc-950"] .text-zinc-300 {
   color: #374151 !important;
 }
 
-.light-dashboard [class*="bg-zinc-800"] .text-white,
-.light-dashboard [class*="bg-zinc-900"] .text-white,
-.light-dashboard [class*="bg-zinc-950"] .text-white {
+.light-dashboard .dashboard-shell [class*="bg-zinc-800"] .text-white,
+.light-dashboard .dashboard-shell [class*="bg-zinc-900"] .text-white,
+.light-dashboard .dashboard-shell [class*="bg-zinc-950"] .text-white {
   color: #111827 !important;
 }
 
-.light-dashboard input,
-.light-dashboard select,
-.light-dashboard textarea {
+.light-dashboard .dashboard-shell input,
+.light-dashboard .dashboard-shell select,
+.light-dashboard .dashboard-shell textarea {
   background-color: #e5e7eb !important;
   color: #111827 !important;
   border-color: #9ca3af !important;
 }
 
-.light-dashboard ::placeholder {
+.light-dashboard .dashboard-shell ::placeholder {
   color: #6b7280 !important;
 }
 
-.light-dashboard button[class*="bg-zinc-9"],
-.light-dashboard button[class*="bg-zinc-8"] {
+.light-dashboard .dashboard-shell button[class*="bg-zinc-9"],
+.light-dashboard .dashboard-shell button[class*="bg-zinc-8"] {
   color: #111827 !important;
 }
 
