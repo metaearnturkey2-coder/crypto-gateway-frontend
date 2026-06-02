@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { API_BASE_URL } from "@/lib/api";
 
 const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "REJECTED", "PAID"];
 
@@ -70,7 +71,31 @@ export default function AdminPayoutsPage() {
   const [securityEvents, setSecurityEvents] = useState([]);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [tokenState, setTokenState] = useState("unknown");
-  const baseUrl = "http://localhost:5000";
+  const [savingToken, setSavingToken] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const baseUrl = API_BASE_URL;
+
+  const showNotice = (type, message) => {
+    setNotice({ type, message });
+  };
+
+  const resetAdminSession = useCallback((nextTokenState = "unknown") => {
+    localStorage.removeItem("adminAccessToken");
+    setAdminAccessToken("");
+    setTokenState(nextTokenState);
+    setPayoutRequests([]);
+    setSelectedPayout(null);
+    setSelectedAuditLogs([]);
+    setSecurityEvents([]);
+    setPagination({
+      page: 1,
+      limit: 10,
+      totalCount: 0,
+      totalPages: 1,
+    });
+    setConfirmAction(null);
+  }, []);
 
   const refreshAccessToken = useCallback(async () => {
     try {
@@ -80,6 +105,7 @@ export default function AdminPayoutsPage() {
       });
       const data = await response.json();
       if (!response.ok || !data.accessToken) {
+        resetAdminSession("invalid");
         return null;
       }
       localStorage.setItem("adminAccessToken", data.accessToken);
@@ -88,23 +114,25 @@ export default function AdminPayoutsPage() {
       return data.accessToken;
     } catch (error) {
       console.error(error);
+      resetAdminSession("invalid");
       return null;
     }
-  }, []);
+  }, [resetAdminSession]);
 
   const adminFetch = useCallback(
     async (path, options = {}) => {
+      const { accessToken, ...fetchOptions } = options;
       const makeRequest = async (token) =>
         fetch(`${baseUrl}${path}`, {
-          ...options,
+          ...fetchOptions,
           headers: {
-            ...(options.headers || {}),
+            ...(fetchOptions.headers || {}),
             Authorization: `Bearer ${token}`,
           },
           credentials: "include",
         });
 
-      let response = await makeRequest(adminAccessToken);
+      let response = await makeRequest(accessToken || adminAccessToken);
       if (response.status !== 401) {
         return response;
       }
@@ -127,13 +155,15 @@ export default function AdminPayoutsPage() {
     }
 
     try {
-      const response = await adminFetch("/api/admin/me", {
+      const response = await fetch(`${baseUrl}/api/admin/me`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
+        credentials: "include",
       });
 
       if (!response.ok) {
+        resetAdminSession("invalid");
         setTokenState("invalid");
         return false;
       }
@@ -142,17 +172,18 @@ export default function AdminPayoutsPage() {
       return true;
     } catch (error) {
       console.error(error);
-      setTokenState("invalid");
+      resetAdminSession("invalid");
       return false;
     }
-  }, [adminFetch]);
+  }, [baseUrl, resetAdminSession]);
 
   const fetchPayouts = useCallback(async (options = {}) => {
     const nextPage = options.page || page;
     const nextStatus = options.status || statusFilter;
+    const accessToken = options.accessToken || adminAccessToken;
 
-    if (!adminAccessToken) {
-      alert("Admin token is required");
+    if (!accessToken) {
+      showNotice("error", "Admin token is required.");
       return;
     }
 
@@ -166,17 +197,18 @@ export default function AdminPayoutsPage() {
       });
 
       const response = await adminFetch(
-        `/api/admin/payout-requests?${params.toString()}`
+        `/api/admin/payout-requests?${params.toString()}`,
+        { accessToken }
       );
 
       const data = await response.json();
 
       if (response.status === 401) {
-        setTokenState("invalid");
+        resetAdminSession("invalid");
       }
 
       if (!response.ok) {
-        alert(data.message || "Admin payouts error");
+        showNotice("error", data.message || "Admin payouts error.");
         return;
       }
 
@@ -189,14 +221,23 @@ export default function AdminPayoutsPage() {
       });
     } catch (error) {
       console.error(error);
-      alert("Admin payouts error");
+      showNotice("error", "Admin payouts error.");
     } finally {
       setLoading(false);
     }
-  }, [adminAccessToken, page, pagination.limit, statusFilter]);
+  }, [adminAccessToken, adminFetch, page, pagination.limit, resetAdminSession, statusFilter]);
 
   const saveToken = async () => {
-    localStorage.setItem("adminToken", adminToken);
+    const trimmedToken = adminToken.trim();
+    if (!trimmedToken) {
+      showNotice("error", "Enter the current internal admin token.");
+      setTokenState("invalid");
+      return;
+    }
+
+    setSavingToken(true);
+    setNotice(null);
+    localStorage.setItem("adminToken", trimmedToken);
     try {
       const loginResponse = await fetch(`${baseUrl}/api/admin/login`, {
         method: "POST",
@@ -205,37 +246,39 @@ export default function AdminPayoutsPage() {
         },
         credentials: "include",
         body: JSON.stringify({
-          token: adminToken,
+          token: trimmedToken,
         }),
       });
       const loginData = await loginResponse.json();
       if (!loginResponse.ok || !loginData.accessToken) {
-        setTokenState("invalid");
+        resetAdminSession("invalid");
         if (loginResponse.status === 429) {
-          alert(
-            `Too many failed attempts. Try again in ${loginData.retryAfterSeconds || "a while"} seconds.`
-          );
+          showNotice("error", `Too many failed attempts. Try again in ${loginData.retryAfterSeconds || "a while"} seconds.`);
           return;
         }
-        alert(loginData.message || "Invalid admin token");
+        showNotice("error", loginData.message || "Invalid admin token.");
         return;
       }
       localStorage.setItem("adminAccessToken", loginData.accessToken);
       setAdminAccessToken(loginData.accessToken);
     } catch (error) {
       console.error(error);
-      setTokenState("invalid");
-      alert("Admin login error");
+      resetAdminSession("invalid");
+      showNotice("error", "Admin login error.");
       return;
+    } finally {
+      setSavingToken(false);
     }
 
     const isValid = await verifyAdminToken(localStorage.getItem("adminAccessToken") || "");
 
     if (isValid) {
-      fetchPayouts({ page: 1 });
-      fetchSecurityEvents();
+      fetchPayouts({ page: 1, accessToken: localStorage.getItem("adminAccessToken") || "" });
+      fetchSecurityEvents(localStorage.getItem("adminAccessToken") || "");
+      showNotice("success", "Admin session verified.");
     } else {
-      alert("Invalid admin token");
+      resetAdminSession("invalid");
+      showNotice("error", "Invalid admin token.");
     }
   };
 
@@ -245,32 +288,13 @@ export default function AdminPayoutsPage() {
       credentials: "include",
     }).catch(() => {});
     localStorage.removeItem("adminToken");
-    localStorage.removeItem("adminAccessToken");
     setAdminToken("");
-    setAdminAccessToken("");
-    setTokenState("unknown");
-    setPayoutRequests([]);
-    setSelectedPayout(null);
-    setSelectedAuditLogs([]);
-    setSecurityEvents([]);
-    setPagination({
-      page: 1,
-      limit: 10,
-      totalCount: 0,
-      totalPages: 1,
-    });
+    resetAdminSession("unknown");
   };
 
   const logoutAllSessions = async () => {
     if (!adminAccessToken) {
-      alert("Admin token is required");
-      return;
-    }
-
-    const confirmed = window.confirm(
-      "This will revoke all admin sessions. Continue?"
-    );
-    if (!confirmed) {
+      showNotice("error", "Admin token is required.");
       return;
     }
 
@@ -279,11 +303,11 @@ export default function AdminPayoutsPage() {
         method: "POST",
       });
       const data = await response.json();
-      alert(data.message || "All sessions revoked");
+      showNotice("success", data.message || "All sessions revoked.");
       clearToken();
     } catch (error) {
       console.error(error);
-      alert("Logout all sessions error");
+      showNotice("error", "Logout all sessions error.");
     }
   };
 
@@ -298,26 +322,29 @@ export default function AdminPayoutsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Payout audit logs error");
+        showNotice("error", data.message || "Payout audit logs error.");
         return;
       }
 
       setSelectedAuditLogs(data.auditLogs || []);
     } catch (error) {
       console.error(error);
-      alert("Payout audit logs error");
+      showNotice("error", "Payout audit logs error.");
     } finally {
       setDetailsLoading(false);
     }
   };
 
-  const fetchSecurityEvents = useCallback(async () => {
-    if (!adminAccessToken) {
+  const fetchSecurityEvents = useCallback(async (accessTokenOverride) => {
+    const accessToken = accessTokenOverride || adminAccessToken;
+    if (!accessToken) {
       return;
     }
 
     try {
-      const response = await adminFetch("/api/admin/security-events");
+      const response = await adminFetch("/api/admin/security-events", {
+        accessToken,
+      });
       const data = await response.json();
       if (response.ok) {
         setSecurityEvents(data.events || []);
@@ -334,16 +361,6 @@ export default function AdminPayoutsPage() {
   };
 
   const updatePayoutStatus = async (payoutId, status) => {
-    const confirmed = window.confirm(
-      `Move this payout request to ${status}?`
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    const note = window.prompt(`Optional note for ${status}`, "");
-
     try {
       const response = await adminFetch(
         `/api/admin/payout-requests/${payoutId}/status`,
@@ -354,25 +371,27 @@ export default function AdminPayoutsPage() {
           },
           body: JSON.stringify({
             status,
-            note: note || undefined,
           }),
         }
       );
 
       const data = await response.json();
 
-      alert(data.message);
+      if (!response.ok) {
+        showNotice("error", data.message || "Update payout status error.");
+        return;
+      }
 
-      if (response.ok) {
-        fetchPayouts();
-        if (selectedPayout?.id === payoutId) {
-          setSelectedPayout(data.payoutRequest);
-          fetchPayoutAuditLogs(payoutId);
-        }
+      showNotice("success", data.message || `Payout moved to ${status}.`);
+      setConfirmAction(null);
+      fetchPayouts();
+      if (selectedPayout?.id === payoutId) {
+        setSelectedPayout(data.payoutRequest);
+        fetchPayoutAuditLogs(payoutId);
       }
     } catch (error) {
       console.error(error);
-      alert("Update payout status error");
+      showNotice("error", "Update payout status error.");
     }
   };
 
@@ -399,10 +418,25 @@ export default function AdminPayoutsPage() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-10 space-y-8">
+        {notice && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              notice.type === "success"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                : "border-red-500/40 bg-red-500/10 text-red-200"
+            }`}
+          >
+            {notice.message}
+          </div>
+        )}
+
         <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
           <div className="mb-5">
             <h2 className="text-xl font-bold">Access</h2>
-            <p className="text-zinc-500 text-sm">Manage admin authentication and active sessions.</p>
+            <p className="text-zinc-500 text-sm">
+              Enter the current internal admin token from the backend environment.
+              Saved browser sessions are cleared automatically when the token is invalid or expired.
+            </p>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_auto_auto] gap-3 md:gap-4">
             <input
@@ -415,9 +449,10 @@ export default function AdminPayoutsPage() {
 
             <button
               onClick={saveToken}
+              disabled={savingToken}
               className={`${primaryButtonClass} w-full lg:w-auto`}
             >
-              Save Token
+              {savingToken ? "Verifying..." : "Verify Token"}
             </button>
 
             <button
@@ -428,12 +463,33 @@ export default function AdminPayoutsPage() {
             </button>
 
             <button
-              onClick={logoutAllSessions}
+              onClick={() => setConfirmAction({ type: "logoutAll" })}
+              disabled={!adminAccessToken}
               className={`${dangerButtonClass} w-full lg:w-auto`}
             >
               Logout All Sessions
             </button>
           </div>
+
+          {confirmAction?.type === "logoutAll" && (
+            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+              <p className="mb-3">This will revoke all admin sessions. Continue?</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={logoutAllSessions}
+                  className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+                >
+                  Confirm logout all
+                </button>
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="mt-3">
             <span
@@ -451,6 +507,11 @@ export default function AdminPayoutsPage() {
                 ? "Token not verified"
                 : "Token not checked"}
             </span>
+            {tokenState === "invalid" && (
+              <p className="mt-2 text-sm text-red-300">
+                Use the latest INTERNAL_ADMIN_TOKEN value. Old saved sessions are no longer trusted.
+              </p>
+            )}
           </div>
         </section>
 
@@ -601,7 +662,11 @@ export default function AdminPayoutsPage() {
                       <button
                         key={action.status}
                         onClick={() =>
-                          updatePayoutStatus(request.id, action.status)
+                          setConfirmAction({
+                            type: "payoutStatus",
+                            payoutId: request.id,
+                            status: action.status,
+                          })
                         }
                         className={`${action.className} text-black px-4 py-3 rounded-xl font-semibold hover:opacity-80 transition`}
                       >
@@ -616,6 +681,33 @@ export default function AdminPayoutsPage() {
                     )}
                   </div>
                 </div>
+                {confirmAction?.type === "payoutStatus" &&
+                  confirmAction.payoutId === request.id && (
+                    <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
+                      <p className="mb-3">
+                        Move this payout request to {confirmAction.status}?
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() =>
+                            updatePayoutStatus(
+                              confirmAction.payoutId,
+                              confirmAction.status
+                            )
+                          }
+                          className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80"
+                        >
+                          Confirm status change
+                        </button>
+                        <button
+                          onClick={() => setConfirmAction(null)}
+                          className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
             ))}
           </div>
@@ -759,7 +851,7 @@ export default function AdminPayoutsPage() {
                           navigator.clipboard.writeText(
                             selectedPayout.walletAddress
                           );
-                          alert("Wallet copied");
+                          showNotice("success", "Wallet copied.");
                         }}
                         className="shrink-0 bg-zinc-800 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition"
                       >

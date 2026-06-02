@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
+import { API_BASE_URL, apiUrl } from "@/lib/api";
 
 function getApiCallClassName(success) {
   return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
@@ -29,7 +30,7 @@ export default function BusinessWalletApiDocsPage() {
       window.location.href = "/login";
       return;
     }
-    const res = await fetch("http://localhost:5000/api/merchant/api-usage", {
+    const res = await fetch(apiUrl("/api/merchant/api-usage"), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -45,7 +46,7 @@ export default function BusinessWalletApiDocsPage() {
       recentCalls: data.recentCalls || [],
     });
 
-    const dashboardRes = await fetch("http://localhost:5000/api/merchant/dashboard", {
+    const dashboardRes = await fetch(apiUrl("/api/merchant/dashboard"), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -135,7 +136,7 @@ export default function BusinessWalletApiDocsPage() {
               method: "POST",
               description: "Creates a checkout session and returns a checkoutUrl.",
               path: "/api/public/payments/create",
-              value: `curl -X POST http://localhost:5000/api/public/payments/create \\
+              value: `curl -X POST ${API_BASE_URL}/api/public/payments/create \\
 -H "Content-Type: application/json" \\
 -H "x-api-key: ${apiKey || "your_api_key"}" \\
 -d '{
@@ -150,7 +151,7 @@ export default function BusinessWalletApiDocsPage() {
               method: "GET",
               description: "Checks a payment by its gateway payment ID.",
               path: "/api/public/payments/status/{paymentId}",
-              value: `curl -X GET "http://localhost:5000/api/public/payments/status/{paymentId}" \\
+              value: `curl -X GET "${API_BASE_URL}/api/public/payments/status/{paymentId}" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {
@@ -159,7 +160,7 @@ export default function BusinessWalletApiDocsPage() {
               method: "GET",
               description: "Checks a payment by the merchant order ID.",
               path: "/api/public/payments/status?orderId=ORDER-1001",
-              value: `curl -X GET "http://localhost:5000/api/public/payments/status?orderId=ORDER-1001" \\
+              value: `curl -X GET "${API_BASE_URL}/api/public/payments/status?orderId=ORDER-1001" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {

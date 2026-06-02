@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
+import { apiUrl } from "@/lib/api";
 
 const getWebhookStatusClassName = (status) => {
   if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
@@ -52,11 +53,14 @@ export default function BusinessWalletMerchantsPage() {
   const [newOrderId, setNewOrderId] = useState("");
   const [newCustomerEmail, setNewCustomerEmail] = useState("");
   const [creatingPayment, setCreatingPayment] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [paymentAction, setPaymentAction] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const copyAddress = async (address) => {
     try {
       await navigator.clipboard.writeText(address);
-      alert("Wallet address copied");
+      setNotice({ type: "success", message: "Wallet address copied." });
     } catch {
       const temp = document.createElement("textarea");
       temp.value = address;
@@ -64,7 +68,7 @@ export default function BusinessWalletMerchantsPage() {
       temp.select();
       document.execCommand("copy");
       document.body.removeChild(temp);
-      alert("Wallet address copied");
+      setNotice({ type: "success", message: "Wallet address copied." });
     }
   };
 
@@ -79,16 +83,21 @@ export default function BusinessWalletMerchantsPage() {
     if (statusFilter !== "ALL") params.set("status", statusFilter);
     if (webhookStatusFilter !== "ALL") params.set("webhookStatus", webhookStatusFilter);
 
-    const res = await fetch(`http://localhost:5000/api/payments?${params.toString()}`, {
+    const res = await fetch(apiUrl(`/api/payments?${params.toString()}`), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
     const data = await res.json();
     setPayments(data.payments || []);
     setPaymentPagination({
-      page: data.pagination?.page || paymentPage,
-      totalCount: data.pagination?.totalCount ?? data.pagination?.total ?? data.stats?.total ?? 0,
-      totalPages: data.pagination?.totalPages || 1,
+      page: data.pagination?.page || data.page || paymentPage,
+      totalCount:
+        data.pagination?.totalCount ??
+        data.pagination?.total ??
+        data.totalCount ??
+        data.stats?.total ??
+        0,
+      totalPages: data.pagination?.totalPages || data.totalPages || 1,
     });
   }, [paymentPage, paymentSearch, statusFilter, webhookStatusFilter]);
 
@@ -109,7 +118,7 @@ export default function BusinessWalletMerchantsPage() {
     if (auditActionFilter !== "ALL") params.set("action", auditActionFilter);
     if (auditTargetTypeFilter !== "ALL") params.set("targetType", auditTargetTypeFilter);
 
-    const res = await fetch(`http://localhost:5000/api/merchant/audit-logs?${params.toString()}`, {
+    const res = await fetch(apiUrl(`/api/merchant/audit-logs?${params.toString()}`), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -131,13 +140,14 @@ export default function BusinessWalletMerchantsPage() {
 
     const amountNumber = Number(newAmount);
     if (!Number.isFinite(amountNumber) || amountNumber <= 0) {
-      alert("Please enter a valid amount");
+      setNotice({ type: "error", message: "Please enter a valid amount." });
       return;
     }
 
     setCreatingPayment(true);
+    setNotice(null);
     try {
-      const response = await fetch("http://localhost:5000/api/payments/create", {
+      const response = await fetch(apiUrl("/api/payments/create"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -151,11 +161,11 @@ export default function BusinessWalletMerchantsPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "Create payment error");
+        setNotice({ type: "error", message: data.message || "Create payment error." });
         return;
       }
 
-      alert(data.message || "Payment created");
+      setNotice({ type: "success", message: data.message || "Payment created." });
       setNewAmount("");
       setNewOrderId("");
       setNewCustomerEmail("");
@@ -166,9 +176,55 @@ export default function BusinessWalletMerchantsPage() {
       await fetchOps();
       await fetchActivity();
     } catch {
-      alert("Create payment error");
+      setNotice({ type: "error", message: "Create payment error." });
     } finally {
       setCreatingPayment(false);
+    }
+  };
+
+  const runPaymentAction = async (paymentId, action) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const actionPath = action === "verify" ? "verify" : "cancel";
+    setPaymentAction({ paymentId, action });
+    setNotice(null);
+
+    try {
+      const response = await fetch(apiUrl(`/api/payments/${paymentId}/${actionPath}`), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice({
+          type: "error",
+          message: data.message || `Payment ${action} failed.`,
+        });
+        return;
+      }
+
+      setNotice({
+        type: "success",
+        message: data.message || `Payment ${action} completed.`,
+      });
+      setConfirmAction(null);
+
+      if (selectedPayment?.id === paymentId && data.payment) {
+        setSelectedPayment((current) => ({
+          ...current,
+          ...data.payment,
+          webhookEvents: current?.webhookEvents || data.payment.webhookEvents,
+        }));
+      }
+
+      await fetchOps();
+      await fetchActivity();
+    } catch {
+      setNotice({ type: "error", message: `Payment ${action} failed.` });
+    } finally {
+      setPaymentAction(null);
     }
   };
 
@@ -202,6 +258,18 @@ export default function BusinessWalletMerchantsPage() {
 
   return (
     <OverviewShell>
+      {notice && (
+        <div
+          className={`mb-6 rounded-xl border px-4 py-3 text-sm ${
+            notice.type === "success"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+              : "border-red-500/40 bg-red-500/10 text-red-200"
+          }`}
+        >
+          {notice.message}
+        </div>
+      )}
+
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6 text-white">
         <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_auto] gap-3">
@@ -334,8 +402,20 @@ export default function BusinessWalletMerchantsPage() {
                   <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-5 gap-2">
                       <button onClick={() => copyAddress(payment.walletAddress)} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Address</button>
-                      <button className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40" disabled={payment.status !== "PENDING"}>Verify</button>
-                      <button className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40" disabled={payment.status !== "PENDING"}>Cancel</button>
+                      <button
+                        onClick={() => runPaymentAction(payment.id, "verify")}
+                        className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
+                        disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
+                      >
+                        {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? "Verifying..." : "Verify"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
+                        className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
+                        disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
+                      >
+                        Cancel
+                      </button>
                       <a href={`/pay/${payment.id}`} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">Checkout</a>
                       <button
                         onClick={() => setSelectedPayment(payment)}
@@ -351,6 +431,26 @@ export default function BusinessWalletMerchantsPage() {
                     )}
                   </div>
                 </div>
+                {confirmAction?.type === "cancelPayment" &&
+                  confirmAction.paymentId === payment.id && (
+                    <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+                      <p className="mb-3">Cancel this pending payment?</p>
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={() => runPaymentAction(payment.id, "cancel")}
+                          className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+                        >
+                          Confirm cancel
+                        </button>
+                        <button
+                          onClick={() => setConfirmAction(null)}
+                          className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                        >
+                          Keep payment
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
             );
           })}
@@ -465,12 +565,44 @@ export default function BusinessWalletMerchantsPage() {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <button className="bg-blue-500 text-black px-4 py-2 rounded-lg font-semibold">Verify Now</button>
-                <button className="bg-red-500 text-black px-4 py-2 rounded-lg font-semibold">Cancel</button>
+                <button
+                  onClick={() => runPaymentAction(selectedPayment.id, "verify")}
+                  disabled={selectedPayment.status !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
+                  className="bg-blue-500 text-black px-4 py-2 rounded-lg font-semibold disabled:opacity-40"
+                >
+                  {paymentAction?.paymentId === selectedPayment.id && paymentAction?.action === "verify" ? "Verifying..." : "Verify Now"}
+                </button>
+                <button
+                  onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: selectedPayment.id })}
+                  disabled={selectedPayment.status !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
+                  className="bg-red-500 text-black px-4 py-2 rounded-lg font-semibold disabled:opacity-40"
+                >
+                  Cancel
+                </button>
                 <a href={`/pay/${selectedPayment.id}`} target="_blank" className="bg-white text-black px-4 py-2 rounded-lg font-semibold">Checkout</a>
                 <button onClick={() => setSelectedPayment(null)} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">Close</button>
               </div>
             </div>
+            {confirmAction?.type === "cancelPayment" &&
+              confirmAction.paymentId === selectedPayment.id && (
+                <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+                  <p className="mb-3">Cancel this pending payment?</p>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={() => runPaymentAction(selectedPayment.id, "cancel")}
+                      className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+                    >
+                      Confirm cancel
+                    </button>
+                    <button
+                      onClick={() => setConfirmAction(null)}
+                      className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                    >
+                      Keep payment
+                    </button>
+                  </div>
+                </div>
+              )}
 
             <div className="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
               <aside className="space-y-4">
