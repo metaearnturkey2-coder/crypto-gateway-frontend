@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
+import { apiUrl } from "@/lib/api";
 
 function payoutStatusClass(status) {
   if (status === "PAID" || status === "APPROVED") {
@@ -35,6 +36,7 @@ export default function BusinessWalletPage() {
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [note, setNote] = useState("");
+  const [notice, setNotice] = useState(null);
 
   const loadDashboard = async () => {
     const token = localStorage.getItem("token");
@@ -42,7 +44,7 @@ export default function BusinessWalletPage() {
       window.location.href = "/login";
       return;
     }
-    const paymentsRes = await fetch(`http://localhost:5000/api/payments?limit=50&t=${Date.now()}`, {
+    const paymentsRes = await fetch(apiUrl(`/api/payments?limit=50&t=${Date.now()}`), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -51,7 +53,7 @@ export default function BusinessWalletPage() {
       paymentsData.stats || { total: 0, paid: 0, pending: 0, expired: 0 }
     );
 
-    const settlementsRes = await fetch(`http://localhost:5000/api/merchant/settlements?t=${Date.now()}`, {
+    const settlementsRes = await fetch(apiUrl(`/api/merchant/settlements?t=${Date.now()}`), {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
@@ -89,31 +91,38 @@ export default function BusinessWalletPage() {
     e.preventDefault();
     const numericAmount = Number(amount);
     if (!Number.isFinite(numericAmount) || numericAmount <= 0) {
-      alert("Please enter a valid payout amount");
+      setNotice({ type: "error", message: "Please enter a valid payout amount." });
       return;
     }
     if (!walletAddress.trim()) {
-      alert("Please enter a payout wallet address");
+      setNotice({ type: "error", message: "Please enter a payout wallet address." });
       return;
     }
 
     const token = localStorage.getItem("token");
-    await fetch("http://localhost:5000/api/merchant/payout-requests", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        amount: numericAmount,
-        walletAddress: walletAddress.trim(),
-        note: note || undefined,
-      }),
-    });
+    setNotice(null);
+    const response = await fetch(apiUrl("/api/merchant/payout-requests"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: numericAmount,
+          walletAddress: walletAddress.trim(),
+          note: note || undefined,
+        }),
+      });
+    const data = await response.json();
+    if (!response.ok) {
+      setNotice({ type: "error", message: data.message || "Payout request failed." });
+      return;
+    }
 
     setAmount("");
     setWalletAddress("");
     setNote("");
+    setNotice({ type: "success", message: data.message || "Payout request created." });
     await loadDashboard();
   };
 
@@ -128,6 +137,18 @@ export default function BusinessWalletPage() {
   return (
     <OverviewShell>
       <div className="space-y-6">
+        {notice && (
+          <div
+            className={`rounded-xl border px-4 py-3 text-sm ${
+              notice.type === "success"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+                : "border-red-500/40 bg-red-500/10 text-red-700"
+            }`}
+          >
+            {notice.message}
+          </div>
+        )}
+
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
           <h2 className="text-2xl font-semibold mb-1">Overview</h2>
           <p className="text-zinc-500 mb-4">Real-time payment performance snapshot.</p>
@@ -140,12 +161,12 @@ export default function BusinessWalletPage() {
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-2xl font-semibold">Finance</h2>
               <p className="text-zinc-500">Request manual payouts from confirmed paid volume.</p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-sm">
                 {settlements.summary.network} {settlements.summary.currency}
               </span>
@@ -159,9 +180,9 @@ export default function BusinessWalletPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Available</p><p className="text-5xl font-bold">{settlements.summary.available} {settlements.summary.currency}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Gross Paid</p><p className="text-5xl font-bold">{settlements.summary.grossPaid} {settlements.summary.currency}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Reserved</p><p className="text-5xl font-bold">{settlements.summary.reservedForPayouts} {settlements.summary.currency}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Available</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.available} {settlements.summary.currency}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Gross Paid</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.grossPaid} {settlements.summary.currency}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Reserved</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.reservedForPayouts} {settlements.summary.currency}</p></div>
           </div>
 
           <form onSubmit={createPayoutRequest} className="grid grid-cols-1 lg:grid-cols-[160px_1fr_1fr_auto] gap-3 mb-4">

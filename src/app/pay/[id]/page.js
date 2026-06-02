@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
+import { apiUrl } from "@/lib/api";
 
 const formatTimeLeft = (expiresAt, now) => {
   if (!expiresAt) {
@@ -91,24 +92,26 @@ export default function PaymentCheckoutPage() {
   const [now, setNow] = useState(0);
   const [copied, setCopied] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [error, setError] = useState("");
 
   const fetchPayment = useCallback(async () => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/public/payments/${paymentId}`
+        apiUrl(`/api/public/payments/${paymentId}`)
       );
 
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Payment not found");
+        setError(data.message || "Payment not found");
         return;
       }
 
+      setError("");
       setPayment(data.payment);
     } catch (error) {
       console.error(error);
-      alert("Payment checkout error");
+      setError("Payment checkout error. Please refresh the page.");
     } finally {
       setLoading(false);
     }
@@ -161,8 +164,11 @@ export default function PaymentCheckoutPage() {
 
   if (!payment) {
     return (
-      <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        Payment not found
+      <main className="min-h-screen bg-black text-white flex items-center justify-center px-5">
+        <div className="max-w-md rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center">
+          <h1 className="text-2xl font-bold">Payment unavailable</h1>
+          <p className="mt-2 text-red-100">{error || "Payment not found"}</p>
+        </div>
       </main>
     );
   }

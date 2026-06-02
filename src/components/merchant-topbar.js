@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiUrl } from "@/lib/api";
 
 export default function MerchantTopbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -11,7 +12,7 @@ export default function MerchantTopbar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
-    fetch("http://localhost:5000/api/merchant/dashboard", {
+    fetch(apiUrl("/api/merchant/dashboard"), {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())

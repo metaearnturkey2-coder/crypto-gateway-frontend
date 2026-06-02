@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiUrl } from "@/lib/api";
 
 export default function LoginPage() {
   const [form, setForm] = useState({
@@ -9,6 +10,7 @@ export default function LoginPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     setForm({
@@ -20,9 +22,10 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessage("");
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -38,10 +41,10 @@ export default function LoginPage() {
         return;
       }
 
-      alert(data.message || "Login failed");
+      setMessage(data.message || "Login failed");
     } catch (error) {
       console.error(error);
-      alert("Login error");
+      setMessage("Login error. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -93,6 +96,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {message && (
+              <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+                {message}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
                 Email Address

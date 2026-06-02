@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { apiUrl } from "@/lib/api";
 
 export default function RegisterPage() {
   const [form, setForm] = useState({
@@ -10,6 +11,7 @@ export default function RegisterPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState(null);
 
   const handleChange = (e) => {
     setForm({
@@ -21,9 +23,10 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessage(null);
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch(apiUrl("/api/auth/register"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -33,14 +36,25 @@ export default function RegisterPage() {
 
       const data = await response.json();
 
-      alert(data.message);
-
       if (response.ok) {
+        setMessage({
+          type: "success",
+          text: data.message || "Account created. Redirecting to login...",
+        });
         window.location.href = "/login";
+        return;
       }
+
+      setMessage({
+        type: "error",
+        text: data.message || "Register failed",
+      });
     } catch (error) {
       console.error(error);
-      alert("Register error");
+      setMessage({
+        type: "error",
+        text: "Register error. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -93,6 +107,18 @@ export default function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {message && (
+              <div
+                className={`rounded-xl border px-4 py-3 text-sm ${
+                  message.type === "success"
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                    : "border-red-500/40 bg-red-500/10 text-red-200"
+                }`}
+              >
+                {message.text}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
                 Merchant Name

@@ -2,6 +2,22 @@
 
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
+import { apiUrl } from "@/lib/api";
+
+function Notice({ notice }) {
+  if (!notice) return null;
+
+  const className =
+    notice.type === "success"
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+      : "border-red-500/40 bg-red-500/10 text-red-200";
+
+  return (
+    <div className={`rounded-xl border px-4 py-3 text-sm ${className}`}>
+      {notice.message}
+    </div>
+  );
+}
 
 export default function SecuritySettingsPage() {
   const [merchant, setMerchant] = useState(null);
@@ -9,6 +25,12 @@ export default function SecuritySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [confirmAction, setConfirmAction] = useState(null);
+
+  const showNotice = (type, message) => {
+    setNotice({ type, message });
+  };
 
   const loadDashboard = async () => {
     const token = localStorage.getItem("token");
@@ -18,18 +40,18 @@ export default function SecuritySettingsPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/merchant/dashboard", {
+      const response = await fetch(apiUrl("/api/merchant/dashboard"), {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "Merchant data error");
+        showNotice("error", data.message || "Merchant data error");
         return;
       }
       setMerchant(data.merchant || null);
       setWebhookUrl(data.merchant?.webhookUrl || "");
     } catch {
-      alert("Merchant data error");
+      showNotice("error", "Merchant data error");
     } finally {
       setLoading(false);
     }
@@ -43,8 +65,9 @@ export default function SecuritySettingsPage() {
     const token = localStorage.getItem("token");
     if (!token) return;
     setSaving(true);
+    setNotice(null);
     try {
-      const response = await fetch("http://localhost:5000/api/merchant/webhook-url", {
+      const response = await fetch(apiUrl("/api/merchant/webhook-url"), {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -54,37 +77,38 @@ export default function SecuritySettingsPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "Webhook URL save error");
+        showNotice("error", data.message || "Webhook URL save error");
         return;
       }
-      alert("Webhook URL updated");
+      showNotice("success", "Webhook URL updated");
       setMerchant((prev) => ({ ...prev, webhookUrl: data.webhookUrl || webhookUrl }));
     } catch {
-      alert("Webhook URL save error");
+      showNotice("error", "Webhook URL save error");
     } finally {
       setSaving(false);
     }
   };
 
   const regenerateWebhookSecret = async () => {
-    if (!confirm("Webhook secret regenerate edilsin mi?")) return;
     const token = localStorage.getItem("token");
     if (!token) return;
     setRegenerating(true);
+    setNotice(null);
+    setConfirmAction(null);
     try {
-      const response = await fetch("http://localhost:5000/api/merchant/webhook-secret/regenerate", {
+      const response = await fetch(apiUrl("/api/merchant/webhook-secret/regenerate"), {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "Webhook secret regenerate error");
+        showNotice("error", data.message || "Webhook secret regenerate error");
         return;
       }
       setMerchant((prev) => ({ ...prev, webhookSecret: data.webhookSecret }));
-      alert("Webhook secret regenerated");
+      showNotice("success", "Webhook secret regenerated");
     } catch {
-      alert("Webhook secret regenerate error");
+      showNotice("error", "Webhook secret regenerate error");
     } finally {
       setRegenerating(false);
     }
@@ -94,36 +118,39 @@ export default function SecuritySettingsPage() {
     if (!merchant?.apiKey) return;
     try {
       await navigator.clipboard.writeText(merchant.apiKey);
-      alert("API key copied");
+      showNotice("success", "API key copied");
     } catch {
-      alert("Copy failed");
+      showNotice("error", "Copy failed");
     }
   };
 
   const regenerateApiKey = async () => {
-    if (!confirm("API key regenerate edilsin mi?")) return;
     const token = localStorage.getItem("token");
     if (!token) return;
+    setNotice(null);
+    setConfirmAction(null);
     try {
-      const response = await fetch("http://localhost:5000/api/merchant/api-key/regenerate", {
+      const response = await fetch(apiUrl("/api/merchant/api-key/regenerate"), {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
       if (!response.ok) {
-        alert(data.message || "API key regenerate error");
+        showNotice("error", data.message || "API key regenerate error");
         return;
       }
       setMerchant((prev) => ({ ...prev, apiKey: data.apiKey }));
-      alert("API key regenerated");
+      showNotice("success", "API key regenerated");
     } catch {
-      alert("API key regenerate error");
+      showNotice("error", "API key regenerate error");
     }
   };
 
   return (
     <OverviewShell>
       <div className="space-y-6">
+        <Notice notice={notice} />
+
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
           <h2 className="text-2xl font-bold text-white">Security</h2>
           <p className="text-zinc-400 mt-2">Configure your receiver URL and manage webhook credentials.</p>
@@ -161,20 +188,39 @@ export default function SecuritySettingsPage() {
                 onClick={async () => {
                   if (!merchant?.webhookSecret) return;
                   await navigator.clipboard.writeText(merchant.webhookSecret);
-                  alert("Webhook secret copied");
+                  showNotice("success", "Webhook secret copied");
                 }}
                 className="rounded-xl border border-zinc-600 bg-zinc-900 px-6 py-3 font-semibold text-zinc-100 hover:bg-zinc-800"
               >
                 Copy Secret
               </button>
               <button
-                onClick={regenerateWebhookSecret}
+                onClick={() => setConfirmAction("webhookSecret")}
                 disabled={regenerating}
                 className="rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500 disabled:opacity-60"
               >
                 {regenerating ? "Regenerating..." : "Regenerate"}
               </button>
             </div>
+            {confirmAction === "webhookSecret" && (
+              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+                <p className="mb-3">Regenerate webhook secret? Existing integrations must be updated.</p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={regenerateWebhookSecret}
+                    className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+                  >
+                    Confirm regenerate
+                  </button>
+                  <button
+                    onClick={() => setConfirmAction(null)}
+                    className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -195,12 +241,31 @@ export default function SecuritySettingsPage() {
               Copy API Key
             </button>
             <button
-              onClick={regenerateApiKey}
+              onClick={() => setConfirmAction("apiKey")}
               className="rounded-xl bg-red-600 px-6 py-3 font-semibold text-white hover:bg-red-500"
             >
               Regenerate
             </button>
           </div>
+          {confirmAction === "apiKey" && (
+            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+              <p className="mb-3">Regenerate API key? Existing external integrations will stop working until updated.</p>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={regenerateApiKey}
+                  className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+                >
+                  Confirm regenerate
+                </button>
+                <button
+                  onClick={() => setConfirmAction(null)}
+                  className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </OverviewShell>
