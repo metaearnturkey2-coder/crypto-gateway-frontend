@@ -19,6 +19,34 @@ function Notice({ notice }) {
   );
 }
 
+const BLOCKED_WEBHOOK_HOSTS = ["localhost", "localhost.localdomain", "0.0.0.0", "127.", "10.", "192.168."];
+
+const validateWebhookUrlInput = (value) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "Webhook URL is required.";
+
+  try {
+    const parsedUrl = new URL(trimmed);
+    if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+      return "Webhook URL must start with http or https.";
+    }
+
+    const hostname = parsedUrl.hostname.toLowerCase();
+    const isBlocked =
+      BLOCKED_WEBHOOK_HOSTS.some((blocked) => hostname === blocked || hostname.startsWith(blocked)) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname) ||
+      hostname.endsWith(".localhost");
+
+    if (isBlocked) {
+      return "Webhook URL cannot point to localhost or a private network.";
+    }
+  } catch {
+    return "Webhook URL must be a valid URL.";
+  }
+
+  return "";
+};
+
 export default function SecuritySettingsPage() {
   const [merchant, setMerchant] = useState(null);
   const [webhookUrl, setWebhookUrl] = useState("");
@@ -66,6 +94,12 @@ export default function SecuritySettingsPage() {
   const saveWebhookUrl = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
+    const validationError = validateWebhookUrlInput(webhookUrl);
+    if (validationError) {
+      showNotice("error", validationError);
+      return;
+    }
+
     setSaving(true);
     setNotice(null);
     try {
@@ -79,7 +113,7 @@ export default function SecuritySettingsPage() {
       });
       const data = await response.json();
       if (!response.ok) {
-        showNotice("error", data.message || "Webhook URL save error");
+        showNotice("error", data.errors?.join(" ") || data.message || "Webhook URL save error");
         return;
       }
       showNotice("success", "Webhook URL updated");
