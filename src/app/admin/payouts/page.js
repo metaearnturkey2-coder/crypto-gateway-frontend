@@ -35,6 +35,41 @@ const getAllowedActions = (status) => {
   return [];
 };
 
+const formatAuditAction = (action) =>
+  String(action || "audit")
+    .split(".")
+    .map((part) => part.replace(/_/g, " "))
+    .join(" / ");
+
+const getAuditActionClassName = (action) => {
+  if (action?.includes("paid")) return "bg-blue-500/20 text-blue-200 border border-blue-400/40";
+  if (action?.includes("approved")) return "bg-emerald-500/20 text-emerald-200 border border-emerald-400/40";
+  if (action?.includes("rejected")) return "bg-red-500/20 text-red-200 border border-red-400/40";
+  return "bg-zinc-700/40 text-zinc-200 border border-zinc-500/40";
+};
+
+const formatAuditValue = (value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (typeof value === "boolean") return value ? "yes" : "no";
+  return String(value);
+};
+
+const getAuditMetadataEntries = (metadata = {}) => {
+  const preferredKeys = [
+    "previousStatus",
+    "status",
+    "amount",
+    "currency",
+    "txHash",
+    "rejectReason",
+    "note",
+  ];
+
+  return preferredKeys
+    .filter((key) => metadata[key] !== null && metadata[key] !== undefined && metadata[key] !== "")
+    .map((key) => [key, metadata[key]]);
+};
+
 export default function AdminPayoutsPage() {
   const primaryButtonClass =
     "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:opacity-40 disabled:cursor-not-allowed";
@@ -997,18 +1032,44 @@ export default function AdminPayoutsPage() {
                 )}
 
                 <div className="space-y-3">
-                  {selectedAuditLogs.map((log) => (
-                    <div
-                      key={log.id}
-                      className="border border-zinc-800 rounded-xl p-3 text-sm"
-                    >
-                      <p className="font-semibold">{log.action}</p>
-                      <p className="text-zinc-400 mt-1">{log.message}</p>
-                      <p className="text-zinc-500 text-xs mt-2">
-                        {new Date(log.createdAt).toLocaleString()}
-                      </p>
-                    </div>
-                  ))}
+                  {selectedAuditLogs.map((log, index) => {
+                    const metadataEntries = getAuditMetadataEntries(log.metadata || {});
+
+                    return (
+                      <div key={log.id} className="relative pl-5">
+                        <span className="absolute left-0 top-4 h-2.5 w-2.5 rounded-full bg-zinc-500" />
+                        {index < selectedAuditLogs.length - 1 && (
+                          <span className="absolute left-[4px] top-7 h-[calc(100%-1rem)] w-px bg-zinc-800" />
+                        )}
+                        <div className="border border-zinc-800 rounded-xl p-3 text-sm">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                              <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getAuditActionClassName(log.action)}`}>
+                                {formatAuditAction(log.action)}
+                              </span>
+                              <p className="text-zinc-400 mt-2">{log.message}</p>
+                            </div>
+                            <p className="text-zinc-500 text-xs sm:text-right">
+                              {new Date(log.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+
+                          {metadataEntries.length > 0 && (
+                            <div className="mt-3 grid grid-cols-1 gap-2">
+                              {metadataEntries.map(([key, value]) => (
+                                <div key={key} className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+                                  <p className="text-[11px] uppercase text-zinc-500">{key}</p>
+                                  <p className="mt-1 break-all text-xs text-zinc-200">
+                                    {formatAuditValue(value)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </aside>
             </div>
