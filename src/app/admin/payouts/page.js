@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 
 const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "REJECTED", "PAID"];
+const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
 
 const getStatusClassName = (status) => {
   if (status === "PAID" || status === "APPROVED") {
@@ -69,6 +70,8 @@ const getAuditMetadataEntries = (metadata = {}) => {
     .filter((key) => metadata[key] !== null && metadata[key] !== undefined && metadata[key] !== "")
     .map((key) => [key, metadata[key]]);
 };
+
+const isCriticalPayoutStatus = (status) => status === "PAID" || status === "REJECTED";
 
 const formatSecurityEvent = (event) =>
   String(event || "security_event")
@@ -163,10 +166,16 @@ export default function AdminPayoutsPage() {
   const [confirmAction, setConfirmAction] = useState(null);
   const [statusNote, setStatusNote] = useState("");
   const [settlementTxHash, setSettlementTxHash] = useState("");
+  const [criticalConfirmationText, setCriticalConfirmationText] = useState("");
   const baseUrl = API_BASE_URL;
 
   const showNotice = (type, message) => {
     setNotice({ type, message });
+  };
+
+  const clearConfirmAction = () => {
+    setConfirmAction(null);
+    setCriticalConfirmationText("");
   };
 
   const resetAdminSession = useCallback((nextTokenState = "unknown") => {
@@ -184,6 +193,7 @@ export default function AdminPayoutsPage() {
       totalPages: 1,
     });
     setConfirmAction(null);
+    setCriticalConfirmationText("");
   }, []);
 
   const refreshAccessToken = useCallback(async () => {
@@ -387,12 +397,28 @@ export default function AdminPayoutsPage() {
       return;
     }
 
+    if (criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) {
+      showNotice("error", `Type ${CRITICAL_CONFIRMATION_TEXT} to confirm this critical action.`);
+      return;
+    }
+
     try {
       const response = await adminFetch("/api/admin/logout-all", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          confirmationText: criticalConfirmationText.trim(),
+        }),
       });
       const data = await response.json();
+      if (!response.ok) {
+        showNotice("error", data.message || "Logout all sessions error.");
+        return;
+      }
       showNotice("success", data.message || "All sessions revoked.");
+      setCriticalConfirmationText("");
       clearToken();
     } catch (error) {
       console.error(error);
@@ -452,6 +478,7 @@ export default function AdminPayoutsPage() {
   const openStatusConfirm = (payoutId, status) => {
     setStatusNote("");
     setSettlementTxHash("");
+    setCriticalConfirmationText("");
     setConfirmAction({
       type: "payoutStatus",
       payoutId,
@@ -473,6 +500,11 @@ export default function AdminPayoutsPage() {
       return;
     }
 
+    if (isCriticalPayoutStatus(status) && criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) {
+      showNotice("error", `Type ${CRITICAL_CONFIRMATION_TEXT} to confirm this critical action.`);
+      return;
+    }
+
     try {
       const response = await adminFetch(
         `/api/admin/payout-requests/${payoutId}/status`,
@@ -486,6 +518,9 @@ export default function AdminPayoutsPage() {
             txHash: trimmedTxHash || undefined,
             rejectReason: status === "REJECTED" ? trimmedNote : undefined,
             note: status !== "REJECTED" ? trimmedNote || undefined : undefined,
+            confirmationText: isCriticalPayoutStatus(status)
+              ? criticalConfirmationText.trim()
+              : undefined,
           }),
         }
       );
@@ -498,9 +533,10 @@ export default function AdminPayoutsPage() {
       }
 
       showNotice("success", data.message || `Payout moved to ${status}.`);
-      setConfirmAction(null);
+      clearConfirmAction();
       setStatusNote("");
       setSettlementTxHash("");
+      setCriticalConfirmationText("");
       fetchPayouts();
       if (selectedPayout?.id === payoutId) {
         setSelectedPayout(data.payoutRequest);
@@ -635,7 +671,10 @@ export default function AdminPayoutsPage() {
                   Access tokens are short-lived. Refresh sessions are stored as httpOnly cookies.
                 </p>
                 <button
-                  onClick={() => setConfirmAction({ type: "logoutAll" })}
+                  onClick={() => {
+                    setCriticalConfirmationText("");
+                    setConfirmAction({ type: "logoutAll" });
+                  }}
                   disabled={!adminAccessToken}
                   className={`${dangerButtonClass} w-full md:w-auto`}
                 >
@@ -667,16 +706,24 @@ export default function AdminPayoutsPage() {
 
           {confirmAction?.type === "logoutAll" && (
             <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-              <p className="mb-3">This will revoke all admin sessions. Continue?</p>
+              <p className="mb-3">This will revoke all admin sessions. Type {CRITICAL_CONFIRMATION_TEXT} to continue.</p>
+              <input
+                type="text"
+                value={criticalConfirmationText}
+                onChange={(e) => setCriticalConfirmationText(e.target.value)}
+                placeholder={CRITICAL_CONFIRMATION_TEXT}
+                className="mb-3 w-full rounded-lg border border-red-500/30 bg-black/30 px-3 py-2 text-red-50 outline-none"
+              />
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={logoutAllSessions}
-                  className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
+                  disabled={criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT}
+                  className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Confirm logout all
                 </button>
                 <button
-                  onClick={() => setConfirmAction(null)}
+                  onClick={clearConfirmAction}
                   className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                 >
                   Cancel
@@ -899,6 +946,20 @@ export default function AdminPayoutsPage() {
                           className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                         />
                       )}
+                      {isCriticalPayoutStatus(confirmAction.status) && (
+                        <div className="mb-3 rounded-lg border border-yellow-500/30 bg-black/20 p-3">
+                          <p className="mb-2 text-xs text-yellow-100/80">
+                            Type {CRITICAL_CONFIRMATION_TEXT} to confirm this critical settlement action.
+                          </p>
+                          <input
+                            type="text"
+                            value={criticalConfirmationText}
+                            onChange={(e) => setCriticalConfirmationText(e.target.value)}
+                            placeholder={CRITICAL_CONFIRMATION_TEXT}
+                            className="w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          />
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={() =>
@@ -907,12 +968,16 @@ export default function AdminPayoutsPage() {
                               confirmAction.status
                             )
                           }
-                          className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80"
+                          disabled={
+                            isCriticalPayoutStatus(confirmAction.status) &&
+                            criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT
+                          }
+                          className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           Confirm status change
                         </button>
                         <button
-                          onClick={() => setConfirmAction(null)}
+                          onClick={clearConfirmAction}
                           className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                         >
                           Cancel
@@ -1094,6 +1159,20 @@ export default function AdminPayoutsPage() {
                       className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                     />
                   )}
+                  {isCriticalPayoutStatus(confirmAction.status) && (
+                    <div className="mb-3 rounded-lg border border-yellow-500/30 bg-black/20 p-3">
+                      <p className="mb-2 text-xs text-yellow-100/80">
+                        Type {CRITICAL_CONFIRMATION_TEXT} to confirm this critical settlement action.
+                      </p>
+                      <input
+                        type="text"
+                        value={criticalConfirmationText}
+                        onChange={(e) => setCriticalConfirmationText(e.target.value)}
+                        placeholder={CRITICAL_CONFIRMATION_TEXT}
+                        className="w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                      />
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() =>
@@ -1102,12 +1181,16 @@ export default function AdminPayoutsPage() {
                           confirmAction.status
                         )
                       }
-                      className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80"
+                      disabled={
+                        isCriticalPayoutStatus(confirmAction.status) &&
+                        criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT
+                      }
+                      className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Confirm status change
                     </button>
                     <button
-                      onClick={() => setConfirmAction(null)}
+                      onClick={clearConfirmAction}
                       className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                     >
                       Cancel
