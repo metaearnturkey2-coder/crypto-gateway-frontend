@@ -153,81 +153,74 @@ export default function OverviewPage() {
 
   return (
     <OverviewShell>
-      <div className="max-w-6xl">
-        <div className="rounded-2xl border border-zinc-300 bg-[#e8e8ea] px-5 py-6 md:px-8 md:py-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="max-w-[1108px]">
+        <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 md:px-6 md:py-5">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="text-2xl font-semibold text-zinc-900 mb-4 md:text-4xl">Total funds</p>
+              <p className="mb-2 text-base font-semibold text-white">Total funds</p>
               {loading ? (
                 <p className="text-zinc-500 text-xl">Loading...</p>
               ) : (
-                <div className="flex flex-wrap items-center gap-3">
-                  <p className="text-4xl font-bold text-zinc-900 leading-none tracking-tight md:text-6xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-3xl font-bold leading-none tracking-tight text-white">
                     {formatUsdAmount(available)}
                   </p>
-                  <span className="inline-flex items-center rounded-full bg-zinc-100 px-4 py-2 text-base font-semibold text-zinc-800 border border-zinc-200">
+                  <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs font-semibold text-zinc-200">
                     {currency}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full lg:w-auto lg:min-w-[480px]">
-              <Link href="/business-wallet/merchants" className="flex h-12 items-center justify-center rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white shadow-sm hover:bg-black transition">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[390px]">
+              <Link href="/business-wallet/merchants" className="flex h-10 items-center justify-center rounded-lg bg-black px-4 text-sm font-semibold text-white shadow-sm hover:bg-zinc-950 transition">
                 Create payment
               </Link>
-              <Link href="/business-wallet" className="flex h-12 items-center justify-center rounded-lg bg-zinc-100 px-4 text-sm font-semibold text-zinc-900 border border-zinc-300 shadow-sm hover:bg-white transition">
+              <Link href="/business-wallet" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">
                 Request payout
               </Link>
-              <Link href="/business-wallet/api-docs" className="flex h-12 items-center justify-center rounded-lg bg-zinc-100 px-4 text-sm font-semibold text-zinc-900 border border-zinc-300 shadow-sm hover:bg-white transition">
+              <Link href="/business-wallet/api-docs" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">
                 API docs
               </Link>
             </div>
           </div>
 
-        </div>
-
-        <div className="mt-6 rounded-2xl border border-zinc-300 bg-[#ececef] px-5 py-5 md:px-8 md:py-7">
-          <div className="flex items-center justify-between mb-5">
-            <h3 className="text-2xl font-semibold text-zinc-900">Business Wallet</h3>
-            <span className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-xs font-semibold text-zinc-700">
-              {network} {currency}
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-xl border border-zinc-300 bg-white/70 px-5 py-5">
-              <p className="text-sm font-medium text-zinc-600 mb-2">Available</p>
-              <p className="text-3xl font-bold text-zinc-900 leading-none md:text-4xl">
+          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+              <p className="mb-2 text-sm font-semibold text-zinc-300">Available</p>
+              <p className="text-2xl font-bold leading-none text-white">
                 {loading ? "..." : `${Number(available || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`}
               </p>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">{network}</p>
             </div>
 
-            <div className="rounded-xl border border-zinc-300 bg-white/70 px-5 py-5">
-              <p className="text-sm font-medium text-zinc-600 mb-2">Gross Paid</p>
-              <p className="text-3xl font-bold text-zinc-900 leading-none md:text-4xl">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+              <p className="mb-2 text-sm font-semibold text-zinc-300">Gross Paid</p>
+              <p className="text-2xl font-bold leading-none text-white">
                 {loading ? "..." : `${Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`}
               </p>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">Settled volume</p>
             </div>
 
-            <div className="rounded-xl border border-zinc-300 bg-white/70 px-5 py-5">
-              <p className="text-sm font-medium text-zinc-600 mb-2">Reserved</p>
-              <p className="text-3xl font-bold text-zinc-900 leading-none md:text-4xl">
+            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
+              <p className="mb-2 text-sm font-semibold text-zinc-300">Reserved</p>
+              <p className="text-2xl font-bold leading-none text-white">
                 {loading ? "..." : `${Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`}
               </p>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">Payout hold</p>
             </div>
           </div>
         </div>
 
-        <section className="mt-9">
-          <h3 className="text-3xl font-semibold text-zinc-900 mb-4">Assets</h3>
-          <div className="rounded-2xl border border-zinc-300 bg-[#efeff1] shadow-[0_8px_24px_rgba(15,23,42,0.04)] overflow-hidden">
-            <div className="flex flex-col gap-4 px-5 py-4 border-b border-zinc-300 sm:flex-row sm:items-center sm:justify-between md:px-6">
-              <div className="flex items-center gap-5 text-lg font-semibold md:text-xl">
+        <section className="mt-6">
+          <h3 className="text-2xl font-semibold text-zinc-900 mb-4">Assets</h3>
+          <div className="rounded-2xl border border-zinc-700 bg-zinc-900 shadow-[0_8px_24px_rgba(0,0,0,0.16)] overflow-hidden">
+            <div className="flex flex-col gap-4 px-5 py-4 border-b border-zinc-800 sm:flex-row sm:items-center sm:justify-between md:px-6">
+              <div className="flex items-center gap-5 text-base font-semibold">
                 <button
                   onClick={() => setActiveAssetsTab("personal")}
                   className={`pb-2 border-b-4 transition ${
-                    activeAssetsTab === "personal" ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500"
+                    activeAssetsTab === "personal" ? "border-white text-white" : "border-transparent text-zinc-500"
                   }`}
                 >
                   Personal
@@ -235,17 +228,17 @@ export default function OverviewPage() {
                 <button
                   onClick={() => setActiveAssetsTab("business")}
                   className={`pb-2 border-b-4 transition ${
-                    activeAssetsTab === "business" ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500"
+                    activeAssetsTab === "business" ? "border-white text-white" : "border-transparent text-zinc-500"
                   }`}
                 >
                   Business
                 </button>
               </div>
-              <Link href="/business-wallet" className="text-sm font-semibold text-zinc-600 hover:text-zinc-900 transition">
+              <Link href="/business-wallet" className="text-sm font-semibold text-zinc-400 hover:text-white transition">
                 Wallet details
               </Link>
             </div>
-            <div className="px-6 py-2 text-sm text-zinc-500 border-b border-zinc-300">
+            <div className="px-6 py-2 text-sm text-zinc-500 border-b border-zinc-800">
               {pricesLoading
                 ? "Updating prices..."
                 : pricesError
@@ -255,7 +248,7 @@ export default function OverviewPage() {
                 : "Live prices"}
             </div>
 
-            <div className="hidden grid-cols-[1.5fr_1.2fr_1fr_1fr] gap-3 px-6 py-3 text-sm uppercase tracking-wide text-zinc-500 border-b border-zinc-300 bg-zinc-100/60 md:grid">
+            <div className="hidden grid-cols-[1.5fr_1.2fr_1fr_1fr] gap-3 px-6 py-3 text-xs uppercase tracking-wide text-zinc-500 border-b border-zinc-800 bg-zinc-950 md:grid">
               <span>Name</span>
               <span>Balance</span>
               <span>Price</span>
@@ -272,27 +265,27 @@ export default function OverviewPage() {
                   return (
                 <div
                   key={asset.symbol}
-                  className="grid grid-cols-1 gap-4 px-5 py-4 border-b last:border-b-0 border-zinc-300 hover:bg-white/50 transition md:grid-cols-[1.5fr_1.2fr_1fr_1fr] md:items-center md:px-6"
+                  className="grid grid-cols-1 gap-4 px-5 py-4 border-b last:border-b-0 border-zinc-800 hover:bg-zinc-950/60 transition md:grid-cols-[1.5fr_1.2fr_1fr_1fr] md:items-center md:px-6"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-10 w-10 rounded-full bg-zinc-300 text-zinc-700 flex items-center justify-center text-xs font-bold shadow-sm">
+                    <div className="h-9 w-9 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-[11px] font-bold shadow-sm">
                       {asset.symbol.slice(0, 3)}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xl font-semibold text-zinc-900 truncate tracking-tight md:text-2xl">{asset.symbol}</p>
+                      <p className="text-lg font-semibold text-white truncate tracking-tight">{asset.symbol}</p>
                       <p className="text-sm text-zinc-500 truncate">{asset.name}</p>
                     </div>
                   </div>
 
                   <div>
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Balance</p>
-                    <p className="text-xl font-semibold text-zinc-900 break-words md:text-2xl">{formatTokenBalance(balance)}</p>
+                    <p className="text-lg font-semibold text-white break-words">{formatTokenBalance(balance)}</p>
                     <p className="text-sm text-zinc-500">{formatUsdAmount(usdValue)}</p>
                   </div>
 
                   <div>
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Price</p>
-                    <p className="text-xl font-semibold text-zinc-900 md:text-2xl">
+                    <p className="text-lg font-semibold text-white">
                       {pricesLoading ? "..." : formatUsdPrice(asset.symbol, prices?.[asset.symbol]?.usd)}
                     </p>
                     <p
@@ -305,9 +298,9 @@ export default function OverviewPage() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex h-7 w-7 rounded-full border-4 border-zinc-300" />
+                    <span className="inline-flex h-7 w-7 rounded-full border-4 border-zinc-700" />
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Allocation</p>
-                    <p className="text-lg font-semibold text-zinc-800 md:text-xl">{allocation.toFixed(1)}%</p>
+                    <p className="text-base font-semibold text-white">{allocation.toFixed(1)}%</p>
                   </div>
                 </div>
                   );

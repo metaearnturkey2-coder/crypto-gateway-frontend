@@ -190,12 +190,12 @@ export default function PaymentCheckoutPage() {
   const amountLabel = `${payment.amount} ${payment.currency}`;
 
   return (
-    <main className="min-h-screen bg-black text-white px-5 py-8 md:py-12">
-      <div className="max-w-5xl mx-auto">
-        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <main className="min-h-screen bg-black text-white px-5 py-6 md:py-8">
+      <div className="max-w-4xl mx-auto">
+        <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
             <p className="text-zinc-500 text-sm">Crypto Gateway Checkout</p>
-            <h1 className="text-3xl md:text-4xl font-bold mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold mt-1">
               {checkoutState.title}
             </h1>
           </div>
@@ -223,14 +223,14 @@ export default function PaymentCheckoutPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
-          <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
+          <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 text-center">
             <div
-              className={`mx-auto mb-5 w-fit rounded-2xl p-4 ${
+              className={`mx-auto mb-4 w-fit rounded-xl p-3 ${
                 isPayable ? "bg-white" : "bg-zinc-800 opacity-50"
               }`}
             >
-              <QRCodeSVG value={payment.walletAddress} size={230} />
+              <QRCodeSVG value={payment.walletAddress} size={190} />
             </div>
             {!isPayable && (
               <p className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
@@ -239,7 +239,7 @@ export default function PaymentCheckoutPage() {
             )}
 
             <p className="text-zinc-400 text-sm">Amount due</p>
-            <p className="text-4xl font-bold mt-1">
+            <p className="text-3xl font-bold mt-1">
               {amountLabel}
             </p>
             <button
@@ -251,12 +251,12 @@ export default function PaymentCheckoutPage() {
             </button>
 
             <div className="mt-5 grid grid-cols-2 gap-3 text-left">
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                 <p className="text-zinc-500 text-xs mb-1">Network</p>
                 <p className="font-semibold">{payment.network}</p>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                 <p className="text-zinc-500 text-xs mb-1">Time left</p>
                 <p className="font-semibold">
                   {formatTimeLeft(payment.expiresAt, now)}
@@ -265,24 +265,24 @@ export default function PaymentCheckoutPage() {
             </div>
           </section>
 
-          <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6">
-            <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <div className={`rounded-xl border p-4 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
+          <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+            <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className={`rounded-xl border p-3 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
                 <p className="text-xs uppercase tracking-wide opacity-70">Step 1</p>
                 <p className="mt-1 font-semibold">Copy amount</p>
               </div>
-              <div className={`rounded-xl border p-4 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
+              <div className={`rounded-xl border p-3 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
                 <p className="text-xs uppercase tracking-wide opacity-70">Step 2</p>
                 <p className="mt-1 font-semibold">Send on {payment.network}</p>
               </div>
-              <div className={`rounded-xl border p-4 ${getStepClassName(payment.status === "PAID", payment.status === "PAID")}`}>
+              <div className={`rounded-xl border p-3 ${getStepClassName(payment.status === "PAID", payment.status === "PAID")}`}>
                 <p className="text-xs uppercase tracking-wide opacity-70">Step 3</p>
                 <p className="mt-1 font-semibold">Confirmation</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                 <p className="text-zinc-500 text-xs mb-1">Status</p>
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(
@@ -293,21 +293,21 @@ export default function PaymentCheckoutPage() {
                 </span>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                 <p className="text-zinc-500 text-xs mb-1">Order ID</p>
                 <p className="break-all font-semibold">
                   {payment.orderId || "Not provided"}
                 </p>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                 <p className="text-zinc-500 text-xs mb-1">Customer</p>
                 <p className="break-all">
                   {payment.customerEmail || "Not provided"}
                 </p>
               </div>
 
-              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4">
+              <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
                 <p className="text-zinc-500 text-xs mb-1">Expires</p>
                 <p>
                   {payment.expiresAt
@@ -317,7 +317,7 @@ export default function PaymentCheckoutPage() {
               </div>
             </div>
 
-            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4 mb-5">
+            <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 mb-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
                 <div>
                   <p className="text-zinc-500 text-xs">Wallet address</p>
