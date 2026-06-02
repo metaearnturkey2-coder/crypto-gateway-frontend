@@ -164,12 +164,94 @@ export default function BusinessWalletApiDocsPage() {
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {
-              key: "verify-webhook",
-              title: "Verify Webhook Signature",
+              key: "verify-webhook-node",
+              title: "Verify Webhook in Node.js",
               method: "POST",
-              description: "Verifies timestamped signatures and rejects old payloads.",
+              description: "Verifies timestamped signatures with a raw JSON body.",
               path: "merchant webhook URL",
-              value: "x-webhook-signature + x-webhook-timestamp",
+              value: `import crypto from "crypto";
+import express from "express";
+
+const app = express();
+const WEBHOOK_SECRET = process.env.CRYPTO_GATEWAY_WEBHOOK_SECRET;
+const TOLERANCE_SECONDS = 300;
+
+app.post(
+  "/webhooks/crypto-gateway",
+  express.raw({ type: "application/json" }),
+  (req, res) => {
+    const signature = req.header("x-webhook-signature");
+    const timestamp = req.header("x-webhook-timestamp");
+    const rawBody = req.body.toString("utf8");
+
+    if (!signature || !timestamp) {
+      return res.status(401).send("Missing signature headers");
+    }
+
+    const age = Math.abs(Math.floor(Date.now() / 1000) - Number(timestamp));
+    if (!Number.isFinite(age) || age > TOLERANCE_SECONDS) {
+      return res.status(401).send("Webhook timestamp is too old");
+    }
+
+    const expected = crypto
+      .createHmac("sha256", WEBHOOK_SECRET)
+      .update(\`\${timestamp}.\${rawBody}\`)
+      .digest("hex");
+
+    const valid = crypto.timingSafeEqual(
+      Buffer.from(expected, "hex"),
+      Buffer.from(signature, "hex")
+    );
+
+    if (!valid) {
+      return res.status(401).send("Invalid webhook signature");
+    }
+
+    const event = JSON.parse(rawBody);
+    // event.event: payment.paid, payment.cancelled, payment.expired
+    // event.payment.id, event.payment.status, event.payment.txHash
+
+    return res.sendStatus(200);
+  }
+);`,
+            },
+            {
+              key: "verify-webhook-php",
+              title: "Verify Webhook in PHP",
+              method: "POST",
+              description: "Validates the webhook signature before reading the event.",
+              path: "merchant webhook URL",
+              value: `<?php
+$webhookSecret = getenv('CRYPTO_GATEWAY_WEBHOOK_SECRET');
+$toleranceSeconds = 300;
+
+$signature = $_SERVER['HTTP_X_WEBHOOK_SIGNATURE'] ?? '';
+$timestamp = $_SERVER['HTTP_X_WEBHOOK_TIMESTAMP'] ?? '';
+$rawBody = file_get_contents('php://input');
+
+if (!$signature || !$timestamp) {
+    http_response_code(401);
+    exit('Missing signature headers');
+}
+
+$age = abs(time() - intval($timestamp));
+if ($age > $toleranceSeconds) {
+    http_response_code(401);
+    exit('Webhook timestamp is too old');
+}
+
+$expected = hash_hmac('sha256', $timestamp . '.' . $rawBody, $webhookSecret);
+
+if (!hash_equals($expected, $signature)) {
+    http_response_code(401);
+    exit('Invalid webhook signature');
+}
+
+$event = json_decode($rawBody, true);
+// $event['event']: payment.paid, payment.cancelled, payment.expired
+// $event['payment']['id'], status, txHash
+
+http_response_code(200);`,
             },
           ];
 
@@ -238,8 +320,8 @@ export default function BusinessWalletApiDocsPage() {
                   <p className="font-mono break-all">x-webhook-signature + x-webhook-timestamp</p>
                 </div>
                 <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                  <p className="text-zinc-500 text-xs mb-2">Retry behavior</p>
-                  <p>Failed webhooks are retried and can be retried manually.</p>
+                  <p className="text-zinc-500 text-xs mb-2">Signature format</p>
+                  <p className="font-mono break-all">HMAC_SHA256(timestamp + "." + rawBody)</p>
                 </div>
               </div>
             </>
