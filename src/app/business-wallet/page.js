@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 const getActivityMeta = (action) => {
   if (action?.includes("webhook")) {
@@ -84,6 +85,7 @@ export default function BusinessWalletPage() {
   const [walletAddress, setWalletAddress] = useState("");
   const [note, setNote] = useState("");
   const [notice, setNotice] = useState(null);
+  const { t } = useDashboardLanguage();
 
   const loadDashboard = async () => {
     const token = localStorage.getItem("token");
@@ -125,7 +127,7 @@ export default function BusinessWalletPage() {
             paymentsData.message ||
             settlementsData.message ||
             activityData.message ||
-            "Business wallet data could not be refreshed.",
+            t("businessWallet.dataRefreshError"),
         });
         return;
       }
@@ -147,7 +149,7 @@ export default function BusinessWalletPage() {
     } catch {
       setNotice({
         type: "error",
-        message: "Business wallet data could not be refreshed.",
+        message: t("businessWallet.dataRefreshError"),
       });
     }
   };
@@ -175,35 +177,35 @@ export default function BusinessWalletPage() {
     const available = Number(settlements.summary.available || 0);
 
     if (!Number.isFinite(numericAmount)) {
-      setNotice({ type: "error", message: "Please enter a valid payout amount." });
+      setNotice({ type: "error", message: t("businessWallet.validPayoutAmount") });
       return;
     }
 
     if (numericAmount < MIN_PAYOUT_AMOUNT || numericAmount > MAX_PAYOUT_AMOUNT) {
       setNotice({
         type: "error",
-        message: `Payout amount must be between ${MIN_PAYOUT_AMOUNT} and ${MAX_PAYOUT_AMOUNT} USDT.`,
+        message: `${t("businessWallet.payoutRange")} ${MIN_PAYOUT_AMOUNT} - ${MAX_PAYOUT_AMOUNT} USDT.`,
       });
       return;
     }
 
     if (String(amount).split(".")[1]?.length > 2) {
-      setNotice({ type: "error", message: "Payout amount can have at most 2 decimal places." });
+      setNotice({ type: "error", message: t("businessWallet.maxDecimals") });
       return;
     }
 
     if (numericAmount > available) {
-      setNotice({ type: "error", message: "Payout amount exceeds available balance." });
+      setNotice({ type: "error", message: t("businessWallet.exceedsBalance") });
       return;
     }
 
     if (!walletAddress.trim()) {
-      setNotice({ type: "error", message: "Please enter a payout wallet address." });
+      setNotice({ type: "error", message: t("businessWallet.enterWallet") });
       return;
     }
 
     if (!TRON_ADDRESS_PATTERN.test(walletAddress.trim())) {
-      setNotice({ type: "error", message: "Please enter a valid TRON wallet address." });
+      setNotice({ type: "error", message: t("businessWallet.validTronWallet") });
       return;
     }
 
@@ -225,7 +227,7 @@ export default function BusinessWalletPage() {
     if (!response.ok) {
       setNotice({
         type: "error",
-        message: data.errors?.join(" ") || data.message || "Payout request failed.",
+        message: data.errors?.join(" ") || data.message || t("businessWallet.payoutFailed"),
       });
       return;
     }
@@ -233,14 +235,14 @@ export default function BusinessWalletPage() {
     setAmount("");
     setWalletAddress("");
     setNote("");
-    setNotice({ type: "success", message: data.message || "Payout request created." });
+    setNotice({ type: "success", message: data.message || t("businessWallet.payoutCreated") });
     await loadDashboard();
   };
 
   if (loading) {
     return (
       <OverviewShell>
-        <p className="text-zinc-500">Loading...</p>
+        <p className="text-zinc-500">{t("overview.loading")}</p>
       </OverviewShell>
     );
   }
@@ -261,39 +263,39 @@ export default function BusinessWalletPage() {
         )}
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-          <h2 className="text-2xl font-semibold mb-1">Overview</h2>
-          <p className="text-zinc-500 mb-4">Real-time payment performance snapshot.</p>
+          <h2 className="text-2xl font-semibold mb-1">{t("businessWallet.overview")}</h2>
+          <p className="text-zinc-500 mb-4">{t("businessWallet.snapshot")}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">Total Payments</p><p className="text-4xl font-bold">{paymentStats.total}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">Paid Payments</p><p className="text-4xl font-bold">{paymentStats.paid}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">Pending Payments</p><p className="text-4xl font-bold">{paymentStats.pending}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">Expired Payments</p><p className="text-4xl font-bold">{paymentStats.expired}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">{t("businessWallet.totalPayments")}</p><p className="text-4xl font-bold">{paymentStats.total}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">{t("businessWallet.paidPayments")}</p><p className="text-4xl font-bold">{paymentStats.paid}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">{t("businessWallet.pendingPayments")}</p><p className="text-4xl font-bold">{paymentStats.pending}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500">{t("businessWallet.expiredPayments")}</p><p className="text-4xl font-bold">{paymentStats.expired}</p></div>
           </div>
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Recent Activity</h2>
-              <p className="text-zinc-500">Latest payment, webhook, and security events.</p>
+              <h2 className="text-2xl font-semibold">{t("businessWallet.recentActivity")}</h2>
+              <p className="text-zinc-500">{t("businessWallet.activityDescription")}</p>
             </div>
             <a
               href="/business-wallet/merchants"
               className="w-fit rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
             >
-              View all activity
+              {t("businessWallet.viewAllActivity")}
             </a>
           </div>
 
           {recentActivity.some((log) => getActivityMeta(log.action).critical) && (
             <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              Recent webhook or security activity needs review.
+              {t("businessWallet.reviewWarning")}
             </div>
           )}
 
           {recentActivity.length === 0 ? (
             <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-500">
-              No activity recorded yet.
+              {t("businessWallet.noActivity")}
             </p>
           ) : (
             <div className="divide-y divide-zinc-200 rounded-xl border border-zinc-200">
@@ -326,8 +328,8 @@ export default function BusinessWalletPage() {
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
           <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-center md:justify-between">
             <div>
-              <h2 className="text-2xl font-semibold">Finance</h2>
-              <p className="text-zinc-500">Request manual payouts from confirmed paid volume.</p>
+              <h2 className="text-2xl font-semibold">{t("businessWallet.finance")}</h2>
+              <p className="text-zinc-500">{t("businessWallet.financeDescription")}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-sm">
@@ -337,15 +339,15 @@ export default function BusinessWalletPage() {
                 onClick={loadDashboard}
                 className="rounded-full border border-zinc-300 bg-zinc-100 px-3 py-1 text-sm"
               >
-                Refresh
+                {t("businessWallet.refresh")}
               </button>
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Available</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.available} {settlements.summary.currency}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Gross Paid</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.grossPaid} {settlements.summary.currency}</p></div>
-            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">Reserved</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.reservedForPayouts} {settlements.summary.currency}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">{t("overview.available")}</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.available} {settlements.summary.currency}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">{t("overview.grossPaid")}</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.grossPaid} {settlements.summary.currency}</p></div>
+            <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4"><p className="text-zinc-500 text-sm">{t("overview.reserved")}</p><p className="break-words text-3xl font-bold md:text-4xl">{settlements.summary.reservedForPayouts} {settlements.summary.currency}</p></div>
           </div>
 
           <form onSubmit={createPayoutRequest} className="grid grid-cols-1 lg:grid-cols-[160px_1fr_1fr_auto] gap-3 mb-4">
@@ -354,22 +356,22 @@ export default function BusinessWalletPage() {
               min={MIN_PAYOUT_AMOUNT}
               max={Math.min(Number(settlements.summary.available || 0), MAX_PAYOUT_AMOUNT)}
               step="0.01"
-              placeholder="Amount"
+              placeholder={t("businessWallet.amount")}
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none"
             />
-            <input type="text" placeholder="TRC20 payout wallet address" value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
-            <input type="text" placeholder="Optional note" value={note} onChange={(e) => setNote(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
-            <button className="px-6 py-3 rounded-xl bg-black text-white font-semibold">Request Payout</button>
+            <input type="text" placeholder={t("businessWallet.walletPlaceholder")} value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
+            <input type="text" placeholder={t("businessWallet.optionalNote")} value={note} onChange={(e) => setNote(e.target.value)} className="p-3 rounded-xl border border-zinc-300 bg-zinc-100 outline-none" />
+            <button className="px-6 py-3 rounded-xl bg-black text-white font-semibold">{t("businessWallet.requestPayout")}</button>
           </form>
           <p className="mb-4 text-sm text-zinc-500">
-            Minimum payout is {MIN_PAYOUT_AMOUNT} USDT. Available now: {settlements.summary.available} {settlements.summary.currency}. Use a valid TRC20 wallet address.
+            {t("businessWallet.minimumPayout")} {MIN_PAYOUT_AMOUNT} USDT. {t("businessWallet.availableNow")}: {settlements.summary.available} {settlements.summary.currency}. {t("businessWallet.validWallet")}
           </p>
 
           <div className="rounded-xl border border-zinc-200 overflow-hidden">
             {settlements.payoutRequests.length === 0 ? (
-              <p className="p-4 text-zinc-500">No payout requests yet.</p>
+              <p className="p-4 text-zinc-500">{t("businessWallet.noPayoutRequests")}</p>
             ) : (
               settlements.payoutRequests.map((request) => (
                 <div key={request.id} className="grid grid-cols-1 lg:grid-cols-[180px_1fr_160px_180px] gap-3 p-4 border-t border-zinc-200 first:border-t-0">

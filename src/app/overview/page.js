@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 const fallbackDisplayCurrencyRates = {
   USD: 1,
@@ -46,6 +47,7 @@ export default function OverviewPage() {
   const [pricesLoading, setPricesLoading] = useState(true);
   const [pricesError, setPricesError] = useState("");
   const [pricesUpdatedAt, setPricesUpdatedAt] = useState("");
+  const { t } = useDashboardLanguage();
   const [balances, setBalances] = useState({
     BTC: 0,
     ETH: 0,
@@ -235,44 +237,44 @@ export default function OverviewPage() {
 
   const onboardingSteps = [
     {
-      title: "Create business account",
-      shortTitle: "Account",
-      description: "Merchant profile and authenticated dashboard access are ready.",
+      title: t("onboarding.account.title"),
+      shortTitle: t("onboarding.account.short"),
+      description: t("onboarding.account.description"),
       done: Boolean(merchant?.id),
       href: "/overview",
-      action: "Dashboard",
+      action: t("onboarding.account.action"),
     },
     {
-      title: "Add webhook URL",
-      shortTitle: "Webhook",
-      description: "Send payment status updates to your own system automatically.",
+      title: t("onboarding.webhook.title"),
+      shortTitle: t("onboarding.webhook.short"),
+      description: t("onboarding.webhook.description"),
       done: Boolean(merchant?.callbackUrl),
       href: "/settings/security",
-      action: merchant?.callbackUrl ? "Webhook settings" : "Add URL",
+      action: merchant?.callbackUrl ? t("onboarding.webhook.actionReady") : t("onboarding.webhook.action"),
     },
     {
-      title: "Prepare API access",
-      shortTitle: "API",
-      description: "Review the public payment API access used to create checkouts.",
+      title: t("onboarding.api.title"),
+      shortTitle: t("onboarding.api.short"),
+      description: t("onboarding.api.description"),
       done: Boolean(merchant?.apiKey),
       href: "/business-wallet/api-docs",
-      action: "API docs",
+      action: t("onboarding.api.action"),
     },
     {
-      title: "Create first payment",
-      shortTitle: "Payment",
-      description: "Use a test order to verify checkout and customer payment flow.",
+      title: t("onboarding.payment.title"),
+      shortTitle: t("onboarding.payment.short"),
+      description: t("onboarding.payment.description"),
       done: Number(paymentStats.total || 0) > 0,
       href: "/business-wallet/merchants",
-      action: "Create payment",
+      action: t("onboarding.payment.action"),
     },
     {
-      title: "Run integration test",
-      shortTitle: "Test",
-      description: "Confirm that API traffic or a webhook test can be completed.",
+      title: t("onboarding.test.title"),
+      shortTitle: t("onboarding.test.short"),
+      description: t("onboarding.test.description"),
       done: Number(apiUsage.total || 0) > 0 || webhookTestCompleted,
       href: "/business-wallet/api-docs",
-      action: "Test now",
+      action: t("onboarding.test.action"),
     },
   ];
   const completedOnboardingSteps = onboardingSteps.filter((step) => step.done).length;
@@ -282,12 +284,12 @@ export default function OverviewPage() {
   const onboardingComplete = !nextOnboardingStep;
   const setupStatus = nextOnboardingStep
     ? {
-        label: "Setup in progress",
-        description: "Complete the next required step before production use.",
+        label: t("overview.setupInProgress"),
+        description: t("overview.setupDescription"),
         className: "border-amber-400/40 bg-amber-400/10 text-amber-200",
       }
     : {
-        label: "Ready",
+        label: t("overview.ready"),
         description: "",
         className: "border-emerald-400/40 bg-emerald-400/10 text-emerald-200",
       };
@@ -324,9 +326,9 @@ export default function OverviewPage() {
         <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 md:px-6 md:py-5">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="mb-2 text-base font-semibold text-white">Total funds</p>
+              <p className="mb-2 text-base font-semibold text-white">{t("overview.totalFunds")}</p>
               {loading ? (
-                <p className="text-zinc-500 text-xl">Loading...</p>
+                <p className="text-zinc-500 text-xl">{t("overview.loading")}</p>
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-3xl font-bold leading-none tracking-tight text-white">
@@ -341,20 +343,20 @@ export default function OverviewPage() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[390px]">
               <Link href="/business-wallet/merchants" className="flex h-10 items-center justify-center rounded-lg bg-black px-4 text-sm font-semibold text-white shadow-sm hover:bg-zinc-950 transition">
-                Create payment
+                {t("overview.createPayment")}
               </Link>
               <Link href="/business-wallet" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">
-                Request payout
+                {t("overview.requestPayout")}
               </Link>
               <Link href="/business-wallet/api-docs" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">
-                API docs
+                {t("overview.apiDocs")}
               </Link>
             </div>
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="mb-2 text-sm font-semibold text-zinc-300">Available</p>
+              <p className="mb-2 text-sm font-semibold text-zinc-300">{t("overview.available")}</p>
               <p className="text-2xl font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(available)}
               </p>
@@ -364,22 +366,22 @@ export default function OverviewPage() {
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="mb-2 text-sm font-semibold text-zinc-300">Gross Paid</p>
+              <p className="mb-2 text-sm font-semibold text-zinc-300">{t("overview.grossPaid")}</p>
               <p className="text-2xl font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(grossPaid)}
               </p>
               <p className="mt-3 text-xs font-semibold text-zinc-500">
-                {Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} settled
+                {Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.settledVolume")}
               </p>
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="mb-2 text-sm font-semibold text-zinc-300">Reserved</p>
+              <p className="mb-2 text-sm font-semibold text-zinc-300">{t("overview.reserved")}</p>
               <p className="text-2xl font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(reserved)}
               </p>
               <p className="mt-3 text-xs font-semibold text-zinc-500">
-                {Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} on hold
+                {Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.onHold")}
               </p>
             </div>
           </div>
@@ -390,10 +392,10 @@ export default function OverviewPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-4">
-                <h2 className="text-xl font-semibold text-white">Merchant setup</h2>
+                <h2 className="text-xl font-semibold text-white">{t("overview.merchantSetup")}</h2>
                 <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${setupStatus.className}`}>
                   {onboardingComplete
-                    ? `${setupStatus.label} · ${completedOnboardingSteps}/${onboardingSteps.length} completed`
+                    ? `${setupStatus.label} · ${completedOnboardingSteps}/${onboardingSteps.length} ${t("overview.completed")}`
                     : setupStatus.label}
                 </span>
               </div>
@@ -417,14 +419,14 @@ export default function OverviewPage() {
               ) : (
                 <div className="rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-3 sm:min-w-[220px]">
                   <div className="flex items-center justify-between gap-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Progress</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("overview.progress")}</p>
                     <p className="text-sm font-semibold text-zinc-200">{onboardingProgress}%</p>
                   </div>
                   <div className="mt-3 h-1.5 rounded-full bg-zinc-800">
                     <div className="h-full rounded-full bg-amber-300 transition-all" style={{ width: `${onboardingProgress}%` }} />
                   </div>
                   <p className="mt-2 text-xs font-semibold text-zinc-500">
-                    {completedOnboardingSteps}/{onboardingSteps.length} completed
+                    {completedOnboardingSteps}/{onboardingSteps.length} {t("overview.completed")}
                   </p>
                 </div>
               )}
@@ -435,7 +437,7 @@ export default function OverviewPage() {
           {nextOnboardingStep ? (
             <div className="mx-5 mt-5 flex flex-col gap-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 md:mx-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/80">Next recommended action</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/80">{t("overview.nextRecommendedAction")}</p>
                 <h3 className="mt-1 text-lg font-semibold text-white">{nextOnboardingStep.title}</h3>
                 <p className="mt-1 max-w-2xl text-sm text-zinc-400">{nextOnboardingStep.description}</p>
               </div>
@@ -474,7 +476,7 @@ export default function OverviewPage() {
                           : "border-zinc-700 bg-zinc-900 text-zinc-400"
                       }`}
                     >
-                      {step.done ? "Done" : index === nextOnboardingStepIndex ? "Next" : `Step ${index + 1}`}
+                      {step.done ? t("overview.done") : index === nextOnboardingStepIndex ? t("overview.next") : `${t("overview.step")} ${index + 1}`}
                     </span>
                   </div>
                   <h3 className="text-sm font-semibold leading-snug text-white">{step.title}</h3>
@@ -489,7 +491,7 @@ export default function OverviewPage() {
         </section>
 
         <section className="mt-6">
-          <h3 className="text-2xl font-semibold text-zinc-900 mb-4">Assets</h3>
+          <h3 className="text-2xl font-semibold text-zinc-900 mb-4">{t("overview.assets")}</h3>
           <div className="rounded-2xl border border-zinc-700 bg-zinc-900 shadow-[0_8px_24px_rgba(0,0,0,0.16)] overflow-hidden">
             <div className="flex flex-col gap-4 px-5 py-4 border-b border-zinc-800 sm:flex-row sm:items-center sm:justify-between md:px-6">
               <div className="flex items-center gap-5 text-base font-semibold">
@@ -499,7 +501,7 @@ export default function OverviewPage() {
                     activeAssetsTab === "personal" ? "border-white text-white" : "border-transparent text-zinc-500"
                   }`}
                 >
-                  Personal
+                  {t("overview.personal")}
                 </button>
                 <button
                   onClick={() => setActiveAssetsTab("business")}
@@ -507,28 +509,28 @@ export default function OverviewPage() {
                     activeAssetsTab === "business" ? "border-white text-white" : "border-transparent text-zinc-500"
                   }`}
                 >
-                  Business
+                  {t("overview.business")}
                 </button>
               </div>
               <Link href="/business-wallet" className="text-sm font-semibold text-zinc-400 hover:text-white transition">
-                Wallet details
+                {t("overview.walletDetails")}
               </Link>
             </div>
             <div className="px-6 py-2 text-sm text-zinc-500 border-b border-zinc-800">
               {pricesLoading
-                ? "Updating prices..."
+                ? t("overview.updatingPrices")
                 : pricesError
                 ? pricesError
                 : pricesUpdatedAt
-                ? `Updated ${new Date(pricesUpdatedAt).toLocaleTimeString()}`
-                : "Live prices"}
+                ? `${t("overview.updated")} ${new Date(pricesUpdatedAt).toLocaleTimeString()}`
+                : t("overview.livePrices")}
             </div>
 
             <div className="hidden grid-cols-[1.5fr_1.2fr_1fr_1fr] gap-3 px-6 py-3 text-xs uppercase tracking-wide text-zinc-500 border-b border-zinc-800 bg-zinc-950 md:grid">
-              <span>Name</span>
-              <span>Balance</span>
-              <span>Price</span>
-              <span>Allocation</span>
+              <span>{t("overview.name")}</span>
+              <span>{t("overview.balance")}</span>
+              <span>{t("overview.price")}</span>
+              <span>{t("overview.allocation")}</span>
             </div>
 
             <div>
@@ -554,13 +556,13 @@ export default function OverviewPage() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Balance</p>
+                    <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">{t("overview.balance")}</p>
                     <p className="text-lg font-semibold text-white break-words">{formatTokenBalance(balance)}</p>
                     <p className="text-sm text-zinc-500">{formatDisplayAmount(usdValue)}</p>
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Price</p>
+                    <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">{t("overview.price")}</p>
                     <p className="text-lg font-semibold text-white">
                       {pricesLoading ? "..." : formatUsdPrice(asset.symbol, prices?.[asset.symbol]?.usd)}
                     </p>
@@ -575,7 +577,7 @@ export default function OverviewPage() {
 
                   <div className="flex items-center gap-3">
                     <span className="inline-flex h-7 w-7 rounded-full border-4 border-zinc-700" />
-                    <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Allocation</p>
+                    <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">{t("overview.allocation")}</p>
                     <p className="text-base font-semibold text-white">{allocation.toFixed(1)}%</p>
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 const getWebhookStatusClassName = (status) => {
   if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
@@ -141,6 +142,7 @@ export default function BusinessWalletMerchantsPage() {
   const [webhookAction, setWebhookAction] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+  const { t } = useDashboardLanguage();
 
   const copyText = async (value, label) => {
     try {
@@ -218,14 +220,14 @@ export default function BusinessWalletMerchantsPage() {
 
     const amountNumber = Number(newAmount);
     if (!Number.isFinite(amountNumber)) {
-      setNotice({ type: "error", message: "Please enter a valid amount." });
+      setNotice({ type: "error", message: t("merchantPayments.validAmount") });
       return;
     }
 
     if (amountNumber < MIN_PAYMENT_AMOUNT || amountNumber > MAX_PAYMENT_AMOUNT) {
       setNotice({
         type: "error",
-        message: `Amount must be between ${MIN_PAYMENT_AMOUNT} and ${MAX_PAYMENT_AMOUNT} USDT.`,
+        message: `${t("merchantPayments.amountRange")} ${MIN_PAYMENT_AMOUNT} - ${MAX_PAYMENT_AMOUNT} USDT.`,
       });
       return;
     }
@@ -239,14 +241,14 @@ export default function BusinessWalletMerchantsPage() {
     if (trimmedOrderId && (trimmedOrderId.length > 80 || !ORDER_ID_PATTERN.test(trimmedOrderId))) {
       setNotice({
         type: "error",
-        message: "Order ID can use up to 80 letters, numbers, dots, dashes, underscores, and colons.",
+        message: t("merchantPayments.orderIdValidation"),
       });
       return;
     }
 
     const trimmedCustomerEmail = newCustomerEmail.trim();
     if (trimmedCustomerEmail && (trimmedCustomerEmail.length > 254 || !EMAIL_PATTERN.test(trimmedCustomerEmail))) {
-      setNotice({ type: "error", message: "Customer email must be a valid email address." });
+      setNotice({ type: "error", message: t("merchantPayments.emailValidation") });
       return;
     }
 
@@ -269,7 +271,7 @@ export default function BusinessWalletMerchantsPage() {
       if (!response.ok) {
         setNotice({
           type: "error",
-          message: data.errors?.join(" ") || data.message || "Create payment error.",
+          message: data.errors?.join(" ") || data.message || t("merchantPayments.createError"),
         });
         return;
       }
@@ -285,7 +287,7 @@ export default function BusinessWalletMerchantsPage() {
       await fetchOps();
       await fetchActivity();
     } catch {
-      setNotice({ type: "error", message: "Create payment error." });
+      setNotice({ type: "error", message: t("merchantPayments.createError") });
     } finally {
       setCreatingPayment(false);
     }
@@ -322,7 +324,7 @@ export default function BusinessWalletMerchantsPage() {
         });
         setNotice({
           type: "error",
-          message: `Transaction found but amount is short. Received ${data.underpaid.amountReceived} USDT, missing ${data.underpaid.amountMissing} USDT.`,
+          message: `${t("merchantPayments.underpaidNotice")} ${t("merchantPayments.received")}: ${data.underpaid.amountReceived} USDT, ${t("merchantPayments.missing").toLowerCase()}: ${data.underpaid.amountMissing} USDT.`,
         });
       } else {
         setVerificationResult(
@@ -373,7 +375,7 @@ export default function BusinessWalletMerchantsPage() {
         setSelectedPayment(data.payment);
       }
     } catch {
-      setNotice({ type: "error", message: "Payment details could not be refreshed." });
+      setNotice({ type: "error", message: t("merchantPayments.detailsRefreshError") });
     }
   };
 
@@ -470,21 +472,21 @@ export default function BusinessWalletMerchantsPage() {
       )}
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6 text-white">
-        <h2 className="text-2xl font-bold mb-4">Create Payment</h2>
+        <h2 className="text-2xl font-bold mb-4">{t("merchantPayments.createPayment")}</h2>
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_auto] gap-3">
           <input
             type="number"
             min={MIN_PAYMENT_AMOUNT}
             max={MAX_PAYMENT_AMOUNT}
             step="0.01"
-            placeholder="Amount USDT"
+            placeholder={t("merchantPayments.amountPlaceholder")}
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
             className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
           />
           <input
             type="text"
-            placeholder="Order ID"
+            placeholder={t("merchantPayments.orderId")}
             maxLength={80}
             value={newOrderId}
             onChange={(e) => setNewOrderId(e.target.value)}
@@ -492,7 +494,7 @@ export default function BusinessWalletMerchantsPage() {
           />
           <input
             type="email"
-            placeholder="Customer email"
+            placeholder={t("merchantPayments.customerEmail")}
             maxLength={254}
             value={newCustomerEmail}
             onChange={(e) => setNewCustomerEmail(e.target.value)}
@@ -503,19 +505,23 @@ export default function BusinessWalletMerchantsPage() {
             disabled={creatingPayment}
             className="h-[50px] rounded-xl bg-zinc-100 text-zinc-900 px-6 font-semibold hover:bg-white transition disabled:opacity-60"
           >
-            {creatingPayment ? "Creating..." : "Create Payment"}
+            {creatingPayment ? t("merchantPayments.creating") : t("merchantPayments.createPayment")}
           </button>
         </div>
         <p className="mt-3 text-xs text-zinc-500">
-          Amount: 0.01-1,000,000 USDT, max 2 decimals. Order ID: letters, numbers, dots, dashes, underscores, and colons.
+          {t("merchantPayments.helper")}
         </p>
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10 text-white">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           <div>
-            <h2 className="text-2xl font-bold">Operations</h2>
-            <p className="text-zinc-500 text-sm">Showing {payments.length} of {paymentPagination.totalCount} matching payments</p>
+            <h2 className="text-2xl font-bold">{t("merchantPayments.operations")}</h2>
+            <p className="text-zinc-500 text-sm">
+              {t("merchantPayments.showingPayments")
+                .replace("{shown}", payments.length)
+                .replace("{total}", paymentPagination.totalCount)}
+            </p>
           </div>
           <button
             onClick={() => {
@@ -526,14 +532,14 @@ export default function BusinessWalletMerchantsPage() {
             }}
             className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
           >
-            Clear Filters
+            {t("merchantPayments.clearFilters")}
           </button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
           <input
             type="text"
-            placeholder="Search payment, order, customer, wallet, tx"
+            placeholder={t("merchantPayments.searchPlaceholder")}
             value={paymentSearch}
             onChange={(e) => {
               setPaymentSearch(e.target.value);
@@ -549,7 +555,7 @@ export default function BusinessWalletMerchantsPage() {
             }}
             className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
           >
-            <option value="ALL">All payment statuses</option>
+            <option value="ALL">{t("merchantPayments.allPaymentStatuses")}</option>
             <option value="PENDING">Pending</option>
             <option value="PAID">Paid</option>
             <option value="EXPIRED">Expired</option>
@@ -563,7 +569,7 @@ export default function BusinessWalletMerchantsPage() {
             }}
             className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
           >
-            <option value="ALL">All webhook statuses</option>
+            <option value="ALL">{t("merchantPayments.allWebhookStatuses")}</option>
             <option value="SUCCESS">Webhook success</option>
             <option value="PENDING">Webhook pending</option>
             <option value="FAILED">Webhook failed</option>
@@ -576,7 +582,7 @@ export default function BusinessWalletMerchantsPage() {
             <span>Amount</span><span>Payment</span><span>Status</span><span>Actions</span>
           </div>
 
-          {!loading && payments.length === 0 && <p className="text-zinc-400">No payments match the current filters.</p>}
+          {!loading && payments.length === 0 && <p className="text-zinc-400">{t("merchantPayments.noPayments")}</p>}
 
           {payments.map((payment) => {
             const latestWebhook = payment.webhookEvents?.[0];
@@ -588,7 +594,7 @@ export default function BusinessWalletMerchantsPage() {
                     <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
                   </div>
                   <div className="text-sm text-zinc-400 space-y-1">
-                    <p className="break-all"><span className="text-zinc-500">Payment ID:</span> {payment.id}</p>
+                    <p className="break-all"><span className="text-zinc-500">{t("merchantPayments.paymentId")}:</span> {payment.id}</p>
                     {payment.orderId && <p className="break-all"><span className="text-zinc-500">Order ID:</span> {payment.orderId}</p>}
                     <p className="break-all"><span className="text-zinc-500">Wallet:</span> {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
                     <p><span className="text-zinc-500">Created:</span> {formatDateTime(payment.createdAt)}</p>
@@ -613,22 +619,22 @@ export default function BusinessWalletMerchantsPage() {
                         className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
                         disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
                       >
-                        {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? "Verifying..." : "Verify"}
+                        {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verify")}
                       </button>
                       <button
                         onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
                         className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
                         disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
                       >
-                        Cancel
+                        {t("merchantPayments.cancel")}
                       </button>
-                      <button onClick={() => copyText(getCheckoutUrl(payment), "Checkout link")} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Link</button>
-                      <a href={getCheckoutUrl(payment)} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">Checkout</a>
+                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">{t("merchantPayments.copyLink")}</button>
+                      <a href={getCheckoutUrl(payment)} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">{t("merchantPayments.checkout")}</a>
                       <button
                         onClick={() => openPaymentDetails(payment)}
                         className="h-10 bg-zinc-100 text-zinc-900 px-3 rounded-lg text-xs font-semibold flex items-center justify-center"
                       >
-                        Details
+                        {t("merchantPayments.details")}
                       </button>
                     </div>
                     {payment.status === "PENDING" && (
@@ -641,19 +647,19 @@ export default function BusinessWalletMerchantsPage() {
                 {confirmAction?.type === "cancelPayment" &&
                   confirmAction.paymentId === payment.id && (
                     <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-                      <p className="mb-3">Cancel this pending payment?</p>
+                      <p className="mb-3">{t("merchantPayments.cancelPrompt")}</p>
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={() => runPaymentAction(payment.id, "cancel")}
                           className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
                         >
-                          Confirm cancel
+                          {t("merchantPayments.confirmCancel")}
                         </button>
                         <button
                           onClick={() => setConfirmAction(null)}
                           className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                         >
-                          Keep payment
+                          {t("merchantPayments.keepPayment")}
                         </button>
                       </div>
                     </div>
@@ -666,8 +672,8 @@ export default function BusinessWalletMerchantsPage() {
         <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <p className="text-zinc-500 text-sm">Page {paymentPagination.page} of {paymentPagination.totalPages}</p>
           <div className="flex gap-3">
-            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">Previous</button>
-            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">Next</button>
+            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">{t("merchantPayments.previous")}</button>
+            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">{t("merchantPayments.next")}</button>
           </div>
         </div>
         <p className="text-zinc-500 text-xs mt-4">Auto refresh active: payments update every 10 seconds.</p>
@@ -762,7 +768,7 @@ export default function BusinessWalletMerchantsPage() {
                         onClick={() => openPaymentDetails({ id: log.targetId })}
                         className="w-fit rounded-lg border border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-800"
                       >
-                        Payment details
+                        {t("merchantPayments.details")}
                       </button>
                     )}
                   </div>
@@ -787,7 +793,7 @@ export default function BusinessWalletMerchantsPage() {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-2">
-                  <h2 className="text-4xl font-bold">Payment Details</h2>
+                  <h2 className="text-4xl font-bold">{t("merchantPayments.paymentDetails")}</h2>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(selectedPayment.status)}`}>
                     {selectedPayment.status}
                   </span>
@@ -804,36 +810,36 @@ export default function BusinessWalletMerchantsPage() {
                   disabled={selectedPayment.status !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
                   className="bg-blue-500 text-black px-4 py-2 rounded-lg font-semibold disabled:opacity-40"
                 >
-                  {paymentAction?.paymentId === selectedPayment.id && paymentAction?.action === "verify" ? "Verifying..." : "Verify Now"}
+                  {paymentAction?.paymentId === selectedPayment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verifyNow")}
                 </button>
                 <button
                   onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: selectedPayment.id })}
                   disabled={selectedPayment.status !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
                   className="bg-red-500 text-black px-4 py-2 rounded-lg font-semibold disabled:opacity-40"
                 >
-                  Cancel
+                  {t("merchantPayments.cancel")}
                 </button>
-                <button onClick={() => copyText(getCheckoutUrl(selectedPayment), "Checkout link")} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">Copy Link</button>
-                <a href={getCheckoutUrl(selectedPayment)} target="_blank" className="bg-white text-black px-4 py-2 rounded-lg font-semibold">Checkout</a>
-                <button onClick={() => setSelectedPayment(null)} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">Close</button>
+                <button onClick={() => copyText(getCheckoutUrl(selectedPayment), t("merchantPayments.checkoutLink"))} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">{t("merchantPayments.copyLink")}</button>
+                <a href={getCheckoutUrl(selectedPayment)} target="_blank" className="bg-white text-black px-4 py-2 rounded-lg font-semibold">{t("merchantPayments.checkout")}</a>
+                <button onClick={() => setSelectedPayment(null)} className="bg-zinc-800 px-4 py-2 rounded-lg font-semibold">{t("merchantPayments.close")}</button>
               </div>
             </div>
             {confirmAction?.type === "cancelPayment" &&
               confirmAction.paymentId === selectedPayment.id && (
                 <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-                  <p className="mb-3">Cancel this pending payment?</p>
+                  <p className="mb-3">{t("merchantPayments.cancelPrompt")}</p>
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() => runPaymentAction(selectedPayment.id, "cancel")}
                       className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500"
                     >
-                      Confirm cancel
+                      {t("merchantPayments.confirmCancel")}
                     </button>
                     <button
                       onClick={() => setConfirmAction(null)}
                       className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                     >
-                      Keep payment
+                      {t("merchantPayments.keepPayment")}
                     </button>
                   </div>
                 </div>
@@ -849,13 +855,13 @@ export default function BusinessWalletMerchantsPage() {
               >
                 <p className="font-semibold">
                   {verificationResult.type === "underpaid"
-                    ? "Underpaid transaction detected"
-                    : "Payment verification succeeded"}
+                    ? t("merchantPayments.underpaid")
+                    : t("merchantPayments.verificationSucceeded")}
                 </p>
                 {verificationResult.type === "underpaid" ? (
                   <div className="mt-2 grid grid-cols-1 gap-2 md:grid-cols-3">
-                    <p>Received: {verificationResult.amountReceived} USDT</p>
-                    <p>Missing: {verificationResult.amountMissing} USDT</p>
+                    <p>{t("merchantPayments.received")}: {verificationResult.amountReceived} USDT</p>
+                    <p>{t("merchantPayments.missing")}: {verificationResult.amountMissing} USDT</p>
                     <p className="break-all">Tx: {verificationResult.txHash}</p>
                   </div>
                 ) : (
@@ -867,25 +873,25 @@ export default function BusinessWalletMerchantsPage() {
             <div className="grid grid-cols-1 xl:grid-cols-[340px_1fr] gap-6">
               <aside className="space-y-4">
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                  <h3 className="font-bold mb-4 text-2xl">Timeline</h3>
+                  <h3 className="font-bold mb-4 text-2xl">{t("merchantPayments.timeline")}</h3>
                   <div className="space-y-4">
                     <div>
-                      <p className="font-semibold">Created</p>
+                      <p className="font-semibold">{t("merchantPayments.created")}</p>
                       <p className="text-zinc-500 text-xs">{formatDateTime(selectedPayment.createdAt)}</p>
                     </div>
                     <div>
-                      <p className="font-semibold">Awaiting payment</p>
-                      <p className="text-zinc-500 text-xs">Expires {formatDateTime(selectedPayment.expiresAt)}</p>
+                      <p className="font-semibold">{t("merchantPayments.awaitingPayment")}</p>
+                      <p className="text-zinc-500 text-xs">{t("merchantPayments.expires")} {formatDateTime(selectedPayment.expiresAt)}</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                  <h3 className="font-bold mb-3 text-2xl">Operation Summary</h3>
+                  <h3 className="font-bold mb-3 text-2xl">{t("merchantPayments.operationSummary")}</h3>
                   <div className="space-y-2 text-sm text-zinc-400">
-                    <p><span className="text-zinc-500">Time left:</span> {formatTimeLeft(selectedPayment.expiresAt, now)}</p>
-                    <p><span className="text-zinc-500">Webhook events:</span> {selectedPayment.webhookEvents?.length || 0}</p>
-                    <p><span className="text-zinc-500">Network:</span> {selectedPayment.network}</p>
+                    <p><span className="text-zinc-500">{t("merchantPayments.timeLeft")}:</span> {formatTimeLeft(selectedPayment.expiresAt, now)}</p>
+                    <p><span className="text-zinc-500">{t("merchantPayments.webhookEvents")}:</span> {selectedPayment.webhookEvents?.length || 0}</p>
+                    <p><span className="text-zinc-500">{t("merchantPayments.network")}:</span> {selectedPayment.network}</p>
                   </div>
                 </div>
               </aside>
@@ -896,23 +902,23 @@ export default function BusinessWalletMerchantsPage() {
                     <QRCodeSVG value={selectedPayment.walletAddress} size={120} />
                   </div>
                   <div>
-                    <p className="text-zinc-500 text-sm">Checkout URL</p>
+                    <p className="text-zinc-500 text-sm">{t("merchantPayments.checkoutUrl")}</p>
                     <p className="break-all mt-1">{getCheckoutUrl(selectedPayment)}</p>
                     <button
-                      onClick={() => copyText(getCheckoutUrl(selectedPayment), "Checkout link")}
+                      onClick={() => copyText(getCheckoutUrl(selectedPayment), t("merchantPayments.checkoutLink"))}
                       className="mt-3 rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-800"
                     >
-                      Copy checkout link
+                      {t("merchantPayments.copyCheckoutLink")}
                     </button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Payment ID</p><p className="break-all">{selectedPayment.id}</p></div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Order ID</p><p>{selectedPayment.orderId || "-"}</p></div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Customer</p><p className="break-all">{selectedPayment.customerEmail || "-"}</p></div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">Wallet Address</p><p className="break-all">{selectedPayment.walletAddress}</p></div>
-                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2"><p className="text-zinc-500 text-xs">Tx Hash</p><p className="break-all">{selectedPayment.txHash || "Not confirmed yet"}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">{t("merchantPayments.paymentId")}</p><p className="break-all">{selectedPayment.id}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">{t("merchantPayments.orderId")}</p><p>{selectedPayment.orderId || "-"}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">{t("merchantPayments.customer")}</p><p className="break-all">{selectedPayment.customerEmail || "-"}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs">{t("merchantPayments.walletAddress")}</p><p className="break-all">{selectedPayment.walletAddress}</p></div>
+                  <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2"><p className="text-zinc-500 text-xs">{t("merchantPayments.txHash")}</p><p className="break-all">{selectedPayment.txHash || t("merchantPayments.notConfirmed")}</p></div>
                 </div>
 
                 <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
@@ -923,7 +929,7 @@ export default function BusinessWalletMerchantsPage() {
                       <>
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
-                      <h3 className="text-2xl font-bold">Webhook delivery</h3>
+                      <h3 className="text-2xl font-bold">{t("merchantPayments.webhookDelivery")}</h3>
                       <p className="mt-1 text-zinc-400 text-sm">
                         {getWebhookStatusMessage(webhookSummary.latest)}
                       </p>
@@ -939,26 +945,26 @@ export default function BusinessWalletMerchantsPage() {
 
                   <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
                     <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                      <p className="text-xs text-zinc-500">Events</p>
+                      <p className="text-xs text-zinc-500">{t("merchantPayments.events")}</p>
                       <p className="mt-1 text-lg font-semibold">{webhookSummary.total}</p>
                     </div>
                     <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                      <p className="text-xs text-zinc-500">Successful</p>
+                      <p className="text-xs text-zinc-500">{t("merchantPayments.successful")}</p>
                       <p className="mt-1 text-lg font-semibold text-emerald-300">{webhookSummary.successful}</p>
                     </div>
                     <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                      <p className="text-xs text-zinc-500">Pending</p>
+                      <p className="text-xs text-zinc-500">{t("merchantPayments.pending")}</p>
                       <p className="mt-1 text-lg font-semibold text-amber-200">{webhookSummary.pending}</p>
                     </div>
                     <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                      <p className="text-xs text-zinc-500">Failed</p>
+                      <p className="text-xs text-zinc-500">{t("merchantPayments.failed")}</p>
                       <p className="mt-1 text-lg font-semibold text-rose-300">{webhookSummary.failed}</p>
                     </div>
                   </div>
 
                   {!selectedPayment.webhookEvents?.length ? (
                     <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-400">
-                      No webhook events yet. A webhook is created after a payment status event is sent.
+                      {t("merchantPayments.noWebhookEvents")}
                     </div>
                   ) : (
                     <div className="mt-4 space-y-3">
@@ -978,37 +984,37 @@ export default function BusinessWalletMerchantsPage() {
                                 disabled={webhookAction?.webhookId === webhook.id}
                                 className="h-10 rounded-lg bg-amber-200 px-4 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
                               >
-                                {webhookAction?.webhookId === webhook.id ? "Retrying..." : "Retry delivery"}
+                                {webhookAction?.webhookId === webhook.id ? t("merchantPayments.retrying") : t("merchantPayments.retryDelivery")}
                               </button>
                             ) : (
                               <span className="inline-flex h-10 items-center rounded-lg border border-zinc-800 px-4 text-xs font-semibold text-zinc-500">
-                                No action
+                                {t("merchantPayments.noAction")}
                               </span>
                             )}
                           </div>
 
                           <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
                             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-                              <p className="text-zinc-500">Attempts</p>
+                              <p className="text-zinc-500">{t("merchantPayments.attempts")}</p>
                               <p className="mt-1 font-semibold text-zinc-100">{webhook.attempts}/{webhook.maxAttempts}</p>
                             </div>
                             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-                              <p className="text-zinc-500">Last status</p>
+                              <p className="text-zinc-500">{t("merchantPayments.lastStatus")}</p>
                               <p className="mt-1 font-semibold text-zinc-100">{webhook.lastStatusCode || "-"}</p>
                             </div>
                             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-                              <p className="text-zinc-500">Next retry</p>
+                              <p className="text-zinc-500">{t("merchantPayments.nextRetry")}</p>
                               <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.nextRetryAt)}</p>
                             </div>
                             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
-                              <p className="text-zinc-500">Delivered</p>
+                              <p className="text-zinc-500">{t("merchantPayments.delivered")}</p>
                               <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.deliveredAt)}</p>
                             </div>
                           </div>
 
                           {webhook.lastError && (
                             <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-100">
-                              <p className="font-semibold">Last error</p>
+                              <p className="font-semibold">{t("merchantPayments.lastError")}</p>
                               <p className="mt-1 break-all">{webhook.lastError}</p>
                             </div>
                           )}

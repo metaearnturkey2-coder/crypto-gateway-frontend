@@ -4,6 +4,7 @@ import { Bell, Clock, DollarSign, Globe2, MapPinned, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 const preferenceDefaults = {
   displayCurrency: "USD",
@@ -17,31 +18,31 @@ const preferenceDefaults = {
 const preferenceRows = [
   {
     key: "displayCurrency",
-    label: "Currency",
+    labelKey: "preferences.currency",
     icon: DollarSign,
     options: ["USD", "TRY", "EUR", "GBP"],
   },
   {
     key: "dashboardLanguage",
-    label: "Language",
+    labelKey: "preferences.language",
     icon: Globe2,
     options: ["English", "Türkçe"],
   },
   {
     key: "notificationLanguage",
-    label: "Notification language",
+    labelKey: "preferences.notificationLanguage",
     icon: Bell,
     options: ["English", "Türkçe"],
   },
   {
     key: "countryRegion",
-    label: "Country/Region",
+    labelKey: "preferences.countryRegion",
     icon: MapPinned,
     options: ["Türkiye", "United States", "United Kingdom", "Germany"],
   },
   {
     key: "timeZone",
-    label: "Time zone",
+    labelKey: "preferences.timeZone",
     icon: Clock,
     options: ["Europe/Istanbul", "Europe/London", "Europe/Berlin", "America/New_York"],
   },
@@ -53,6 +54,7 @@ export default function BasicPreferencesPage() {
   const [ready, setReady] = useState(false);
   const [savingKey, setSavingKey] = useState("");
   const [notice, setNotice] = useState(null);
+  const { t } = useDashboardLanguage();
 
   useEffect(() => {
     const loadPreferences = async () => {
@@ -70,7 +72,7 @@ export default function BasicPreferencesPage() {
         const data = await response.json();
 
         if (!response.ok) {
-          setNotice({ type: "error", message: data.message || data.errors?.join(" ") || "Preference load error" });
+          setNotice({ type: "error", message: data.message || data.errors?.join(" ") || t("preferences.loadError") });
           return;
         }
 
@@ -84,8 +86,9 @@ export default function BasicPreferencesPage() {
         Object.entries(loadedPreferences).forEach(([key, value]) => {
           localStorage.setItem(key, value);
         });
+        window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: loadedPreferences.dashboardLanguage }));
       } catch {
-        setNotice({ type: "error", message: "Preference load error" });
+        setNotice({ type: "error", message: t("preferences.loadError") });
       } finally {
         setReady(true);
       }
@@ -99,6 +102,10 @@ export default function BasicPreferencesPage() {
 
     if (key === "displayCurrency") {
       window.dispatchEvent(new CustomEvent("displayCurrencyChange", { detail: value }));
+    }
+
+    if (key === "dashboardLanguage") {
+      window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: value }));
     }
 
     if (key === "dashboardTheme") {
@@ -134,7 +141,7 @@ export default function BasicPreferencesPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.errors?.join(" ") || data.message || "Preference save error");
+        throw new Error(data.errors?.join(" ") || data.message || t("preferences.saveError"));
       }
 
       const savedPreferences = {
@@ -146,7 +153,7 @@ export default function BasicPreferencesPage() {
         localStorage.setItem(preferenceKey, preferenceValue);
       });
     } catch (error) {
-      setNotice({ type: "error", message: error.message || "Preference save error" });
+      setNotice({ type: "error", message: error.message || t("preferences.saveError") });
     } finally {
       setSavingKey("");
     }
@@ -159,7 +166,7 @@ export default function BasicPreferencesPage() {
   }));
 
   return (
-    <SettingsShell title="Preference" activeSection="preference">
+    <SettingsShell title={t("settings.preference")} activeSection="preference">
       {notice && (
         <div className="mb-4 max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200 light-dashboard:text-red-700">
           {notice.message}
@@ -177,7 +184,7 @@ export default function BasicPreferencesPage() {
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
                   <Icon size={19} strokeWidth={2.2} />
                 </span>
-                <p className="font-semibold text-white light-dashboard:text-zinc-950">{row.label}</p>
+                <p className="font-semibold text-white light-dashboard:text-zinc-950">{t(row.labelKey)}</p>
               </div>
               <select
                 value={preferences[row.key]}
@@ -200,7 +207,7 @@ export default function BasicPreferencesPage() {
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
               <Moon size={19} strokeWidth={2.2} />
             </span>
-            <p className="font-semibold text-white light-dashboard:text-zinc-950">Dark theme</p>
+            <p className="font-semibold text-white light-dashboard:text-zinc-950">{t("preferences.darkTheme")}</p>
           </div>
           <button
             type="button"

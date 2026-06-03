@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 export default function MerchantTopbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -9,6 +10,7 @@ export default function MerchantTopbar() {
   const [merchant, setMerchant] = useState(null);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [themeReady, setThemeReady] = useState(false);
+  const { t } = useDashboardLanguage();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -17,7 +19,14 @@ export default function MerchantTopbar() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
-      .then((data) => setMerchant(data.merchant || null))
+      .then((data) => {
+        setMerchant(data.merchant || null);
+        const language = data.merchant?.preference?.dashboardLanguage;
+        if (language) {
+          localStorage.setItem("dashboardLanguage", language);
+          window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: language }));
+        }
+      })
       .catch(() => {});
   }, []);
 
@@ -67,7 +76,7 @@ export default function MerchantTopbar() {
           <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400" />
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Crypto Gateway</h1>
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Merchant Panel</p>
+            <p className="text-xs uppercase tracking-wide text-zinc-500">{t("brand.merchantPanel")}</p>
           </div>
         </div>
 
@@ -83,7 +92,7 @@ export default function MerchantTopbar() {
             <div className="absolute right-0 z-[100] mt-2 w-72 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
               <div className="border-b border-zinc-800 px-4 py-3">
                 <p className="truncate text-sm font-semibold text-zinc-100">{merchant?.email}</p>
-                <p className="text-xs text-zinc-500">Merchant account</p>
+                <p className="text-xs text-zinc-500">{t("account.merchantAccount")}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <p className="truncate text-xs text-zinc-500">UID: {merchant?.id || "-"}</p>
                   <button
@@ -95,20 +104,20 @@ export default function MerchantTopbar() {
                     }}
                     className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 transition hover:bg-zinc-800"
                   >
-                    {copiedUid ? "Copied" : "Copy"}
+                    {copiedUid ? t("common.copied") : t("common.copy")}
                   </button>
                 </div>
               </div>
 
               <a href="/overview" className="block px-4 py-3 text-sm text-zinc-200 transition hover:bg-zinc-900">
-                Genel Bakış
+                {t("account.overview")}
               </a>
               <a href="/settings" className="block px-4 py-3 text-sm text-zinc-200 transition hover:bg-zinc-900">
-                Ayarlar
+                {t("account.settings")}
               </a>
 
               <button onClick={logout} className="w-full px-4 py-3 text-left text-sm text-red-400 transition hover:bg-zinc-900">
-                Çıkış Yap
+                {t("account.logout")}
               </button>
             </div>
           )}

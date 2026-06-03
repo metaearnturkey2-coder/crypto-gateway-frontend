@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { API_BASE_URL, apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 function getApiCallClassName(success) {
   return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
@@ -23,6 +24,7 @@ export default function BusinessWalletApiDocsPage() {
   const [apiKey, setApiKey] = useState("");
   const [copiedKey, setCopiedKey] = useState("");
   const [activeIntegrationKey, setActiveIntegrationKey] = useState("create-payment");
+  const { t } = useDashboardLanguage();
 
   const loadApiUsage = async () => {
     const token = localStorage.getItem("token");
@@ -73,24 +75,24 @@ export default function BusinessWalletApiDocsPage() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white mb-6">
         <div className="flex items-center justify-between mb-5">
           <div>
-            <h2 className="text-2xl font-bold">API Usage</h2>
-            <p className="text-zinc-500 text-sm">Public API request volume and recent integration calls.</p>
+            <h2 className="text-2xl font-bold">{t("apiDocs.apiUsage")}</h2>
+            <p className="text-zinc-500 text-sm">{t("apiDocs.usageDescription")}</p>
           </div>
-          <span className="text-zinc-500 text-sm">Last 24 hours</span>
+          <span className="text-zinc-500 text-sm">{t("apiDocs.last24Hours")}</span>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-5">
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">Requests</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.total}</p></div>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">Successful</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.successful}</p></div>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">Failed</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.failed}</p></div>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">Create Calls</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.createCalls}</p></div>
-          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">Status Calls</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.statusCalls}</p></div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">{t("apiDocs.requests")}</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.total}</p></div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">{t("merchantPayments.successful")}</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.successful}</p></div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">{t("merchantPayments.failed")}</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.failed}</p></div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">{t("apiDocs.createCalls")}</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.createCalls}</p></div>
+          <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-4"><p className="text-zinc-500 text-xs mb-2 h-8">{t("apiDocs.statusCalls")}</p><p className="text-4xl font-bold font-mono">{apiUsage.summary.statusCalls}</p></div>
         </div>
 
         {loading ? (
-          <p className="text-zinc-400">Loading...</p>
+          <p className="text-zinc-400">{t("overview.loading")}</p>
         ) : apiUsage.recentCalls.length === 0 ? (
-          <p className="text-zinc-400">No API requests recorded yet.</p>
+          <p className="text-zinc-400">{t("apiDocs.noRequests")}</p>
         ) : (
           <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
             {apiUsage.recentCalls.map((call) => (
@@ -116,8 +118,8 @@ export default function BusinessWalletApiDocsPage() {
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white">
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Integration</h2>
-            <p className="text-zinc-400 text-sm mt-2">Production-ready API examples for merchant checkout flows.</p>
+            <h2 className="text-2xl font-bold">{t("apiDocs.integration")}</h2>
+            <p className="text-zinc-400 text-sm mt-2">{t("apiDocs.integrationDescription")}</p>
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
             {["payment.paid", "payment.cancelled", "payment.expired", "webhook.test"].map((event) => (
@@ -130,16 +132,16 @@ export default function BusinessWalletApiDocsPage() {
 
         <div className="mb-5 grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="mb-2 text-xs text-zinc-500">Amount limits</p>
-            <p>0.01 to 1,000,000 USDT, max 2 decimal places.</p>
+            <p className="mb-2 text-xs text-zinc-500">{t("apiDocs.amountLimits")}</p>
+            <p>{t("apiDocs.amountLimitsDescription")}</p>
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="mb-2 text-xs text-zinc-500">Order ID</p>
-            <p>Optional, max 80 chars: letters, numbers, dot, dash, underscore, colon.</p>
+            <p className="mb-2 text-xs text-zinc-500">{t("merchantPayments.orderId")}</p>
+            <p>{t("apiDocs.orderIdDescription")}</p>
           </div>
           <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
-            <p className="mb-2 text-xs text-zinc-500">Customer email</p>
-            <p>Optional, must be a valid email address, max 254 chars.</p>
+            <p className="mb-2 text-xs text-zinc-500">{t("merchantPayments.customerEmail")}</p>
+            <p>{t("apiDocs.customerEmailDescription")}</p>
           </div>
         </div>
 
@@ -147,9 +149,9 @@ export default function BusinessWalletApiDocsPage() {
           const snippets = [
             {
               key: "create-payment",
-              title: "Create Payment",
+              title: t("apiDocs.createPaymentTitle"),
               method: "POST",
-              description: "Creates a checkout session and returns a checkoutUrl.",
+              description: t("apiDocs.createPaymentDescription"),
               path: "/api/public/payments/create",
               value: `curl -X POST ${API_BASE_URL}/api/public/payments/create \\
 -H "Content-Type: application/json" \\
@@ -162,27 +164,27 @@ export default function BusinessWalletApiDocsPage() {
             },
             {
               key: "status-payment-id",
-              title: "Status by Payment ID",
+              title: t("apiDocs.statusPaymentIdTitle"),
               method: "GET",
-              description: "Checks a payment by its gateway payment ID.",
+              description: t("apiDocs.statusPaymentIdDescription"),
               path: "/api/public/payments/status/{paymentId}",
               value: `curl -X GET "${API_BASE_URL}/api/public/payments/status/{paymentId}" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {
               key: "status-order-id",
-              title: "Status by Order ID",
+              title: t("apiDocs.statusOrderIdTitle"),
               method: "GET",
-              description: "Checks a payment by the merchant order ID.",
+              description: t("apiDocs.statusOrderIdDescription"),
               path: "/api/public/payments/status?orderId=ORDER-1001",
               value: `curl -X GET "${API_BASE_URL}/api/public/payments/status?orderId=ORDER-1001" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {
               key: "invalid-request",
-              title: "Invalid Request Response",
+              title: t("apiDocs.invalidRequestTitle"),
               method: "400",
-              description: "Validation errors are returned as a message plus an errors array.",
+              description: t("apiDocs.invalidRequestDescription"),
               path: "POST /api/public/payments/create",
               value: `HTTP/1.1 400 Bad Request
 Content-Type: application/json
@@ -198,9 +200,9 @@ Content-Type: application/json
             },
             {
               key: "save-webhook-url",
-              title: "Save Webhook URL",
+              title: t("apiDocs.saveWebhookTitle"),
               method: "PUT",
-              description: "Stores the merchant callback URL used for payment and test webhooks.",
+              description: t("apiDocs.saveWebhookDescription"),
               path: "/api/merchant/webhook-url",
               value: `curl -X PUT ${API_BASE_URL}/api/merchant/webhook-url \\
 -H "Content-Type: application/json" \\
@@ -211,9 +213,9 @@ Content-Type: application/json
             },
             {
               key: "test-webhook",
-              title: "Send Test Webhook",
+              title: t("apiDocs.testWebhookTitle"),
               method: "POST",
-              description: "Sends a signed webhook.test event to the saved callback URL.",
+              description: t("apiDocs.testWebhookDescription"),
               path: "/api/merchant/webhook-test",
               value: `curl -X POST ${API_BASE_URL}/api/merchant/webhook-test \\
 -H "Authorization: Bearer your_dashboard_token"
@@ -230,9 +232,9 @@ Content-Type: application/json
             },
             {
               key: "retry-webhook",
-              title: "Retry Payment Webhook",
+              title: t("apiDocs.retryWebhookTitle"),
               method: "POST",
-              description: "Retries a pending or failed webhook delivery from a payment detail record.",
+              description: t("apiDocs.retryWebhookDescription"),
               path: "/api/payments/{paymentId}/webhooks/{webhookId}/retry",
               value: `curl -X POST ${API_BASE_URL}/api/payments/{paymentId}/webhooks/{webhookId}/retry \\
 -H "Authorization: Bearer your_dashboard_token"
@@ -253,9 +255,9 @@ Content-Type: application/json
             },
             {
               key: "verify-webhook-node",
-              title: "Verify Webhook in Node.js",
+              title: t("apiDocs.verifyNodeTitle"),
               method: "POST",
-              description: "Verifies timestamped signatures with a raw JSON body.",
+              description: t("apiDocs.verifyNodeDescription"),
               path: "merchant webhook URL",
               value: `import crypto from "crypto";
 import express from "express";
@@ -305,9 +307,9 @@ app.post(
             },
             {
               key: "verify-webhook-php",
-              title: "Verify Webhook in PHP",
+              title: t("apiDocs.verifyPhpTitle"),
               method: "POST",
-              description: "Validates the webhook signature before reading the event.",
+              description: t("apiDocs.verifyPhpDescription"),
               path: "merchant webhook URL",
               value: `<?php
 $webhookSecret = getenv('CRYPTO_GATEWAY_WEBHOOK_SECRET');
@@ -393,7 +395,7 @@ http_response_code(200);`,
                       }}
                       className="shrink-0 bg-white text-black px-4 py-2 rounded-lg text-xs font-semibold"
                     >
-                      {copiedKey === active.key ? "Copied" : "Copy"}
+                      {copiedKey === active.key ? t("common.copied") : t("common.copy")}
                     </button>
                   </div>
                   <pre className="max-h-80 overflow-auto p-4 text-xs leading-6 text-zinc-200 whitespace-pre-wrap">
@@ -404,15 +406,15 @@ http_response_code(200);`,
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                 <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                  <p className="text-zinc-500 text-xs mb-2">API header</p>
+                  <p className="text-zinc-500 text-xs mb-2">{t("apiDocs.apiHeader")}</p>
                   <p className="font-mono break-all">x-api-key</p>
                 </div>
                 <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                  <p className="text-zinc-500 text-xs mb-2">Webhook header</p>
+                  <p className="text-zinc-500 text-xs mb-2">{t("apiDocs.webhookHeader")}</p>
                   <p className="font-mono break-all">x-webhook-signature + x-webhook-timestamp</p>
                 </div>
                 <div className="border border-zinc-800 bg-zinc-950 rounded-xl p-4">
-                  <p className="text-zinc-500 text-xs mb-2">Signature format</p>
+                  <p className="text-zinc-500 text-xs mb-2">{t("apiDocs.signatureFormat")}</p>
                   <p className="font-mono break-all">HMAC_SHA256(timestamp + "." + rawBody)</p>
                 </div>
               </div>

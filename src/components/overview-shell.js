@@ -4,18 +4,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import MerchantTopbar from "@/components/merchant-topbar";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 const navItems = [
-  { href: "/overview", label: "Overview" },
-  { href: "/business", label: "Business" },
-  { href: "/trade", label: "Trade" },
-  { href: "/history", label: "History" },
-  { href: "/settings/security", label: "Settings" },
+  { href: "/overview", labelKey: "nav.overview" },
+  { href: "/business", labelKey: "nav.business" },
+  { href: "/trade", labelKey: "nav.trade" },
+  { href: "/history", labelKey: "nav.history" },
+  { href: "/settings/security", labelKey: "nav.settings" },
 ];
 
 export default function OverviewShell({ children }) {
   const pathname = usePathname();
   const [businessOpen, setBusinessOpen] = useState(false);
+  const { t } = useDashboardLanguage();
 
   useEffect(() => {
     const close = () => setBusinessOpen(false);
@@ -51,7 +53,7 @@ export default function OverviewShell({ children }) {
                         active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                       }`}
                     >
-                      {item.label}
+                      {t(item.labelKey)}
                     </button>
 
                     {businessOpen && (
@@ -60,13 +62,13 @@ export default function OverviewShell({ children }) {
                         className="absolute top-full left-0 z-[100] mt-2 w-[280px] rounded-xl border border-zinc-200 bg-white shadow-xl p-2 space-y-1"
                       >
                         <Link href="/business-wallet" className="block rounded-lg px-4 py-3 hover:bg-zinc-100">
-                          <p className="text-sm font-semibold">Business overview</p>
+                          <p className="text-sm font-semibold">{t("nav.businessOverview")}</p>
                         </Link>
                         <Link href="/business-wallet/merchants" className="block rounded-lg px-4 py-3 hover:bg-zinc-100">
-                          <p className="text-sm font-semibold">Merchant payments</p>
+                          <p className="text-sm font-semibold">{t("nav.merchantPayments")}</p>
                         </Link>
                         <Link href="/business-wallet/api-docs" className="block rounded-lg px-4 py-3 hover:bg-zinc-100">
-                          <p className="text-sm font-semibold">API docs</p>
+                          <p className="text-sm font-semibold">{t("nav.apiDocs")}</p>
                         </Link>
                       </div>
                     )}
@@ -85,7 +87,7 @@ export default function OverviewShell({ children }) {
                     active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                 </Link>
               );
             })}
