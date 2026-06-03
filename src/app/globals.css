@@ -592,6 +592,213 @@ body {
   background: #059669 !important;
 }
 
+.overview-summary-card,
+.dark-dashboard .overview-summary-card {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .overview-summary-card {
+  border-color: #9ca3af !important;
+  background: #f9fafb !important;
+}
+
+.overview-summary-metric,
+.dark-dashboard .overview-summary-metric {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+}
+
+.light-dashboard .overview-summary-metric {
+  border-color: #9ca3af !important;
+  background: #ffffff !important;
+}
+
+.overview-summary-action,
+.dark-dashboard .overview-summary-action {
+  display: flex;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid #3f3f46 !important;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.overview-summary-action-primary,
+.dark-dashboard .overview-summary-action-primary {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+  color: #ffffff !important;
+}
+
+.overview-summary-action-primary:hover,
+.dark-dashboard .overview-summary-action-primary:hover {
+  border-color: #71717a !important;
+  background: #18181b !important;
+  color: #ffffff !important;
+}
+
+.overview-summary-action-secondary,
+.dark-dashboard .overview-summary-action-secondary {
+  background: #09090b !important;
+  color: #f4f4f5 !important;
+}
+
+.overview-summary-action-secondary:hover,
+.dark-dashboard .overview-summary-action-secondary:hover {
+  border-color: #71717a !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .overview-summary-action {
+  border-color: #9ca3af !important;
+}
+
+.light-dashboard .overview-summary-action-primary {
+  border-color: #111827 !important;
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .overview-summary-action-primary:hover {
+  background: #000000 !important;
+}
+
+.light-dashboard .overview-summary-action-secondary {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .overview-summary-action-secondary:hover {
+  border-color: #111827 !important;
+  background: #f3f4f6 !important;
+}
+
+.assets-tab-button,
+.dark-dashboard .assets-tab-button {
+  border: 1px solid transparent !important;
+}
+
+.assets-tab-button-active,
+.dark-dashboard .assets-tab-button-active {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+  color: #ffffff !important;
+}
+
+.assets-tab-button-idle,
+.dark-dashboard .assets-tab-button-idle {
+  color: #a1a1aa !important;
+}
+
+.assets-tab-button-idle:hover,
+.dark-dashboard .assets-tab-button-idle:hover {
+  background: #18181b !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .assets-tab-button-active {
+  border-color: #111827 !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .assets-tab-button-idle {
+  color: #374151 !important;
+}
+
+.light-dashboard .assets-tab-button-idle:hover {
+  background: #f4f4f5 !important;
+  color: #111827 !important;
+}
+
+.assets-wallet-link,
+.dark-dashboard .assets-wallet-link {
+  color: #a1a1aa !important;
+}
+
+.assets-wallet-link:hover,
+.dark-dashboard .assets-wallet-link:hover {
+  background: #18181b !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .assets-wallet-link {
+  color: #374151 !important;
+}
+
+.light-dashboard .assets-wallet-link:hover {
+  background: #f4f4f5 !important;
+  color: #111827 !important;
+}
+
+.assets-price-status,
+.dark-dashboard .assets-price-status {
+  color: #71717a !important;
+}
+
+.light-dashboard .assets-price-status {
+  color: #4b5563 !important;
+}
+
+.asset-coin-avatar,
+.dark-dashboard .asset-coin-avatar {
+  border: 1px solid #3f3f46 !important;
+  background: #18181b !important;
+  color: #d4d4d8 !important;
+}
+
+.light-dashboard .asset-coin-avatar {
+  border-color: #cbd5e1 !important;
+  background: #e5e7eb !important;
+  color: #334155 !important;
+}
+
+.asset-allocation-track,
+.dark-dashboard .asset-allocation-track {
+  background: #27272a !important;
+}
+
+.asset-allocation-fill,
+.dark-dashboard .asset-allocation-fill {
+  background: #34d399 !important;
+}
+
+.light-dashboard .asset-allocation-track {
+  background: #d1d5db !important;
+}
+
+.light-dashboard .asset-allocation-fill {
+  background: #059669 !important;
+}
+
+.asset-price-change,
+.dark-dashboard .asset-price-change {
+  line-height: 1.2;
+}
+
+.asset-price-change-positive,
+.dark-dashboard .asset-price-change-positive {
+  color: #6ee7b7 !important;
+}
+
+.asset-price-change-negative,
+.dark-dashboard .asset-price-change-negative {
+  color: #fda4af !important;
+}
+
+.light-dashboard .asset-price-change-positive {
+  color: #047857 !important;
+}
+
+.light-dashboard .asset-price-change-negative {
+  color: #e11d48 !important;
+}
+
 .payment-create-input,
 .dark-dashboard .payment-create-input {
   border-color: #3f3f46 !important;

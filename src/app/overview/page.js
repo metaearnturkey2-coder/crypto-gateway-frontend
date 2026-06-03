@@ -324,10 +324,10 @@ export default function OverviewPage() {
   return (
     <OverviewShell>
       <div className="max-w-[1108px]">
-        <div className="rounded-2xl border border-zinc-700 bg-zinc-900 px-5 py-4 md:px-6 md:py-5">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+        <div className="overview-summary-card rounded-2xl border px-5 py-4 md:px-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <p className="mb-2 text-base font-semibold text-white">{t("overview.totalFunds")}</p>
+              <p className="mb-1.5 text-sm font-semibold text-white">{t("overview.totalFunds")}</p>
               {loading ? (
                 <p className="text-zinc-500 text-xl">{t("overview.loading")}</p>
               ) : (
@@ -342,53 +342,53 @@ export default function OverviewPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[390px]">
-              <Link href="/business-wallet/merchants" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:border-zinc-500 hover:bg-zinc-900 light-dashboard:border-zinc-950 light-dashboard:bg-zinc-950 light-dashboard:text-white light-dashboard:hover:bg-black">
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:w-auto lg:min-w-[390px]">
+              <Link href="/business-wallet/merchants" className="overview-summary-action overview-summary-action-primary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
                 {t("overview.createPayment")}
               </Link>
-              <Link href="/business-wallet" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">
+              <Link href="/business-wallet" className="overview-summary-action overview-summary-action-secondary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
                 {t("overview.requestPayout")}
               </Link>
-              <Link href="/business-wallet/api-docs" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">
+              <Link href="/business-wallet/api-docs" className="overview-summary-action overview-summary-action-secondary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
                 {t("overview.apiDocs")}
               </Link>
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="mb-2 text-sm font-semibold text-zinc-300">{t("overview.available")}</p>
-              <p className="text-2xl font-bold leading-none text-white">
+          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="overview-summary-metric rounded-xl border px-4 py-2.5">
+              <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.available")}</p>
+              <p className="text-[22px] font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(available)}
               </p>
-              <p className="mt-3 text-xs font-semibold text-zinc-500">
+              <p className="mt-2.5 text-xs font-semibold text-zinc-500">
                 {Number(available || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} · {network}
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="mb-2 text-sm font-semibold text-zinc-300">{t("overview.grossPaid")}</p>
-              <p className="text-2xl font-bold leading-none text-white">
+            <div className="overview-summary-metric rounded-xl border px-4 py-2.5">
+              <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.grossPaid")}</p>
+              <p className="text-[22px] font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(grossPaid)}
               </p>
-              <p className="mt-3 text-xs font-semibold text-zinc-500">
+              <p className="mt-2.5 text-xs font-semibold text-zinc-500">
                 {Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.settledVolume")}
               </p>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
-              <p className="mb-2 text-sm font-semibold text-zinc-300">{t("overview.reserved")}</p>
-              <p className="text-2xl font-bold leading-none text-white">
+            <div className="overview-summary-metric rounded-xl border px-4 py-2.5">
+              <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.reserved")}</p>
+              <p className="text-[22px] font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(reserved)}
               </p>
-              <p className="mt-3 text-xs font-semibold text-zinc-500">
+              <p className="mt-2.5 text-xs font-semibold text-zinc-500">
                 {Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.onHold")}
               </p>
             </div>
           </div>
         </div>
 
-        <section className="mt-6 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900">
+        <section className="mt-5 overflow-hidden rounded-2xl border border-zinc-700 bg-zinc-900">
           <div className={`${onboardingComplete ? "" : "border-b border-zinc-800"} px-5 py-5 md:px-6`}>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
@@ -491,33 +491,33 @@ export default function OverviewPage() {
           )}
         </section>
 
-        <section className="mt-6">
-          <h3 className="text-2xl font-semibold text-zinc-900 mb-4">{t("overview.assets")}</h3>
+        <section className="mt-5">
+          <h3 className="mb-3 text-2xl font-semibold text-zinc-900">{t("overview.assets")}</h3>
           <div className="rounded-2xl border border-zinc-700 bg-zinc-900 shadow-[0_8px_24px_rgba(0,0,0,0.16)] overflow-hidden">
-            <div className="flex flex-col gap-4 px-5 py-4 border-b border-zinc-800 sm:flex-row sm:items-center sm:justify-between md:px-6">
-              <div className="flex items-center gap-5 text-base font-semibold">
+            <div className="flex flex-col gap-3 px-5 py-3 border-b border-zinc-800 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2 text-sm font-semibold">
                 <button
                   onClick={() => setActiveAssetsTab("personal")}
-                  className={`pb-2 border-b-4 transition ${
-                    activeAssetsTab === "personal" ? "border-white text-white" : "border-transparent text-zinc-500"
+                  className={`assets-tab-button rounded-lg px-3 py-2 transition ${
+                    activeAssetsTab === "personal" ? "assets-tab-button-active" : "assets-tab-button-idle"
                   }`}
                 >
                   {t("overview.personal")}
                 </button>
                 <button
                   onClick={() => setActiveAssetsTab("business")}
-                  className={`pb-2 border-b-4 transition ${
-                    activeAssetsTab === "business" ? "border-white text-white" : "border-transparent text-zinc-500"
+                  className={`assets-tab-button rounded-lg px-3 py-2 transition ${
+                    activeAssetsTab === "business" ? "assets-tab-button-active" : "assets-tab-button-idle"
                   }`}
                 >
                   {t("overview.business")}
                 </button>
               </div>
-              <Link href="/business-wallet" className="text-sm font-semibold text-zinc-400 hover:text-white transition">
+              <Link href="/business-wallet" className="assets-wallet-link rounded-lg px-3 py-2 text-xs font-semibold transition">
                 {t("overview.walletDetails")}
               </Link>
             </div>
-            <div className="px-6 py-2 text-sm text-zinc-500 border-b border-zinc-800">
+            <div className="assets-price-status px-5 py-2 text-xs border-b border-zinc-800">
               {pricesLoading
                 ? t("overview.updatingPrices")
                 : pricesError
@@ -527,7 +527,7 @@ export default function OverviewPage() {
                 : t("overview.livePrices")}
             </div>
 
-            <div className="hidden grid-cols-[1.5fr_1.2fr_1fr_1fr] gap-3 px-6 py-3 text-xs uppercase tracking-wide text-zinc-500 border-b border-zinc-800 bg-zinc-950 md:grid">
+            <div className="hidden grid-cols-[1.5fr_1.2fr_1fr_0.8fr] gap-3 px-5 py-2 text-[11px] uppercase tracking-wide text-zinc-500 border-b border-zinc-800 bg-zinc-950 md:grid">
               <span>{t("overview.name")}</span>
               <span>{t("overview.balance")}</span>
               <span>{t("overview.price")}</span>
@@ -544,42 +544,58 @@ export default function OverviewPage() {
                   return (
                 <div
                   key={asset.symbol}
-                  className="grid grid-cols-1 gap-4 px-5 py-4 border-b last:border-b-0 border-zinc-800 hover:bg-zinc-950/60 transition md:grid-cols-[1.5fr_1.2fr_1fr_1fr] md:items-center md:px-6"
+                  className="grid grid-cols-1 gap-3 px-5 py-3 border-b last:border-b-0 border-zinc-800 hover:bg-zinc-950/60 transition md:grid-cols-[1.5fr_1.2fr_1fr_0.8fr] md:items-center"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="h-9 w-9 rounded-full bg-zinc-800 text-zinc-300 flex items-center justify-center text-[11px] font-bold shadow-sm">
-                      {asset.symbol.slice(0, 3)}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="asset-coin-avatar flex h-7 w-7 items-center justify-center rounded-full text-[9px] font-bold">
+                      <img
+                        src={`/coins/${asset.symbol.toLowerCase()}.svg`}
+                        alt=""
+                        className="h-full w-full rounded-full object-contain"
+                        onError={(event) => {
+                          event.currentTarget.style.display = "none";
+                          event.currentTarget.nextElementSibling.style.display = "inline";
+                        }}
+                      />
+                      <span className="hidden">{asset.symbol.slice(0, 3)}</span>
                     </div>
                     <div className="min-w-0">
-                      <p className="text-lg font-semibold text-white truncate tracking-tight">{asset.symbol}</p>
-                      <p className="text-sm text-zinc-500 truncate">{asset.name}</p>
+                      <p className="text-base font-semibold text-white truncate tracking-tight">{asset.symbol}</p>
+                      <p className="text-xs text-zinc-500 truncate">{asset.name}</p>
                     </div>
                   </div>
 
                   <div>
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">{t("overview.balance")}</p>
-                    <p className="text-lg font-semibold text-white break-words">{formatTokenBalance(balance)}</p>
-                    <p className="text-sm text-zinc-500">{formatDisplayAmount(usdValue)}</p>
+                    <p className="text-base font-semibold text-white break-words">{formatTokenBalance(balance)}</p>
+                    <p className="text-xs text-zinc-500">{formatDisplayAmount(usdValue)}</p>
                   </div>
 
                   <div>
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">{t("overview.price")}</p>
-                    <p className="text-lg font-semibold text-white">
+                    <p className="text-base font-semibold text-white">
                       {pricesLoading ? "..." : formatUsdPrice(asset.symbol, prices?.[asset.symbol]?.usd)}
                     </p>
                     <p
-                      className={`text-sm font-semibold ${
-                        Number(prices?.[asset.symbol]?.change24h || 0) >= 0 ? "text-emerald-600" : "text-rose-600"
+                      className={`asset-price-change text-[11px] font-semibold ${
+                        Number(prices?.[asset.symbol]?.change24h || 0) >= 0 ? "asset-price-change-positive" : "asset-price-change-negative"
                       }`}
                     >
                       {pricesLoading ? "--" : formatChange(prices?.[asset.symbol]?.change24h)}
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="inline-flex h-7 w-7 rounded-full border-4 border-zinc-700" />
+                  <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">{t("overview.allocation")}</p>
-                    <p className="text-base font-semibold text-white">{allocation.toFixed(1)}%</p>
+                    <div className="flex items-center gap-2">
+                      <div className="asset-allocation-track h-1.5 w-16 overflow-hidden rounded-full">
+                        <div
+                          className="asset-allocation-fill h-full rounded-full"
+                          style={{ width: `${Math.min(Math.max(allocation, 0), 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs font-semibold text-white">{allocation.toFixed(1)}%</p>
+                    </div>
                   </div>
                 </div>
                   );
