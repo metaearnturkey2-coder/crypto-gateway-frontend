@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "REJECTED", "PAID"];
 const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
@@ -143,6 +144,7 @@ const readJsonResponse = async (response) => {
 };
 
 export default function AdminPayoutsPage() {
+  const { t } = useDashboardLanguage();
   const primaryButtonClass =
     "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const secondaryButtonClass =
@@ -575,22 +577,22 @@ export default function AdminPayoutsPage() {
     const trimmedNote = statusNote.trim();
 
     if (status === "PAID" && !trimmedTxHash) {
-      showNotice("error", "Settlement tx hash is required.");
+      showNotice("error", t("admin.settlementTxRequired"));
       return;
     }
 
     if (status === "REJECTED" && !trimmedNote) {
-      showNotice("error", "Reject reason is required.");
+      showNotice("error", t("admin.rejectReasonRequired"));
       return;
     }
 
     if (status === "APPROVED" && !trimmedNote) {
-      showNotice("error", "Admin note is required when approving payout.");
+      showNotice("error", t("admin.adminNoteRequired"));
       return;
     }
 
     if (isCriticalPayoutStatus(status) && criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) {
-      showNotice("error", `Type ${CRITICAL_CONFIRMATION_TEXT} to confirm this critical action.`);
+      showNotice("error", t("admin.criticalConfirmRequired"));
       return;
     }
 
@@ -676,16 +678,16 @@ export default function AdminPayoutsPage() {
       <header className="border-b border-zinc-800 bg-zinc-950/70">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Internal console</p>
-            <h1 className="mt-1 text-2xl font-bold">Admin Payouts</h1>
-            <p className="text-zinc-500 text-sm">Protected settlement review and payout processing.</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.internalConsole")}</p>
+            <h1 className="mt-1 text-2xl font-bold">{t("admin.payoutsTitle")}</h1>
+            <p className="text-zinc-500 text-sm">{t("admin.subtitle")}</p>
           </div>
 
           <a
             href="/dashboard"
             className="w-fit rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800 transition"
           >
-            Merchant Dashboard
+            {t("admin.merchantDashboard")}
           </a>
         </div>
       </header>
@@ -708,9 +710,9 @@ export default function AdminPayoutsPage() {
             <div className="p-4">
               <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
-                  <h2 className="text-lg font-bold">Restricted Access</h2>
+                  <h2 className="text-lg font-bold">{t("admin.restrictedAccess")}</h2>
                   <p className="mt-1 max-w-2xl text-sm text-zinc-500">
-                    Verify the current internal admin token before settlement data is loaded. Saved sessions are revoked automatically when they become invalid.
+                    {t("admin.accessDescription")}
                   </p>
                 </div>
                 <span
@@ -723,17 +725,17 @@ export default function AdminPayoutsPage() {
                   }`}
                 >
                   {tokenState === "valid"
-                    ? "Verified session"
+                    ? t("admin.verifiedSession")
                     : tokenState === "invalid"
-                    ? "Verification failed"
-                    : "Awaiting verification"}
+                    ? t("admin.verificationFailed")
+                    : t("admin.awaitingVerification")}
                 </span>
               </div>
 
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto]">
                 <input
                   type="password"
-                  placeholder="Internal admin token"
+                  placeholder={t("admin.tokenPlaceholder")}
                   value={adminToken}
                   onChange={(e) => setAdminToken(e.target.value)}
                   className="h-10 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus:border-zinc-500"
@@ -744,20 +746,20 @@ export default function AdminPayoutsPage() {
                   disabled={savingToken}
                   className={`${primaryButtonClass} h-10 w-full px-4 py-2 lg:w-auto`}
                 >
-                  {savingToken ? "Verifying..." : "Verify Token"}
+                  {savingToken ? t("admin.verifying") : t("admin.verifyToken")}
                 </button>
 
                 <button
                   onClick={clearToken}
                   className={`${secondaryButtonClass} h-10 w-full px-4 py-2 lg:w-auto`}
                 >
-                  Clear
+                  {t("admin.clear")}
                 </button>
               </div>
 
               <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p className="text-xs text-zinc-500">
-                  Access tokens are short-lived. Refresh sessions are stored as httpOnly cookies.
+                  {t("admin.tokenHint")}
                 </p>
                 <button
                   onClick={() => {
@@ -767,35 +769,40 @@ export default function AdminPayoutsPage() {
                   disabled={!adminAccessToken}
                   className={`${dangerButtonClass} w-full px-4 py-2 md:w-auto`}
                 >
-                  Revoke All Sessions
+                  {t("admin.revokeAllSessions")}
                 </button>
               </div>
 
               {tokenState === "invalid" && (
                 <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                  Use the latest INTERNAL_ADMIN_TOKEN value. Old saved sessions are no longer trusted.
+                  {t("admin.invalidTokenHint")}
                 </p>
               )}
             </div>
 
             <div className="border-t border-zinc-800 bg-zinc-950 p-4 lg:border-l lg:border-t-0">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Guarded data</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.guardedData")}</p>
                 {tokenState === "valid" && (
                   <button
                     onClick={() => fetchAdminSessions()}
                     className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs font-semibold text-zinc-300 hover:bg-zinc-900"
                   >
-                    Refresh
+                    {t("admin.refresh")}
                   </button>
                 )}
               </div>
               <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-                {["Payout requests", "Settlement actions", "Audit trail", "Security events"].map((item) => (
+                {[
+                  t("admin.payoutRequests"),
+                  t("admin.settlementActions"),
+                  t("admin.auditTrail"),
+                  t("admin.securityEvents"),
+                ].map((item) => (
                   <div key={item} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black px-3 py-2.5">
                     <span className="text-zinc-300">{item}</span>
                     <span className={tokenState === "valid" ? "text-emerald-300" : "text-zinc-600"}>
-                      {tokenState === "valid" ? "unlocked" : "locked"}
+                      {tokenState === "valid" ? t("admin.unlocked") : t("admin.locked")}
                     </span>
                   </div>
                 ))}
@@ -805,7 +812,7 @@ export default function AdminPayoutsPage() {
 
           {confirmAction?.type === "logoutAll" && (
             <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-              <p className="mb-3">This will revoke all admin sessions. Type {CRITICAL_CONFIRMATION_TEXT} to continue.</p>
+              <p className="mb-3">{t("admin.logoutAllPrompt")}</p>
               <input
                 type="text"
                 value={criticalConfirmationText}
@@ -819,13 +826,13 @@ export default function AdminPayoutsPage() {
                   disabled={criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT}
                   className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  Confirm logout all
+                  {t("admin.confirmLogoutAll")}
                 </button>
                 <button
                   onClick={clearConfirmAction}
                   className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                 >
-                  Cancel
+                  {t("admin.cancel")}
                 </button>
               </div>
             </div>
@@ -838,9 +845,9 @@ export default function AdminPayoutsPage() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {[
-                { id: "payouts", label: "Payouts" },
-                { id: "security", label: "Security" },
-                { id: "sessions", label: "Sessions" },
+                { id: "payouts", label: t("admin.payouts") },
+                { id: "security", label: t("admin.security") },
+                { id: "sessions", label: t("admin.sessions") },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -862,10 +869,10 @@ export default function AdminPayoutsPage() {
 
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-200">
-                {adminSessionSummary.active} active sessions
+                {adminSessionSummary.active} {t("admin.activeSessions")}
               </span>
               <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 font-semibold text-zinc-400">
-                {pagination.totalCount} payouts
+                {pagination.totalCount} {t("admin.payoutsCount")}
               </span>
             </div>
           </div>
@@ -875,24 +882,24 @@ export default function AdminPayoutsPage() {
           <>
         <section>
           <div className="mb-4">
-            <h2 className="text-xl font-bold">Overview</h2>
-            <p className="text-zinc-500 text-sm">Live snapshot of payout workload.</p>
+            <h2 className="text-xl font-bold">{t("admin.overview")}</h2>
+            <p className="text-zinc-500 text-sm">{t("admin.overviewDescription")}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-zinc-500 text-sm mb-2">Matching Requests</p>
+            <p className="text-zinc-500 text-sm mb-2">{t("admin.matchingRequests")}</p>
             <p className="text-2xl font-bold">{pagination.totalCount}</p>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-zinc-500 text-sm mb-2">Page Amount</p>
+            <p className="text-zinc-500 text-sm mb-2">{t("admin.pageAmount")}</p>
             <p className="text-2xl font-bold">
               {totalAmount.toFixed(2)} USDT
             </p>
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-zinc-500 text-sm mb-2">Current Page</p>
+            <p className="text-zinc-500 text-sm mb-2">{t("admin.currentPage")}</p>
             <p className="text-2xl font-bold">
               {pagination.page}/{pagination.totalPages}
             </p>
@@ -903,9 +910,11 @@ export default function AdminPayoutsPage() {
         <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-2xl font-bold">Operations</h2>
+              <h2 className="text-2xl font-bold">{t("admin.operations")}</h2>
               <p className="text-zinc-500 text-sm">
-                Payout queue and status operations. Showing {visiblePayoutRequests.length} of {pagination.totalCount}
+                {t("admin.operationsDescription")
+                  .replace("{shown}", visiblePayoutRequests.length)
+                  .replace("{total}", pagination.totalCount)}
               </p>
             </div>
 
@@ -924,7 +933,7 @@ export default function AdminPayoutsPage() {
               >
                 {STATUS_OPTIONS.map((status) => (
                   <option key={status} value={status}>
-                    {status === "ALL" ? "All statuses" : status}
+                    {status === "ALL" ? t("admin.allStatuses") : status}
                   </option>
                 ))}
               </select>
@@ -934,22 +943,22 @@ export default function AdminPayoutsPage() {
                 onChange={(e) => setAuditSummaryFilter(e.target.value)}
                 className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
               >
-                <option value="ALL">All audit summaries</option>
-                <option value="SETTLED_TX">Has settlement tx</option>
-                <option value="REJECT_REASON">Has reject reason</option>
+                <option value="ALL">{t("admin.allAuditSummaries")}</option>
+                <option value="SETTLED_TX">{t("admin.hasSettlementTx")}</option>
+                <option value="REJECT_REASON">{t("admin.hasRejectReason")}</option>
               </select>
 
               <button
                 onClick={() => fetchPayouts()}
                 className={secondaryButtonClass}
               >
-                Refresh
+                {t("admin.refresh")}
               </button>
               <button
                 onClick={fetchSecurityEvents}
                 className={secondaryButtonClass}
               >
-                Security Events
+                {t("admin.securityEvents")}
               </button>
             </div>
           </div>
@@ -963,7 +972,7 @@ export default function AdminPayoutsPage() {
           )}
 
           {!loading && visiblePayoutRequests.length === 0 && (
-            <p className="text-zinc-400">No payout requests found.</p>
+            <p className="text-zinc-400">{t("admin.noPayoutRequests")}</p>
           )}
 
           <div className="space-y-4">
@@ -992,21 +1001,21 @@ export default function AdminPayoutsPage() {
 
                   <div className="text-sm text-zinc-400 space-y-2">
                     <p>
-                      <span className="text-zinc-500">Merchant:</span>{" "}
+                      <span className="text-zinc-500">{t("admin.merchant")}:</span>{" "}
                       {request.merchant?.name} ({request.merchant?.email})
                     </p>
                     <p className="break-all">
-                      <span className="text-zinc-500">Wallet:</span>{" "}
+                      <span className="text-zinc-500">{t("admin.wallet")}:</span>{" "}
                       {request.walletAddress}
                     </p>
                     <p className="break-all">
-                      <span className="text-zinc-500">Payout ID:</span>{" "}
+                      <span className="text-zinc-500">{t("admin.payoutId")}:</span>{" "}
                       {request.id}
                     </p>
                     {request.note && (
                       <p className="break-all">
                         <span className="text-zinc-500">
-                          {request.status === "REJECTED" ? "Reject reason" : "Admin note"}:
+                          {request.status === "REJECTED" ? t("admin.rejectReason") : t("admin.adminNote")}:
                         </span>{" "}
                         {request.note}
                       </p>
@@ -1018,12 +1027,12 @@ export default function AdminPayoutsPage() {
                       </div>
                     )}
                     <p>
-                      <span className="text-zinc-500">Created:</span>{" "}
+                      <span className="text-zinc-500">{t("admin.created")}:</span>{" "}
                       {new Date(request.createdAt).toLocaleString()}
                     </p>
                     {request.processedAt && (
                       <p>
-                        <span className="text-zinc-500">Processed:</span>{" "}
+                        <span className="text-zinc-500">{t("admin.processed")}:</span>{" "}
                         {new Date(request.processedAt).toLocaleString()}
                       </p>
                     )}
@@ -1034,7 +1043,7 @@ export default function AdminPayoutsPage() {
                       onClick={() => openPayoutDetails(request)}
                       className="bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
                     >
-                      Details
+                      {t("admin.details")}
                     </button>
 
                     {getAllowedActions(request.status).map((action) => (
@@ -1049,7 +1058,7 @@ export default function AdminPayoutsPage() {
 
                     {getAllowedActions(request.status).length === 0 && (
                       <p className="text-zinc-500 text-sm">
-                        No actions available.
+                        {t("admin.noActions")}
                       </p>
                     )}
                   </div>
@@ -1058,14 +1067,14 @@ export default function AdminPayoutsPage() {
                   confirmAction.payoutId === request.id && (
                     <div className="mt-4 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
                       <p className="mb-3">
-                        Move this payout request to {confirmAction.status}?
+                        {t("admin.movePrompt").replace("{status}", confirmAction.status)}
                       </p>
                       {confirmAction.status === "PAID" && (
                         <input
                           type="text"
                           value={settlementTxHash}
                           onChange={(e) => setSettlementTxHash(e.target.value)}
-                          placeholder="Settlement tx hash"
+                          placeholder={t("admin.settlementTxHash")}
                           className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                         />
                       )}
@@ -1073,7 +1082,7 @@ export default function AdminPayoutsPage() {
                         <textarea
                           value={statusNote}
                           onChange={(e) => setStatusNote(e.target.value)}
-                          placeholder="Reject reason"
+                          placeholder={t("admin.rejectReason")}
                           className="mb-3 min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                         />
                       )}
@@ -1082,14 +1091,14 @@ export default function AdminPayoutsPage() {
                           type="text"
                           value={statusNote}
                           onChange={(e) => setStatusNote(e.target.value)}
-                          placeholder="Required admin note"
+                          placeholder={t("admin.requiredAdminNote")}
                           className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                         />
                       )}
                       {isCriticalPayoutStatus(confirmAction.status) && (
                         <div className="mb-3 rounded-lg border border-yellow-500/30 bg-black/20 p-3">
                           <p className="mb-2 text-xs text-yellow-100/80">
-                            Type {CRITICAL_CONFIRMATION_TEXT} to confirm this critical settlement action.
+                            {t("admin.criticalConfirmPrompt")}
                           </p>
                           <input
                             type="text"
@@ -1115,13 +1124,13 @@ export default function AdminPayoutsPage() {
                           }
                           className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          Confirm status change
+                          {t("admin.confirmStatusChange")}
                         </button>
                         <button
                           onClick={clearConfirmAction}
                           className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                         >
-                          Cancel
+                          {t("admin.cancel")}
                         </button>
                       </div>
                     </div>
@@ -1133,7 +1142,7 @@ export default function AdminPayoutsPage() {
 
           <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <p className="text-zinc-500 text-sm">
-              Page {pagination.page} of {pagination.totalPages}
+              {t("admin.pageOf").replace("{page}", pagination.page).replace("{total}", pagination.totalPages)}
             </p>
 
             <div className="flex gap-3">
@@ -1146,7 +1155,7 @@ export default function AdminPayoutsPage() {
                 disabled={pagination.page <= 1}
                 className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Previous
+                {t("admin.previous")}
               </button>
 
               <button
@@ -1158,7 +1167,7 @@ export default function AdminPayoutsPage() {
                 disabled={pagination.page >= pagination.totalPages}
                 className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Next
+                {t("admin.next")}
               </button>
             </div>
           </div>
@@ -1170,34 +1179,34 @@ export default function AdminPayoutsPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Admin security</p>
-              <h3 className="mt-1 text-xl font-bold">Security Events</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.adminSecurity")}</p>
+              <h3 className="mt-1 text-xl font-bold">{t("admin.securityEvents")}</h3>
               <p className="mt-1 text-sm text-zinc-500">
-                Login, refresh, protected API access, and session revocation activity.
+                {t("admin.securityDescription")}
               </p>
             </div>
             <span className="w-fit rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-400">
-              Last 50 events
+              {t("admin.lastEvents")}
             </span>
           </div>
 
           <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
             <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/70">Successful</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/70">{t("admin.successful")}</p>
               <p className="mt-2 text-2xl font-bold text-emerald-100">{securitySummary.success}</p>
             </div>
             <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-red-200/70">Failed</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-red-200/70">{t("admin.failed")}</p>
               <p className="mt-2 text-2xl font-bold text-red-100">{securitySummary.failed}</p>
             </div>
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/70">Blocked</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/70">{t("admin.blocked")}</p>
               <p className="mt-2 text-2xl font-bold text-amber-100">{securitySummary.blocked}</p>
             </div>
           </div>
 
           {securityEvents.length === 0 && (
-            <p className="text-zinc-400">No security events yet.</p>
+            <p className="text-zinc-400">{t("admin.noSecurityEvents")}</p>
           )}
           <div className="space-y-3">
             {securityEvents.map((event) => (
@@ -1213,11 +1222,11 @@ export default function AdminPayoutsPage() {
                     </span>
                   </div>
                   <p className="mt-2 text-zinc-500">
-                    {event.reason ? event.reason.replace(/_/g, " ") : "No reason attached"}
+                    {event.reason ? event.reason.replace(/_/g, " ") : t("admin.noReason")}
                   </p>
                 </div>
                 <div className="text-left text-xs text-zinc-500 md:text-right">
-                  <p>{event.ipAddress || "unknown ip"}</p>
+                  <p>{event.ipAddress || t("admin.unknownIp")}</p>
                   <p className="mt-1">{new Date(event.createdAt).toLocaleString()}</p>
                 </div>
               </div>
@@ -1230,26 +1239,26 @@ export default function AdminPayoutsPage() {
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Admin sessions</p>
-              <h3 className="mt-1 text-xl font-bold">Session Overview</h3>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.adminSessions")}</p>
+              <h3 className="mt-1 text-xl font-bold">{t("admin.sessionOverview")}</h3>
               <p className="mt-1 text-sm text-zinc-500">
-                Refresh session lifecycle, revocations, and expiration status.
+                {t("admin.sessionDescription")}
               </p>
             </div>
             <button
               onClick={() => fetchAdminSessions()}
               className={secondaryButtonClass}
             >
-              Refresh Sessions
+              {t("admin.refreshSessions")}
             </button>
           </div>
 
           <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
             {[
-              { label: "Active", value: adminSessionSummary.active, className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-100" },
-              { label: "Revoked", value: adminSessionSummary.revoked, className: "border-red-500/20 bg-red-500/10 text-red-100" },
-              { label: "Expired", value: adminSessionSummary.expired, className: "border-amber-500/20 bg-amber-500/10 text-amber-100" },
-              { label: "Total", value: adminSessionSummary.total, className: "border-zinc-700 bg-zinc-950 text-zinc-100" },
+              { label: t("admin.active"), value: adminSessionSummary.active, className: "border-emerald-500/20 bg-emerald-500/10 text-emerald-100" },
+              { label: t("admin.revoked"), value: adminSessionSummary.revoked, className: "border-red-500/20 bg-red-500/10 text-red-100" },
+              { label: t("admin.expired"), value: adminSessionSummary.expired, className: "border-amber-500/20 bg-amber-500/10 text-amber-100" },
+              { label: t("admin.total"), value: adminSessionSummary.total, className: "border-zinc-700 bg-zinc-950 text-zinc-100" },
             ].map((item) => (
               <div key={item.label} className={`rounded-xl border p-4 ${item.className}`}>
                 <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{item.label}</p>
@@ -1259,7 +1268,7 @@ export default function AdminPayoutsPage() {
           </div>
 
           {adminSessions.length === 0 && (
-            <p className="text-zinc-400">No admin sessions found.</p>
+            <p className="text-zinc-400">{t("admin.noSessions")}</p>
           )}
 
           <div className="space-y-3">
@@ -1280,10 +1289,10 @@ export default function AdminPayoutsPage() {
                   {session.status}
                 </span>
                 <p className="text-zinc-400">
-                  Created <span className="text-zinc-200">{new Date(session.createdAt).toLocaleString()}</span>
+                  {t("admin.sessionCreated")} <span className="text-zinc-200">{new Date(session.createdAt).toLocaleString()}</span>
                 </p>
                 <p className="text-zinc-400">
-                  Expires <span className="text-zinc-200">{new Date(session.expiresAt).toLocaleString()}</span>
+                  {t("admin.sessionExpires")} <span className="text-zinc-200">{new Date(session.expiresAt).toLocaleString()}</span>
                 </p>
               </div>
             ))}
@@ -1300,7 +1309,7 @@ export default function AdminPayoutsPage() {
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-2">
-                  <h2 className="text-2xl font-bold">Payout Details</h2>
+                  <h2 className="text-2xl font-bold">{t("admin.payoutDetails")}</h2>
                   <span
                     className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
                       selectedPayout.status
@@ -1310,7 +1319,7 @@ export default function AdminPayoutsPage() {
                   </span>
                 </div>
                 <p className="text-zinc-400">
-                  {selectedPayout.amount} {selectedPayout.currency} to{" "}
+                  {selectedPayout.amount} {selectedPayout.currency} {t("admin.to")}{" "}
                   {selectedPayout.walletAddress}
                 </p>
               </div>
@@ -1333,7 +1342,7 @@ export default function AdminPayoutsPage() {
                   }}
                   className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
                 >
-                  Close
+                  {t("admin.close")}
                 </button>
               </div>
             </div>
@@ -1342,14 +1351,14 @@ export default function AdminPayoutsPage() {
               confirmAction.payoutId === selectedPayout.id && (
                 <div className="mb-6 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-4 text-sm text-yellow-100">
                   <p className="mb-3">
-                    Move this payout request to {confirmAction.status}?
+                    {t("admin.movePrompt").replace("{status}", confirmAction.status)}
                   </p>
                   {confirmAction.status === "PAID" && (
                     <input
                       type="text"
                       value={settlementTxHash}
                       onChange={(e) => setSettlementTxHash(e.target.value)}
-                      placeholder="Settlement tx hash"
+                      placeholder={t("admin.settlementTxHash")}
                       className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                     />
                   )}
@@ -1357,7 +1366,7 @@ export default function AdminPayoutsPage() {
                     <textarea
                       value={statusNote}
                       onChange={(e) => setStatusNote(e.target.value)}
-                      placeholder="Reject reason"
+                      placeholder={t("admin.rejectReason")}
                       className="mb-3 min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                     />
                   )}
@@ -1366,14 +1375,14 @@ export default function AdminPayoutsPage() {
                       type="text"
                       value={statusNote}
                       onChange={(e) => setStatusNote(e.target.value)}
-                      placeholder="Required admin note"
+                      placeholder={t("admin.requiredAdminNote")}
                       className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                     />
                   )}
                   {isCriticalPayoutStatus(confirmAction.status) && (
                     <div className="mb-3 rounded-lg border border-yellow-500/30 bg-black/20 p-3">
                       <p className="mb-2 text-xs text-yellow-100/80">
-                        Type {CRITICAL_CONFIRMATION_TEXT} to confirm this critical settlement action.
+                        {t("admin.criticalConfirmPrompt")}
                       </p>
                       <input
                         type="text"
@@ -1399,13 +1408,13 @@ export default function AdminPayoutsPage() {
                       }
                       className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Confirm status change
+                      {t("admin.confirmStatusChange")}
                     </button>
                     <button
                       onClick={clearConfirmAction}
                       className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
                     >
-                      Cancel
+                      {t("admin.cancel")}
                     </button>
                   </div>
                 </div>
@@ -1415,7 +1424,7 @@ export default function AdminPayoutsPage() {
               <section className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                    <p className="text-zinc-500 text-xs mb-1">Merchant</p>
+                    <p className="text-zinc-500 text-xs mb-1">{t("admin.merchant")}</p>
                     <p className="font-semibold">
                       {selectedPayout.merchant?.name}
                     </p>
@@ -1425,7 +1434,7 @@ export default function AdminPayoutsPage() {
                   </div>
 
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                    <p className="text-zinc-500 text-xs mb-1">Amount</p>
+                    <p className="text-zinc-500 text-xs mb-1">{t("admin.amount")}</p>
                     <p className="text-xl font-bold">
                       {selectedPayout.amount} {selectedPayout.currency}
                     </p>
@@ -1436,7 +1445,7 @@ export default function AdminPayoutsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-zinc-500 text-xs mb-1">
-                          Wallet Address
+                          {t("admin.walletAddress")}
                         </p>
                         <p className="break-all">
                           {selectedPayout.walletAddress}
@@ -1447,47 +1456,47 @@ export default function AdminPayoutsPage() {
                           navigator.clipboard.writeText(
                             selectedPayout.walletAddress
                           );
-                          showNotice("success", "Wallet copied.");
+                          showNotice("success", t("admin.walletCopied"));
                         }}
                         className="shrink-0 bg-zinc-800 px-3 py-2 rounded-lg text-xs font-semibold hover:bg-zinc-700 transition"
                       >
-                        Copy
+                        {t("admin.copy")}
                       </button>
                     </div>
                   </div>
 
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                    <p className="text-zinc-500 text-xs mb-1">Created</p>
+                    <p className="text-zinc-500 text-xs mb-1">{t("admin.created")}</p>
                     <p>{new Date(selectedPayout.createdAt).toLocaleString()}</p>
                   </div>
 
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                    <p className="text-zinc-500 text-xs mb-1">Processed</p>
+                    <p className="text-zinc-500 text-xs mb-1">{t("admin.processed")}</p>
                     <p>
                       {selectedPayout.processedAt
                         ? new Date(selectedPayout.processedAt).toLocaleString()
-                        : "Not processed yet"}
+                        : t("admin.notProcessed")}
                     </p>
                   </div>
 
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 md:col-span-2">
-                    <p className="text-zinc-500 text-xs mb-1">Note</p>
+                    <p className="text-zinc-500 text-xs mb-1">{t("admin.note")}</p>
                     <p className="break-all">
-                      {selectedPayout.note || "No note provided."}
+                      {selectedPayout.note || t("admin.noNote")}
                     </p>
                   </div>
                 </div>
               </section>
 
               <aside className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <h3 className="font-bold mb-4">Audit Trail</h3>
+                <h3 className="font-bold mb-4">{t("admin.auditTrail")}</h3>
 
                 {detailsLoading && (
-                  <p className="text-zinc-400">Loading audit logs...</p>
+                  <p className="text-zinc-400">{t("admin.loadingAuditLogs")}</p>
                 )}
 
                 {!detailsLoading && selectedAuditLogs.length === 0 && (
-                  <p className="text-zinc-400">No audit logs found.</p>
+                  <p className="text-zinc-400">{t("admin.noAuditLogs")}</p>
                 )}
 
                 <div className="space-y-3">
