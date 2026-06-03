@@ -1,15 +1,151 @@
 "use client";
 
-import SettingsEmptyState from "@/components/settings-empty-state";
+import { CheckCircle2, Copy, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { apiUrl } from "@/lib/api";
+import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 export default function PreferenceAccountPage() {
   const { t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
+  const [merchant, setMerchant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState(null);
+  const [copiedUid, setCopiedUid] = useState(false);
+
+  useEffect(() => {
+    const loadAccount = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/login";
+        return;
+      }
+
+      try {
+        const response = await fetch(apiUrl("/api/merchant/dashboard"), {
+          headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          setNotice({ type: "error", message: data.message || t("account.loadError") });
+          return;
+        }
+
+        setMerchant(data.merchant || null);
+      } catch {
+        setNotice({ type: "error", message: t("account.loadError") });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadAccount();
+  }, [t]);
+
+  const copyUid = async () => {
+    if (!merchant?.id) return;
+    await navigator.clipboard.writeText(merchant.id);
+    setCopiedUid(true);
+    setTimeout(() => setCopiedUid(false), 1200);
+  };
+
+  const profileItems = [
+    {
+      label: t("account.merchantName"),
+      value: merchant?.name || "-",
+      icon: UserRound,
+    },
+    {
+      label: t("account.email"),
+      value: merchant?.email || "-",
+      icon: Mail,
+    },
+    {
+      label: t("account.accountType"),
+      value: t("account.authenticatedDashboard"),
+      icon: ShieldCheck,
+    },
+    {
+      label: t("account.webhookStatus"),
+      value: merchant?.callbackUrl ? t("account.configured") : t("account.notConfigured"),
+      icon: CheckCircle2,
+    },
+  ];
 
   return (
     <SettingsShell title={t("settings.preference")} activeSection="preference">
-      <SettingsEmptyState />
+      {notice && (
+        <div className="mb-4 max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200 light-dashboard:text-red-700">
+          {notice.message}
+        </div>
+      )}
+
+      <section className="max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+        <div className="border-b border-zinc-800 px-5 py-5 light-dashboard:border-zinc-200">
+          <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">{t("account.profile")}</p>
+          <h3 className="mt-1 text-2xl font-bold text-white light-dashboard:text-zinc-950">
+            {t("account.pageTitle")}
+          </h3>
+          <p className="mt-2 text-sm text-zinc-400 light-dashboard:text-zinc-600">
+            {t("account.pageDescription")}
+          </p>
+        </div>
+
+        {loading ? (
+          <div className="space-y-3 p-5">
+            <div className="h-14 animate-pulse rounded-xl bg-zinc-800/70 light-dashboard:bg-zinc-100" />
+            <div className="h-14 animate-pulse rounded-xl bg-zinc-800/50 light-dashboard:bg-zinc-100" />
+            <div className="h-14 animate-pulse rounded-xl bg-zinc-800/40 light-dashboard:bg-zinc-100" />
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
+            <div className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm text-zinc-500">{t("account.uid")}</p>
+                <p className="mt-1 break-all font-mono text-sm font-semibold text-white light-dashboard:text-zinc-950">
+                  {merchant?.id || "-"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={copyUid}
+                disabled={!merchant?.id}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:opacity-50 light-dashboard:border-zinc-200 light-dashboard:bg-white light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
+              >
+                <Copy size={16} />
+                {copiedUid ? t("account.uidCopied") : t("account.copyUid")}
+              </button>
+            </div>
+
+            {profileItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-4">
+                  <div className="flex min-w-0 items-center gap-4">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                      <Icon size={19} strokeWidth={2.2} />
+                    </span>
+                    <p className="font-semibold text-white light-dashboard:text-zinc-950">{item.label}</p>
+                  </div>
+                  <p className="min-w-0 break-words text-right text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-700">
+                    {item.value}
+                  </p>
+                </div>
+              );
+            })}
+
+            <div className="flex items-center justify-between gap-4 px-5 py-4">
+              <p className="font-semibold text-white light-dashboard:text-zinc-950">{t("account.createdAt")}</p>
+              <p className="text-right text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-700">
+                {formatDashboardDateTime(merchant?.createdAt, timeZone)}
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
     </SettingsShell>
   );
 }
