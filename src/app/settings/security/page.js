@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import OverviewShell from "@/components/overview-shell";
+import SettingsShell from "@/components/settings-shell";
 import { apiUrl } from "@/lib/api";
 
 function Notice({ notice }) {
@@ -241,7 +241,7 @@ export default function SecuritySettingsPage() {
   };
 
   return (
-    <OverviewShell>
+    <SettingsShell title="Security" activeSection="security">
       <div className="space-y-6">
         <Notice notice={notice} />
 
@@ -389,6 +389,6 @@ export default function SecuritySettingsPage() {
           )}
         </div>
       </div>
-    </OverviewShell>
+    </SettingsShell>
   );
 }

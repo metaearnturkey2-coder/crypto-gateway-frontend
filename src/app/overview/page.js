@@ -5,6 +5,20 @@ import Link from "next/link";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
 
+const fallbackDisplayCurrencyRates = {
+  USD: 1,
+  TRY: 32.4,
+  EUR: 0.92,
+  GBP: 0.79,
+};
+
+const displayCurrencyLocales = {
+  USD: "en-US",
+  TRY: "tr-TR",
+  EUR: "de-DE",
+  GBP: "en-GB",
+};
+
 export default function OverviewPage() {
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState(null);
@@ -25,6 +39,8 @@ export default function OverviewPage() {
   const [reserved, setReserved] = useState(0);
   const [network, setNetwork] = useState("TRC20");
   const [currency, setCurrency] = useState("USDT");
+  const [displayCurrency, setDisplayCurrency] = useState("USD");
+  const [displayCurrencyRates, setDisplayCurrencyRates] = useState(fallbackDisplayCurrencyRates);
   const [activeAssetsTab, setActiveAssetsTab] = useState("personal");
   const [prices, setPrices] = useState({});
   const [pricesLoading, setPricesLoading] = useState(true);
@@ -54,13 +70,17 @@ export default function OverviewPage() {
     { symbol: "XMR", name: "Monero" },
   ];
 
-  const formatUsdAmount = (value) => {
+  const convertDisplayAmount = (value) => Number(value || 0) * (displayCurrencyRates[displayCurrency] || 1);
+
+  const formatDisplayAmount = (value) => {
     const numeric = Number(value || 0);
-    if (!numeric) return "$0.00";
-    return `$${numeric.toLocaleString(undefined, {
+    const converted = convertDisplayAmount(numeric);
+    return new Intl.NumberFormat(displayCurrencyLocales[displayCurrency] || "en-US", {
+      style: "currency",
+      currency: displayCurrency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    })}`;
+    }).format(converted);
   };
 
   const formatUsdPrice = (symbol, value) => {
@@ -104,6 +124,45 @@ export default function OverviewPage() {
     const priceUsd = Number(prices?.[asset.symbol]?.usd || 0);
     return sum + balance * priceUsd;
   }, 0);
+
+  useEffect(() => {
+    const updateCurrency = (code) => {
+      if (fallbackDisplayCurrencyRates[code]) setDisplayCurrency(code);
+    };
+
+    updateCurrency(localStorage.getItem("displayCurrency") || "USD");
+    const onCurrencyChange = (event) => updateCurrency(event.detail);
+    const onStorage = (event) => {
+      if (event.key === "displayCurrency") updateCurrency(event.newValue || "USD");
+    };
+
+    window.addEventListener("displayCurrencyChange", onCurrencyChange);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("displayCurrencyChange", onCurrencyChange);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
+
+  useEffect(() => {
+    const loadDisplayCurrencyRates = async () => {
+      try {
+        const response = await fetch(apiUrl("/api/market/rates"), { cache: "no-store" });
+        const data = await response.json();
+        if (data?.rates) {
+          setDisplayCurrencyRates((prev) => ({
+            ...prev,
+            ...data.rates,
+            USD: 1,
+          }));
+        }
+      } catch {
+        setDisplayCurrencyRates(fallbackDisplayCurrencyRates);
+      }
+    };
+
+    loadDisplayCurrencyRates();
+  }, []);
 
   useEffect(() => {
     const load = async () => {
@@ -271,10 +330,10 @@ export default function OverviewPage() {
               ) : (
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-3xl font-bold leading-none tracking-tight text-white">
-                    {formatUsdAmount(available)}
+                    {formatDisplayAmount(available)}
                   </p>
                   <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs font-semibold text-zinc-200">
-                    {currency}
+                    {displayCurrency}
                   </span>
                 </div>
               )}
@@ -297,25 +356,31 @@ export default function OverviewPage() {
             <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
               <p className="mb-2 text-sm font-semibold text-zinc-300">Available</p>
               <p className="text-2xl font-bold leading-none text-white">
-                {loading ? "..." : `${Number(available || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`}
+                {loading ? "..." : formatDisplayAmount(available)}
               </p>
-              <p className="mt-3 text-xs font-semibold text-zinc-500">{network}</p>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">
+                {Number(available || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} · {network}
+              </p>
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
               <p className="mb-2 text-sm font-semibold text-zinc-300">Gross Paid</p>
               <p className="text-2xl font-bold leading-none text-white">
-                {loading ? "..." : `${Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`}
+                {loading ? "..." : formatDisplayAmount(grossPaid)}
               </p>
-              <p className="mt-3 text-xs font-semibold text-zinc-500">Settled volume</p>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">
+                {Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} settled
+              </p>
             </div>
 
             <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
               <p className="mb-2 text-sm font-semibold text-zinc-300">Reserved</p>
               <p className="text-2xl font-bold leading-none text-white">
-                {loading ? "..." : `${Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`}
+                {loading ? "..." : formatDisplayAmount(reserved)}
               </p>
-              <p className="mt-3 text-xs font-semibold text-zinc-500">Payout hold</p>
+              <p className="mt-3 text-xs font-semibold text-zinc-500">
+                {Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} on hold
+              </p>
             </div>
           </div>
         </div>
@@ -491,7 +556,7 @@ export default function OverviewPage() {
                   <div>
                     <p className="text-xs font-semibold uppercase text-zinc-500 md:hidden">Balance</p>
                     <p className="text-lg font-semibold text-white break-words">{formatTokenBalance(balance)}</p>
-                    <p className="text-sm text-zinc-500">{formatUsdAmount(usdValue)}</p>
+                    <p className="text-sm text-zinc-500">{formatDisplayAmount(usdValue)}</p>
                   </div>
 
                   <div>
