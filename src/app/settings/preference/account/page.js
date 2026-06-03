@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Copy, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { CheckCircle2, Copy, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
 import { apiUrl } from "@/lib/api";
@@ -52,6 +52,14 @@ export default function PreferenceAccountPage() {
     setTimeout(() => setCopiedUid(false), 1200);
   };
 
+  const getInitial = () => (merchant?.email || merchant?.name || "M").slice(0, 1).toUpperCase();
+
+  const shortenUid = (value = "") => {
+    if (!value) return "-";
+    if (value.length <= 16) return value;
+    return `${value.slice(0, 8)}...${value.slice(-6)}`;
+  };
+
   const profileItems = [
     {
       label: t("account.merchantName"),
@@ -59,9 +67,9 @@ export default function PreferenceAccountPage() {
       icon: UserRound,
     },
     {
-      label: t("account.email"),
-      value: merchant?.email || "-",
-      icon: Mail,
+      label: t("account.dashboardAccess"),
+      value: t("account.enabled"),
+      icon: KeyRound,
     },
     {
       label: t("account.accountType"),
@@ -83,17 +91,7 @@ export default function PreferenceAccountPage() {
         </div>
       )}
 
-      <section className="max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 light-dashboard:border-zinc-200 light-dashboard:bg-white">
-        <div className="border-b border-zinc-800 px-5 py-5 light-dashboard:border-zinc-200">
-          <p className="text-sm font-semibold uppercase tracking-wide text-zinc-500">{t("account.profile")}</p>
-          <h3 className="mt-1 text-2xl font-bold text-white light-dashboard:text-zinc-950">
-            {t("account.pageTitle")}
-          </h3>
-          <p className="mt-2 text-sm text-zinc-400 light-dashboard:text-zinc-600">
-            {t("account.pageDescription")}
-          </p>
-        </div>
-
+      <section className="max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/55 light-dashboard:border-zinc-200 light-dashboard:bg-white">
         {loading ? (
           <div className="space-y-3 p-5">
             <div className="h-14 animate-pulse rounded-xl bg-zinc-800/70 light-dashboard:bg-zinc-100" />
@@ -101,45 +99,87 @@ export default function PreferenceAccountPage() {
             <div className="h-14 animate-pulse rounded-xl bg-zinc-800/40 light-dashboard:bg-zinc-100" />
           </div>
         ) : (
-          <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
-            <div className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm text-zinc-500">{t("account.uid")}</p>
-                <p className="mt-1 break-all font-mono text-sm font-semibold text-white light-dashboard:text-zinc-950">
-                  {merchant?.id || "-"}
-                </p>
+          <div>
+            <div className="flex flex-col gap-4 border-b border-zinc-800 px-5 py-5 light-dashboard:border-zinc-200 md:flex-row md:items-center md:justify-between">
+              <div className="flex min-w-0 items-center gap-4">
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-lg font-bold text-white light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                  {getInitial()}
+                </span>
+                <div className="min-w-0">
+                  <h3 className="truncate text-lg font-bold text-white light-dashboard:text-zinc-950">
+                    {merchant?.email || "-"}
+                  </h3>
+                  <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400 light-dashboard:text-zinc-500">
+                    <span>{t("account.uid")} · {shortenUid(merchant?.id)}</span>
+                    <button
+                      type="button"
+                      onClick={copyUid}
+                      disabled={!merchant?.id}
+                      className="inline-flex h-6 items-center justify-center rounded-md border border-zinc-700 px-2 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50 light-dashboard:border-zinc-200 light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
+                    >
+                      <Copy size={13} />
+                    </button>
+                    {copiedUid ? (
+                      <span className="text-xs font-semibold text-emerald-300 light-dashboard:text-emerald-700">
+                        {t("account.uidCopied")}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
               </div>
               <button
                 type="button"
                 onClick={copyUid}
                 disabled={!merchant?.id}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:opacity-50 light-dashboard:border-zinc-200 light-dashboard:bg-white light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:opacity-50 light-dashboard:border-zinc-200 light-dashboard:bg-white light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
               >
                 <Copy size={16} />
                 {copiedUid ? t("account.uidCopied") : t("account.copyUid")}
               </button>
             </div>
 
-            {profileItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-4">
-                  <div className="flex min-w-0 items-center gap-4">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
-                      <Icon size={19} strokeWidth={2.2} />
-                    </span>
-                    <p className="font-semibold text-white light-dashboard:text-zinc-950">{item.label}</p>
-                  </div>
-                  <p className="min-w-0 break-words text-right text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-700">
-                    {item.value}
-                  </p>
-                </div>
-              );
-            })}
+            <div className="grid gap-0 divide-y divide-zinc-800 light-dashboard:divide-zinc-200 md:grid-cols-2 md:divide-x md:divide-y-0">
+              <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
+                {profileItems.slice(0, 2).map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                          <Icon size={18} strokeWidth={2.2} />
+                        </span>
+                        <p className="font-semibold text-white light-dashboard:text-zinc-950">{item.label}</p>
+                      </div>
+                      <p className="min-w-0 break-words text-right text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-700">
+                        {item.value}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
+                {profileItems.slice(2).map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                          <Icon size={18} strokeWidth={2.2} />
+                        </span>
+                        <p className="font-semibold text-white light-dashboard:text-zinc-950">{item.label}</p>
+                      </div>
+                      <p className="min-w-0 break-words text-right text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-700">
+                        {item.value}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-            <div className="flex items-center justify-between gap-4 px-5 py-4">
-              <p className="font-semibold text-white light-dashboard:text-zinc-950">{t("account.createdAt")}</p>
-              <p className="text-right text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-700">
+            <div className="flex items-center justify-between gap-4 border-t border-zinc-800 px-5 py-4 light-dashboard:border-zinc-200">
+              <p className="text-sm font-semibold text-zinc-400 light-dashboard:text-zinc-500">{t("account.createdAt")}</p>
+              <p className="text-right text-sm font-semibold text-zinc-200 light-dashboard:text-zinc-700">
                 {formatDashboardDateTime(merchant?.createdAt, timeZone)}
               </p>
             </div>
