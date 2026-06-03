@@ -4,20 +4,21 @@ import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
 import { apiUrl } from "@/lib/api";
+import { getTranslation, useDashboardLanguage } from "@/lib/i18n";
 
-const formatTimeLeft = (expiresAt, now) => {
+const formatTimeLeft = (expiresAt, now, t) => {
   if (!expiresAt) {
-    return "No expiration";
+    return t("checkout.noExpiration");
   }
 
   if (!now) {
-    return "Calculating...";
+    return t("checkout.calculating");
   }
 
   const diff = new Date(expiresAt).getTime() - now;
 
   if (diff <= 0) {
-    return "Expired";
+    return t("checkout.expired");
   }
 
   const totalSeconds = Math.floor(diff / 1000);
@@ -39,12 +40,12 @@ const getPaymentStatusClassName = (status) => {
   return "bg-yellow-500 text-black";
 };
 
-const getCheckoutState = (status) => {
+const getCheckoutState = (status, t) => {
   if (status === "PAID") {
     return {
-      label: "Payment confirmed",
-      title: "Payment Complete",
-      message: "Your transaction has been confirmed. You can close this page.",
+      label: t("checkout.paymentConfirmed"),
+      title: t("checkout.paymentComplete"),
+      message: t("checkout.paymentCompleteMessage"),
       tone: "success",
       badgeClassName: "bg-green-500 text-black",
       panelClassName: "border-green-500/40 bg-green-500/10",
@@ -54,9 +55,9 @@ const getCheckoutState = (status) => {
 
   if (status === "EXPIRED") {
     return {
-      label: "Payment expired",
-      title: "Payment Expired",
-      message: "This checkout session is no longer accepting payments.",
+      label: t("checkout.paymentExpiredLabel"),
+      title: t("checkout.paymentExpired"),
+      message: t("checkout.paymentExpiredMessage"),
       tone: "danger",
       badgeClassName: "bg-red-500 text-black",
       panelClassName: "border-red-500/40 bg-red-500/10",
@@ -66,9 +67,9 @@ const getCheckoutState = (status) => {
 
   if (status === "CANCELLED") {
     return {
-      label: "Payment cancelled",
-      title: "Payment Cancelled",
-      message: "This payment was cancelled by the merchant.",
+      label: t("checkout.paymentCancelledLabel"),
+      title: t("checkout.paymentCancelled"),
+      message: t("checkout.paymentCancelledMessage"),
       tone: "danger",
       badgeClassName: "bg-red-500 text-black",
       panelClassName: "border-red-500/40 bg-red-500/10",
@@ -77,9 +78,9 @@ const getCheckoutState = (status) => {
   }
 
   return {
-    label: "Awaiting payment",
-    title: "Complete Payment",
-    message: "Send the exact amount on the selected network before time runs out.",
+    label: t("checkout.awaitingPayment"),
+    title: t("checkout.completePayment"),
+    message: t("checkout.awaitingMessage"),
     tone: "pending",
     badgeClassName: "bg-yellow-500 text-black",
     panelClassName: "border-yellow-500/40 bg-yellow-500/10",
@@ -96,6 +97,7 @@ const getStepClassName = (active, complete) => {
 export default function PaymentCheckoutPage() {
   const params = useParams();
   const paymentId = params.id;
+  const { language, t } = useDashboardLanguage();
 
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -113,7 +115,7 @@ export default function PaymentCheckoutPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || "Payment not found");
+        setError(data.message || getTranslation(language, "checkout.notFound"));
         return;
       }
 
@@ -121,11 +123,11 @@ export default function PaymentCheckoutPage() {
       setPayment(data.payment);
     } catch (error) {
       console.error(error);
-      setError("Payment checkout error. Please refresh the page.");
+      setError(getTranslation(language, "checkout.error"));
     } finally {
       setLoading(false);
     }
-  }, [paymentId]);
+  }, [language, paymentId]);
 
   const checkPayment = async () => {
     setChecking(true);
@@ -167,7 +169,7 @@ export default function PaymentCheckoutPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center">
-        Loading payment...
+        {t("checkout.loading")}
       </main>
     );
   }
@@ -176,14 +178,14 @@ export default function PaymentCheckoutPage() {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center px-5">
         <div className="max-w-md rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center">
-          <h1 className="text-2xl font-bold">Payment unavailable</h1>
-          <p className="mt-2 text-red-100">{error || "Payment not found"}</p>
+          <h1 className="text-2xl font-bold">{t("checkout.unavailable")}</h1>
+          <p className="mt-2 text-red-100">{error || t("checkout.notFound")}</p>
         </div>
       </main>
     );
   }
 
-  const checkoutState = getCheckoutState(payment.status);
+  const checkoutState = getCheckoutState(payment.status, t);
   const isPayable =
     checkoutState.canPay &&
     (!payment.expiresAt || new Date(payment.expiresAt).getTime() > now);
@@ -194,7 +196,7 @@ export default function PaymentCheckoutPage() {
       <div className="max-w-4xl mx-auto">
         <header className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
           <div>
-            <p className="text-zinc-500 text-sm">Crypto Gateway Checkout</p>
+            <p className="text-zinc-500 text-sm">{t("checkout.brand")}</p>
             <h1 className="text-2xl md:text-3xl font-bold mt-1">
               {checkoutState.title}
             </h1>
@@ -213,12 +215,12 @@ export default function PaymentCheckoutPage() {
           <p className="font-semibold">{checkoutState.message}</p>
           {isPayable && (
             <p className="text-sm text-zinc-300 mt-1">
-              Only send {payment.currency} on {payment.network}. Sending a different asset or network may result in loss of funds.
+              {t("checkout.assetWarning").replace("{currency}", payment.currency).replace("{network}", payment.network)}
             </p>
           )}
           {!isPayable && (
             <p className="text-sm text-zinc-300 mt-1">
-              Do not send funds to this address unless the merchant creates a new checkout session.
+              {t("checkout.doNotSend")}
             </p>
           )}
         </div>
@@ -234,11 +236,11 @@ export default function PaymentCheckoutPage() {
             </div>
             {!isPayable && (
               <p className="mb-4 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3 text-sm text-zinc-400">
-                This QR code is disabled for the current payment status.
+                {t("checkout.qrDisabled")}
               </p>
             )}
 
-            <p className="text-zinc-400 text-sm">Amount due</p>
+            <p className="text-zinc-400 text-sm">{t("checkout.amountDue")}</p>
             <p className="text-3xl font-bold mt-1">
               {amountLabel}
             </p>
@@ -247,19 +249,19 @@ export default function PaymentCheckoutPage() {
               disabled={!isPayable}
               className="mt-3 rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {copiedKey === "amount" ? "Amount Copied" : "Copy Amount"}
+              {copiedKey === "amount" ? t("checkout.amountCopied") : t("checkout.copyAmount")}
             </button>
 
             <div className="mt-5 grid grid-cols-2 gap-3 text-left">
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                <p className="text-zinc-500 text-xs mb-1">Network</p>
+                <p className="text-zinc-500 text-xs mb-1">{t("checkout.network")}</p>
                 <p className="font-semibold">{payment.network}</p>
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                <p className="text-zinc-500 text-xs mb-1">Time left</p>
+                <p className="text-zinc-500 text-xs mb-1">{t("checkout.timeLeft")}</p>
                 <p className="font-semibold">
-                  {formatTimeLeft(payment.expiresAt, now)}
+                  {formatTimeLeft(payment.expiresAt, now, t)}
                 </p>
               </div>
             </div>
@@ -268,22 +270,22 @@ export default function PaymentCheckoutPage() {
           <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
             <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className={`rounded-xl border p-3 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
-                <p className="text-xs uppercase tracking-wide opacity-70">Step 1</p>
-                <p className="mt-1 font-semibold">Copy amount</p>
+                <p className="text-xs uppercase tracking-wide opacity-70">{t("checkout.step")} 1</p>
+                <p className="mt-1 font-semibold">{t("checkout.copyAmountStep")}</p>
               </div>
               <div className={`rounded-xl border p-3 ${getStepClassName(isPayable, payment.status === "PAID")}`}>
-                <p className="text-xs uppercase tracking-wide opacity-70">Step 2</p>
-                <p className="mt-1 font-semibold">Send on {payment.network}</p>
+                <p className="text-xs uppercase tracking-wide opacity-70">{t("checkout.step")} 2</p>
+                <p className="mt-1 font-semibold">{t("checkout.sendOn").replace("{network}", payment.network)}</p>
               </div>
               <div className={`rounded-xl border p-3 ${getStepClassName(payment.status === "PAID", payment.status === "PAID")}`}>
-                <p className="text-xs uppercase tracking-wide opacity-70">Step 3</p>
-                <p className="mt-1 font-semibold">Confirmation</p>
+                <p className="text-xs uppercase tracking-wide opacity-70">{t("checkout.step")} 3</p>
+                <p className="mt-1 font-semibold">{t("checkout.confirmation")}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                <p className="text-zinc-500 text-xs mb-1">Status</p>
+                <p className="text-zinc-500 text-xs mb-1">{t("checkout.status")}</p>
                 <span
                   className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(
                     payment.status
@@ -294,25 +296,25 @@ export default function PaymentCheckoutPage() {
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                <p className="text-zinc-500 text-xs mb-1">Order ID</p>
+                <p className="text-zinc-500 text-xs mb-1">{t("checkout.orderId")}</p>
                 <p className="break-all font-semibold">
-                  {payment.orderId || "Not provided"}
+                  {payment.orderId || t("checkout.notProvided")}
                 </p>
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                <p className="text-zinc-500 text-xs mb-1">Customer</p>
+                <p className="text-zinc-500 text-xs mb-1">{t("checkout.customer")}</p>
                 <p className="break-all">
-                  {payment.customerEmail || "Not provided"}
+                  {payment.customerEmail || t("checkout.notProvided")}
                 </p>
               </div>
 
               <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3">
-                <p className="text-zinc-500 text-xs mb-1">Expires</p>
+                <p className="text-zinc-500 text-xs mb-1">{t("checkout.expires")}</p>
                 <p>
                   {payment.expiresAt
                     ? new Date(payment.expiresAt).toLocaleString()
-                    : "No expiration"}
+                    : t("checkout.noExpiration")}
                 </p>
               </div>
             </div>
@@ -320,9 +322,9 @@ export default function PaymentCheckoutPage() {
             <div className="bg-zinc-950 border border-zinc-800 rounded-xl p-3 mb-4">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
                 <div>
-                  <p className="text-zinc-500 text-xs">Wallet address</p>
+                  <p className="text-zinc-500 text-xs">{t("checkout.walletAddress")}</p>
                   <p className="text-sm text-zinc-400">
-                    Copy this address exactly.
+                    {t("checkout.copyAddressExactly")}
                   </p>
                 </div>
 
@@ -331,7 +333,7 @@ export default function PaymentCheckoutPage() {
                   disabled={!isPayable}
                   className="bg-white text-black px-4 py-2 rounded-lg text-sm font-semibold hover:opacity-80 transition disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {copiedKey === "wallet" ? "Copied" : "Copy Address"}
+                  {copiedKey === "wallet" ? t("common.copied") : t("checkout.copyAddress")}
                 </button>
               </div>
 
@@ -346,7 +348,7 @@ export default function PaymentCheckoutPage() {
                 disabled={checking}
                 className="bg-blue-500 text-black px-5 py-3 rounded-xl font-semibold hover:opacity-80 transition disabled:cursor-wait disabled:opacity-60"
               >
-                {checking ? "Checking..." : "Check Payment Status"}
+                {checking ? t("checkout.checking") : t("checkout.checkStatus")}
               </button>
 
               <button
@@ -354,14 +356,14 @@ export default function PaymentCheckoutPage() {
                 disabled={!isPayable}
                 className="bg-zinc-800 px-5 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {copiedKey === "wallet-bottom" ? "Address Copied" : "Copy Wallet"}
+                {copiedKey === "wallet-bottom" ? t("checkout.addressCopied") : t("checkout.copyWallet")}
               </button>
 
               <button
                 onClick={() => copyText(payment.id, "payment-id")}
                 className="bg-zinc-800 px-5 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
               >
-                {copiedKey === "payment-id" ? "ID Copied" : "Copy Payment ID"}
+                {copiedKey === "payment-id" ? t("checkout.idCopied") : t("checkout.copyPaymentId")}
               </button>
             </div>
           </section>
@@ -370,20 +372,20 @@ export default function PaymentCheckoutPage() {
         <div className="mt-6 bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-zinc-500 mb-1">Payment ID</p>
+              <p className="text-zinc-500 mb-1">{t("checkout.paymentId")}</p>
               <p className="break-all font-mono">{payment.id}</p>
             </div>
 
             <div>
-              <p className="text-zinc-500 mb-1">Transaction hash</p>
+              <p className="text-zinc-500 mb-1">{t("checkout.transactionHash")}</p>
               <p className="break-all font-mono">
-                {payment.txHash || "Not confirmed yet"}
+                {payment.txHash || t("checkout.notConfirmed")}
               </p>
             </div>
 
             <div>
-              <p className="text-zinc-500 mb-1">Auto refresh</p>
-              <p>Payment status updates every 10 seconds.</p>
+              <p className="text-zinc-500 mb-1">{t("checkout.autoRefresh")}</p>
+              <p>{t("checkout.autoRefreshDescription")}</p>
             </div>
           </div>
         </div>
