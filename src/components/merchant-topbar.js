@@ -96,18 +96,18 @@ export default function MerchantTopbar() {
         <div className="relative z-[60]" data-user-menu>
           <button
             onClick={() => setUserMenuOpen((v) => !v)}
-            className="h-10 w-10 rounded-full border border-zinc-700 bg-zinc-900 font-semibold text-zinc-100 transition hover:bg-zinc-800"
+            className="merchant-avatar-button h-10 w-10 rounded-full border font-semibold transition"
           >
             {(merchant?.name?.[0] || merchant?.email?.[0] || "M").toUpperCase()}
           </button>
 
           {userMenuOpen && (
-            <div className="absolute right-0 z-[100] mt-2 w-72 overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-2xl">
-              <div className="border-b border-zinc-800 px-4 py-3">
-                <p className="truncate text-sm font-semibold text-zinc-100">{merchant?.email}</p>
-                <p className="text-xs text-zinc-500">{t("account.merchantAccount")}</p>
+            <div className="merchant-user-menu absolute right-0 z-[100] mt-2 w-72 overflow-hidden rounded-xl border shadow-2xl">
+              <div className="merchant-user-menu-header border-b px-4 py-3">
+                <p className="merchant-user-menu-primary truncate text-sm font-semibold">{merchant?.email}</p>
+                <p className="merchant-user-menu-muted text-xs">{t("account.merchantAccount")}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
-                  <p className="truncate text-xs text-zinc-500">UID: {merchant?.id || "-"}</p>
+                  <p className="merchant-user-menu-muted truncate text-xs">UID: {merchant?.id || "-"}</p>
                   <button
                     onClick={() => {
                       if (!merchant?.id) return;
@@ -115,21 +115,21 @@ export default function MerchantTopbar() {
                       setCopiedUid(true);
                       setTimeout(() => setCopiedUid(false), 1200);
                     }}
-                    className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 transition hover:bg-zinc-800"
+                    className="merchant-user-menu-copy rounded-md border px-2 py-1 text-xs transition"
                   >
                     {copiedUid ? t("common.copied") : t("common.copy")}
                   </button>
                 </div>
               </div>
 
-              <a href="/overview" className="block px-4 py-3 text-sm text-zinc-200 transition hover:bg-zinc-900">
+              <a href="/overview" className="merchant-user-menu-action block px-4 py-3 text-sm transition">
                 {t("account.overview")}
               </a>
-              <a href="/settings" className="block px-4 py-3 text-sm text-zinc-200 transition hover:bg-zinc-900">
+              <a href="/settings/preference/basic-preferences" className="merchant-user-menu-action block px-4 py-3 text-sm transition">
                 {t("account.settings")}
               </a>
 
-              <button onClick={logout} className="w-full px-4 py-3 text-left text-sm text-red-400 transition hover:bg-zinc-900">
+              <button onClick={logout} className="merchant-user-menu-logout w-full px-4 py-3 text-left text-sm transition">
                 {t("account.logout")}
               </button>
             </div>

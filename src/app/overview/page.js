@@ -343,7 +343,7 @@ export default function OverviewPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 lg:w-auto lg:min-w-[390px]">
-              <Link href="/business-wallet/merchants" className="flex h-10 items-center justify-center rounded-lg bg-black px-4 text-sm font-semibold text-white shadow-sm hover:bg-zinc-950 transition">
+              <Link href="/business-wallet/merchants" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:border-zinc-500 hover:bg-zinc-900 light-dashboard:border-zinc-950 light-dashboard:bg-zinc-950 light-dashboard:text-white light-dashboard:hover:bg-black">
                 {t("overview.createPayment")}
               </Link>
               <Link href="/business-wallet" className="flex h-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-zinc-100 shadow-sm hover:bg-zinc-800 transition">

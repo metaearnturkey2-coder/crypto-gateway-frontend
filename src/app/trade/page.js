@@ -17,7 +17,7 @@ export default function TradePage() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Link href="/business-wallet/merchants" className="rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-black hover:bg-zinc-200 light-dashboard:bg-zinc-900 light-dashboard:text-white light-dashboard:hover:bg-black">
+          <Link href="/business-wallet/merchants" className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-zinc-500 hover:bg-zinc-800 light-dashboard:border-zinc-950 light-dashboard:bg-zinc-950 light-dashboard:text-white light-dashboard:hover:bg-black">
             {t("trade.createPayment")}
           </Link>
           <Link href="/business-wallet" className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-zinc-800 light-dashboard:border-zinc-300 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-900 light-dashboard:hover:bg-white">

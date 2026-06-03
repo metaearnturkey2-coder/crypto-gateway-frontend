@@ -17,7 +17,7 @@ export default function HistoryPage() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Link href="/business-wallet/merchants" className="rounded-lg bg-white px-4 py-3 text-center text-sm font-semibold text-black hover:bg-zinc-200 light-dashboard:bg-zinc-900 light-dashboard:text-white light-dashboard:hover:bg-black">
+          <Link href="/business-wallet/merchants" className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white transition hover:border-zinc-500 hover:bg-zinc-800 light-dashboard:border-zinc-950 light-dashboard:bg-zinc-950 light-dashboard:text-white light-dashboard:hover:bg-black">
             {t("history.openPayments")}
           </Link>
           <Link href="/business-wallet/api-docs" className="rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-zinc-800 light-dashboard:border-zinc-300 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-900 light-dashboard:hover:bg-white">

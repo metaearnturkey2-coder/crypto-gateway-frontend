@@ -614,26 +614,26 @@ export default function BusinessWalletMerchantsPage() {
                   </div>
                   <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">Copy Wallet</button>
+                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700">Copy Wallet</button>
                       <button
                         onClick={() => runPaymentAction(payment.id, "verify")}
-                        className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
+                        className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700 disabled:opacity-40"
                         disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
                       >
                         {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verify")}
                       </button>
                       <button
                         onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
-                        className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold disabled:opacity-40"
+                        className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700 disabled:opacity-40"
                         disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
                       >
                         {t("merchantPayments.cancel")}
                       </button>
-                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold">{t("merchantPayments.copyLink")}</button>
-                      <a href={getCheckoutUrl(payment)} target="_blank" className="h-10 bg-zinc-800/80 border border-zinc-600 text-zinc-100 px-3 rounded-lg text-xs font-semibold text-center flex items-center justify-center">{t("merchantPayments.checkout")}</a>
+                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700">{t("merchantPayments.copyLink")}</button>
+                      <a href={getCheckoutUrl(payment)} target="_blank" className="flex h-10 items-center justify-center rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-center text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700">{t("merchantPayments.checkout")}</a>
                       <button
                         onClick={() => openPaymentDetails(payment)}
-                        className="h-10 bg-zinc-100 text-zinc-900 px-3 rounded-lg text-xs font-semibold flex items-center justify-center"
+                        className="flex h-10 items-center justify-center rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700"
                       >
                         {t("merchantPayments.details")}
                       </button>

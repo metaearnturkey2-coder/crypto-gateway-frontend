@@ -62,10 +62,10 @@ export default function SettingsShell({ title, activeSection, children }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`block shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
+                  className={`settings-sidebar-link block shrink-0 rounded-lg px-4 py-2.5 text-sm font-semibold transition ${
                     active
-                      ? "bg-zinc-900 text-white light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950"
-                      : "text-zinc-400 hover:bg-zinc-900 hover:text-white light-dashboard:text-zinc-600 light-dashboard:hover:bg-zinc-100 light-dashboard:hover:text-zinc-950"
+                      ? "settings-sidebar-link-active"
+                      : "settings-sidebar-link-idle"
                   }`}
                 >
                   {item.labelKey ? t(item.labelKey) : item.label}
@@ -86,10 +86,10 @@ export default function SettingsShell({ title, activeSection, children }) {
                 <Link
                   key={tab.href + (tab.labelKey || tab.label)}
                   href={tab.href}
-                  className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
+                  className={`settings-section-tab shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
                     active || (pathname === "/settings/preference" && index === 0)
-                      ? "border-zinc-500 bg-zinc-900 text-white light-dashboard:border-zinc-950 light-dashboard:bg-white light-dashboard:text-zinc-950"
-                      : "border-zinc-700 text-zinc-200 hover:bg-zinc-900 light-dashboard:border-zinc-200 light-dashboard:text-zinc-900 light-dashboard:hover:bg-zinc-50"
+                      ? "settings-section-tab-active"
+                      : "settings-section-tab-idle"
                   }`}
                 >
                   {tab.labelKey ? t(tab.labelKey) : tab.label}

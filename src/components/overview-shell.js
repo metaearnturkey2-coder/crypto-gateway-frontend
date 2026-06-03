@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { BarChart3, ChevronDown, Code2, CreditCard } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import MerchantTopbar from "@/components/merchant-topbar";
@@ -11,7 +12,28 @@ const navItems = [
   { href: "/business", labelKey: "nav.business" },
   { href: "/trade", labelKey: "nav.trade" },
   { href: "/history", labelKey: "nav.history" },
-  { href: "/settings/security", labelKey: "nav.settings" },
+  { href: "/settings/preference/basic-preferences", labelKey: "nav.settings" },
+];
+
+const businessMenuItems = [
+  {
+    href: "/business-wallet",
+    labelKey: "nav.businessOverview",
+    descriptionKey: "nav.businessOverviewDescription",
+    icon: BarChart3,
+  },
+  {
+    href: "/business-wallet/merchants",
+    labelKey: "nav.merchantPayments",
+    descriptionKey: "nav.merchantPaymentsDescription",
+    icon: CreditCard,
+  },
+  {
+    href: "/business-wallet/api-docs",
+    labelKey: "nav.apiDocs",
+    descriptionKey: "nav.apiDocsDescription",
+    icon: Code2,
+  },
 ];
 
 export default function OverviewShell({ children }) {
@@ -53,30 +75,50 @@ export default function OverviewShell({ children }) {
                         active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
                       }`}
                     >
-                      {t(item.labelKey)}
+                      <span className="inline-flex items-center gap-1">
+                        {t(item.labelKey)}
+                        <ChevronDown
+                          size={15}
+                          strokeWidth={2.4}
+                          className={`transition-transform ${businessOpen ? "rotate-180" : ""}`}
+                        />
+                      </span>
                     </button>
 
                     {businessOpen && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute top-full left-0 z-[100] mt-2 w-[280px] rounded-xl border border-zinc-200 bg-white shadow-xl p-2 space-y-1"
+                        className="business-dropdown-menu absolute left-0 top-full z-[100] mt-2 w-[330px] overflow-hidden rounded-xl border p-2 shadow-xl"
                       >
-                        <Link href="/business-wallet" className="block rounded-lg px-4 py-3 hover:bg-zinc-100">
-                          <p className="text-sm font-semibold">{t("nav.businessOverview")}</p>
-                        </Link>
-                        <Link href="/business-wallet/merchants" className="block rounded-lg px-4 py-3 hover:bg-zinc-100">
-                          <p className="text-sm font-semibold">{t("nav.merchantPayments")}</p>
-                        </Link>
-                        <Link href="/business-wallet/api-docs" className="block rounded-lg px-4 py-3 hover:bg-zinc-100">
-                          <p className="text-sm font-semibold">{t("nav.apiDocs")}</p>
-                        </Link>
+                        {businessMenuItems.map((menuItem) => {
+                          const Icon = menuItem.icon;
+                          return (
+                            <Link
+                              key={menuItem.href}
+                              href={menuItem.href}
+                              className="business-dropdown-item flex gap-3 rounded-lg px-3 py-3 transition"
+                            >
+                              <span className="business-dropdown-icon mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                                <Icon size={18} strokeWidth={2.2} />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="business-dropdown-title block text-sm font-bold">
+                                  {t(menuItem.labelKey)}
+                                </span>
+                                <span className="business-dropdown-description mt-0.5 block text-xs leading-5">
+                                  {t(menuItem.descriptionKey)}
+                                </span>
+                              </span>
+                            </Link>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
                 );
               }
               const active =
-                item.href === "/settings/security"
+                item.href.startsWith("/settings")
                   ? pathname.startsWith("/settings")
                   : pathname === item.href;
               return (
