@@ -1,12 +1,5 @@
-"use client";
-
-import SettingsEmptyState from "@/components/settings-empty-state";
-import SettingsShell from "@/components/settings-shell";
+import { redirect } from "next/navigation";
 
 export default function PreferenceSettingsPage() {
-  return (
-    <SettingsShell title="Preference" activeSection="preference">
-      <SettingsEmptyState />
-    </SettingsShell>
-  );
+  redirect("/settings/preference/basic-preferences");
 }

@@ -3,21 +3,12 @@
 import { useEffect, useState } from "react";
 import { apiUrl } from "@/lib/api";
 
-const currencyOptions = [
-  { code: "USD", label: "US Dollar" },
-  { code: "TRY", label: "Turkish Lira" },
-  { code: "EUR", label: "Euro" },
-  { code: "GBP", label: "British Pound" },
-];
-
 export default function MerchantTopbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [currencyMenuOpen, setCurrencyMenuOpen] = useState(false);
   const [copiedUid, setCopiedUid] = useState(false);
   const [merchant, setMerchant] = useState(null);
   const [isDarkTheme, setIsDarkTheme] = useState(true);
   const [themeReady, setThemeReady] = useState(false);
-  const [displayCurrency, setDisplayCurrency] = useState("USD");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -33,7 +24,6 @@ export default function MerchantTopbar() {
   useEffect(() => {
     const stored = localStorage.getItem("dashboardTheme");
     if (stored === "light") setIsDarkTheme(false);
-    setDisplayCurrency(localStorage.getItem("displayCurrency") || "USD");
     setThemeReady(true);
   }, []);
 
@@ -55,20 +45,19 @@ export default function MerchantTopbar() {
     const closeOnOutside = (event) => {
       if (!event.target.closest("[data-user-menu]")) setUserMenuOpen(false);
     };
+    const onThemeChange = (event) => setIsDarkTheme(event.detail !== "light");
+
     window.addEventListener("click", closeOnOutside);
-    return () => window.removeEventListener("click", closeOnOutside);
+    window.addEventListener("dashboardThemeChange", onThemeChange);
+    return () => {
+      window.removeEventListener("click", closeOnOutside);
+      window.removeEventListener("dashboardThemeChange", onThemeChange);
+    };
   }, []);
 
   const logout = () => {
     localStorage.removeItem("token");
     window.location.href = "/login";
-  };
-
-  const selectCurrency = (code) => {
-    setDisplayCurrency(code);
-    localStorage.setItem("displayCurrency", code);
-    window.dispatchEvent(new CustomEvent("displayCurrencyChange", { detail: code }));
-    setCurrencyMenuOpen(false);
   };
 
   return (
@@ -117,48 +106,6 @@ export default function MerchantTopbar() {
               <a href="/settings" className="block px-4 py-3 text-sm text-zinc-200 transition hover:bg-zinc-900">
                 Ayarlar
               </a>
-
-              <div className="border-t border-zinc-800 px-4 py-3">
-                <button
-                  onClick={() => setCurrencyMenuOpen((v) => !v)}
-                  className="flex w-full items-center justify-between gap-3 text-left text-sm text-zinc-200 transition hover:text-white"
-                >
-                  <span>
-                    <span className="block font-medium">Para birimi</span>
-                    <span className="block text-xs text-zinc-500">{displayCurrency}</span>
-                  </span>
-                  <span className="text-lg leading-none text-zinc-500">{currencyMenuOpen ? "‹" : "›"}</span>
-                </button>
-
-                {currencyMenuOpen && (
-                  <div className="mt-3 grid gap-1">
-                    {currencyOptions.map((option) => (
-                      <button
-                        key={option.code}
-                        onClick={() => selectCurrency(option.code)}
-                        className={`flex items-center justify-between rounded-lg px-3 py-2 text-left text-sm transition ${
-                          displayCurrency === option.code
-                            ? "bg-emerald-400/10 text-emerald-200"
-                            : "text-zinc-300 hover:bg-zinc-900"
-                        }`}
-                      >
-                        <span>{option.label}</span>
-                        <span className="font-semibold">{option.code}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-between border-t border-zinc-800 px-4 py-3">
-                <span className="text-sm text-zinc-200">Koyu tema</span>
-                <button
-                  onClick={() => setIsDarkTheme((v) => !v)}
-                  className={`relative h-7 w-12 rounded-full transition ${isDarkTheme ? "bg-zinc-600" : "bg-zinc-400"}`}
-                >
-                  <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition ${isDarkTheme ? "left-6" : "left-1"}`} />
-                </button>
-              </div>
 
               <button onClick={logout} className="w-full px-4 py-3 text-left text-sm text-red-400 transition hover:bg-zinc-900">
                 Çıkış Yap

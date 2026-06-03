@@ -13,11 +13,36 @@ const settingsNavItems = [
 ];
 
 const sectionTabs = {
-  preference: ["Basic preferences", "Authorization", "Active sessions", "Account"],
-  security: ["Webhook", "Credentials", "API access", "Audit"],
-  business: ["Profile", "Settlement", "Branding", "Checkout"],
-  notifications: ["Payment alerts", "Webhook alerts", "Email", "System"],
-  api: ["API keys", "Documentation", "Webhooks", "Usage"],
+  preference: [
+    { href: "/settings/preference/basic-preferences", label: "Basic preferences" },
+    { href: "/settings/preference/authorization", label: "Authorization" },
+    { href: "/settings/preference/active-sessions", label: "Active sessions" },
+    { href: "/settings/preference/account", label: "Account" },
+  ],
+  security: [
+    { href: "/settings/security", label: "Webhook" },
+    { href: "/settings/security", label: "Credentials" },
+    { href: "/settings/security", label: "API access" },
+    { href: "/settings/security", label: "Audit" },
+  ],
+  business: [
+    { href: "/settings/business-settings", label: "Profile" },
+    { href: "/settings/business-settings", label: "Settlement" },
+    { href: "/settings/business-settings", label: "Branding" },
+    { href: "/settings/business-settings", label: "Checkout" },
+  ],
+  notifications: [
+    { href: "/settings/notifications", label: "Payment alerts" },
+    { href: "/settings/notifications", label: "Webhook alerts" },
+    { href: "/settings/notifications", label: "Email" },
+    { href: "/settings/notifications", label: "System" },
+  ],
+  api: [
+    { href: "/settings/api", label: "API keys" },
+    { href: "/settings/api", label: "Documentation" },
+    { href: "/settings/api", label: "Webhooks" },
+    { href: "/settings/api", label: "Usage" },
+  ],
 };
 
 export default function SettingsShell({ title, activeSection, children }) {
@@ -53,18 +78,22 @@ export default function SettingsShell({ title, activeSection, children }) {
 
           {tabs.length > 0 && (
             <div className="mt-6 flex gap-3 overflow-x-auto pb-1">
-              {tabs.map((tab, index) => (
-                <button
-                  key={tab}
+              {tabs.map((tab, index) => {
+                const active = pathname === tab.href || (activeSection === "preference" && pathname.startsWith(`${tab.href}/`));
+                return (
+                <Link
+                  key={tab.href + tab.label}
+                  href={tab.href}
                   className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold transition ${
-                    index === 0
-                      ? "border-zinc-100 bg-zinc-100 text-zinc-950 light-dashboard:border-zinc-950 light-dashboard:bg-white"
+                    active || (pathname === "/settings/preference" && index === 0)
+                      ? "border-zinc-500 bg-zinc-900 text-white light-dashboard:border-zinc-950 light-dashboard:bg-white light-dashboard:text-zinc-950"
                       : "border-zinc-700 text-zinc-200 hover:bg-zinc-900 light-dashboard:border-zinc-200 light-dashboard:text-zinc-900 light-dashboard:hover:bg-zinc-50"
                   }`}
                 >
-                  {tab}
-                </button>
-              ))}
+                  {tab.label}
+                </Link>
+                );
+              })}
             </div>
           )}
 
