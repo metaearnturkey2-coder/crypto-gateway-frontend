@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 export default function LoginPage() {
+  const { t } = useDashboardLanguage();
   const [form, setForm] = useState({
     email: "",
     password: "",
@@ -43,14 +45,18 @@ export default function LoginPage() {
 
       if (response.status === 429 && data.retryAfterSeconds) {
         const minutes = Math.ceil(Number(data.retryAfterSeconds) / 60);
-        setMessage(`Too many login attempts. Please try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+        setMessage(
+          t("auth.tooManyLogin")
+            .replace("{minutes}", minutes)
+            .replace("{plural}", minutes === 1 ? "" : "s")
+        );
         return;
       }
 
-      setMessage(data.message || "Login failed");
+      setMessage(data.message || t("auth.loginFailed"));
     } catch (error) {
       console.error(error);
-      setMessage("Login error. Please try again.");
+      setMessage(t("auth.loginError"));
     } finally {
       setLoading(false);
     }
@@ -65,39 +71,37 @@ export default function LoginPage() {
           </p>
 
           <h1 className="text-5xl font-bold leading-tight mb-6">
-            Manage your crypto payments from one dashboard.
+            {t("auth.loginHeroTitle")}
           </h1>
 
           <p className="text-zinc-400 text-lg mb-8 max-w-xl">
-            Login to your merchant panel to create payment requests, monitor
-            TRC20 USDT transactions, manage webhook URLs, and track payment
-            status in real time.
+            {t("auth.loginHeroDescription")}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-              <p className="text-2xl font-bold">Live</p>
-              <p className="text-zinc-500 text-sm mt-1">Payment Status</p>
+              <p className="text-2xl font-bold">{t("auth.live")}</p>
+              <p className="text-zinc-500 text-sm mt-1">{t("auth.paymentStatus")}</p>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
               <p className="text-2xl font-bold">API</p>
-              <p className="text-zinc-500 text-sm mt-1">Key Access</p>
+              <p className="text-zinc-500 text-sm mt-1">{t("auth.keyAccess")}</p>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
               <p className="text-2xl font-bold">Webhook</p>
-              <p className="text-zinc-500 text-sm mt-1">Callbacks</p>
+              <p className="text-zinc-500 text-sm mt-1">{t("auth.callbacks")}</p>
             </div>
           </div>
         </section>
 
         <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold">Merchant Login</h2>
+            <h2 className="text-3xl font-bold">{t("auth.merchantLogin")}</h2>
 
             <p className="text-zinc-400 mt-2">
-              Access your crypto payment dashboard.
+              {t("auth.loginDescription")}
             </p>
           </div>
 
@@ -110,7 +114,7 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
-                Email Address
+                {t("auth.emailAddress")}
               </label>
 
               <input
@@ -126,13 +130,13 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
-                Password
+                {t("auth.password")}
               </label>
 
               <input
                 type="password"
                 name="password"
-                placeholder="Enter your password"
+                placeholder={t("auth.passwordPlaceholder")}
                 value={form.password}
                 onChange={handleChange}
                 required
@@ -145,7 +149,7 @@ export default function LoginPage() {
                 href="#"
                 className="text-sm text-zinc-400 hover:text-white transition"
               >
-                Forgot password?
+                {t("auth.forgotPassword")}
               </a>
             </div>
 
@@ -154,14 +158,14 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:opacity-80 transition disabled:opacity-50"
             >
-              {loading ? "Logging in..." : "Login"}
+              {loading ? t("auth.loggingIn") : t("auth.login")}
             </button>
           </form>
 
           <p className="text-zinc-500 text-sm mt-6 text-center">
-            Do not have an account?{" "}
+            {t("auth.noAccount")}{" "}
             <a href="/register" className="text-white hover:underline">
-              Create account
+              {t("auth.createAccount")}
             </a>
           </p>
         </section>

@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { apiUrl } from "@/lib/api";
+import { useDashboardLanguage } from "@/lib/i18n";
 
 export default function RegisterPage() {
+  const { t } = useDashboardLanguage();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -39,7 +41,7 @@ export default function RegisterPage() {
       if (response.ok) {
         setMessage({
           type: "success",
-          text: data.message || "Account created. Redirecting to login...",
+          text: data.message || t("auth.accountCreated"),
         });
         window.location.href = "/login";
         return;
@@ -49,20 +51,22 @@ export default function RegisterPage() {
         const minutes = Math.ceil(Number(data.retryAfterSeconds) / 60);
         setMessage({
           type: "error",
-          text: `Too many registration attempts. Please try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+          text: t("auth.tooManyRegister")
+            .replace("{minutes}", minutes)
+            .replace("{plural}", minutes === 1 ? "" : "s"),
         });
         return;
       }
 
       setMessage({
         type: "error",
-        text: data.message || "Register failed",
+        text: data.message || t("auth.registerFailed"),
       });
     } catch (error) {
       console.error(error);
       setMessage({
         type: "error",
-        text: "Register error. Please try again.",
+        text: t("auth.registerError"),
       });
     } finally {
       setLoading(false);
@@ -78,28 +82,27 @@ export default function RegisterPage() {
           </p>
 
           <h1 className="text-5xl font-bold leading-tight mb-6">
-            Start accepting USDT TRC20 payments today.
+            {t("auth.registerHeroTitle")}
           </h1>
 
           <p className="text-zinc-400 text-lg mb-8 max-w-xl">
-            Create your merchant account, generate payment links, track
-            incoming payments, and manage webhook callbacks from one dashboard.
+            {t("auth.registerHeroDescription")}
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
               <p className="text-2xl font-bold">TRC20</p>
-              <p className="text-zinc-500 text-sm mt-1">USDT Network</p>
+              <p className="text-zinc-500 text-sm mt-1">{t("auth.usdtNetwork")}</p>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
               <p className="text-2xl font-bold">API</p>
-              <p className="text-zinc-500 text-sm mt-1">Merchant Ready</p>
+              <p className="text-zinc-500 text-sm mt-1">{t("auth.merchantReady")}</p>
             </div>
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
               <p className="text-2xl font-bold">QR</p>
-              <p className="text-zinc-500 text-sm mt-1">Checkout Flow</p>
+              <p className="text-zinc-500 text-sm mt-1">{t("auth.checkoutFlow")}</p>
             </div>
           </div>
         </section>
@@ -107,11 +110,11 @@ export default function RegisterPage() {
         <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
           <div className="mb-8">
             <h2 className="text-3xl font-bold">
-              Create Merchant Account
+              {t("auth.createMerchantAccount")}
             </h2>
 
             <p className="text-zinc-400 mt-2">
-              Register your gateway dashboard in seconds.
+              {t("auth.registerDescription")}
             </p>
           </div>
 
@@ -130,12 +133,12 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
-                Merchant Name
+                {t("auth.merchantName")}
               </label>
               <input
                 type="text"
                 name="name"
-                placeholder="Acme Store"
+                placeholder={t("auth.namePlaceholder")}
                 value={form.name}
                 onChange={handleChange}
                 required
@@ -145,7 +148,7 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
-                Email Address
+                {t("auth.emailAddress")}
               </label>
               <input
                 type="email"
@@ -160,12 +163,12 @@ export default function RegisterPage() {
 
             <div>
               <label className="block text-sm text-zinc-400 mb-2">
-                Password
+                {t("auth.password")}
               </label>
               <input
                 type="password"
                 name="password"
-                placeholder="Minimum 6 characters"
+                placeholder={t("auth.passwordMinPlaceholder")}
                 value={form.password}
                 onChange={handleChange}
                 required
@@ -179,14 +182,14 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:opacity-80 transition disabled:opacity-50"
             >
-              {loading ? "Creating account..." : "Create Account"}
+              {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
             </button>
           </form>
 
           <p className="text-zinc-500 text-sm mt-6 text-center">
-            Already have an account?{" "}
+            {t("auth.alreadyHaveAccount")}{" "}
             <a href="/login" className="text-white hover:underline">
-              Login
+              {t("auth.login")}
             </a>
           </p>
         </section>
