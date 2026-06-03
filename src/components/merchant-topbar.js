@@ -21,10 +21,23 @@ export default function MerchantTopbar() {
       .then((r) => r.json())
       .then((data) => {
         setMerchant(data.merchant || null);
-        const language = data.merchant?.preference?.dashboardLanguage;
-        if (language) {
-          localStorage.setItem("dashboardLanguage", language);
-          window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: language }));
+        const preference = data.merchant?.preference;
+        if (preference) {
+          Object.entries(preference).forEach(([key, value]) => {
+            if (value !== null && value !== undefined) localStorage.setItem(key, value);
+          });
+
+          if (preference.dashboardLanguage) {
+            window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: preference.dashboardLanguage }));
+          }
+
+          if (preference.timeZone) {
+            window.dispatchEvent(new CustomEvent("dashboardTimeZoneChange", { detail: preference.timeZone }));
+          }
+
+          if (preference.dashboardTheme) {
+            window.dispatchEvent(new CustomEvent("dashboardThemeChange", { detail: preference.dashboardTheme }));
+          }
         }
       })
       .catch(() => {});

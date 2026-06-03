@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { API_BASE_URL, apiUrl } from "@/lib/api";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 function getApiCallClassName(success) {
   return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
@@ -25,6 +25,7 @@ export default function BusinessWalletApiDocsPage() {
   const [copiedKey, setCopiedKey] = useState("");
   const [activeIntegrationKey, setActiveIntegrationKey] = useState("create-payment");
   const { t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
 
   const loadApiUsage = async () => {
     const token = localStorage.getItem("token");
@@ -108,7 +109,7 @@ export default function BusinessWalletApiDocsPage() {
                   {call.error && <p className="text-zinc-500 text-xs break-all mt-1">{call.error}</p>}
                 </div>
                 <p className="text-zinc-500">{call.durationMs}ms</p>
-                <p className="text-zinc-500 lg:text-right">{new Date(call.createdAt).toLocaleString()}</p>
+                <p className="text-zinc-500 lg:text-right">{formatDashboardDateTime(call.createdAt, timeZone)}</p>
               </div>
             ))}
           </div>

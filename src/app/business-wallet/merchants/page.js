@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const getWebhookStatusClassName = (status) => {
   if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
@@ -28,9 +28,9 @@ const formatTimeLeft = (expiresAt, now) => {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 };
 
-const formatDateTime = (value) => {
+const formatDateTime = (value, timeZone) => {
   if (!value) return "-";
-  return new Date(value).toLocaleString();
+  return formatDashboardDateTime(value, timeZone);
 };
 
 const getCheckoutUrl = (payment) => payment.checkoutUrl || `/pay/${payment.id}`;
@@ -143,6 +143,7 @@ export default function BusinessWalletMerchantsPage() {
   const [verificationResult, setVerificationResult] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const { t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
 
   const copyText = async (value, label) => {
     try {
@@ -597,7 +598,7 @@ export default function BusinessWalletMerchantsPage() {
                     <p className="break-all"><span className="text-zinc-500">{t("merchantPayments.paymentId")}:</span> {payment.id}</p>
                     {payment.orderId && <p className="break-all"><span className="text-zinc-500">Order ID:</span> {payment.orderId}</p>}
                     <p className="break-all"><span className="text-zinc-500">Wallet:</span> {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
-                    <p><span className="text-zinc-500">Created:</span> {formatDateTime(payment.createdAt)}</p>
+                    <p><span className="text-zinc-500">Created:</span> {formatDateTime(payment.createdAt, timeZone)}</p>
                     <p><span className="text-zinc-500">Expires:</span> {formatTimeLeft(payment.expiresAt, now)}</p>
                     {latestWebhook && (
                       <div className="pt-2">
@@ -761,7 +762,7 @@ export default function BusinessWalletMerchantsPage() {
                   </div>
                   <div className="flex flex-col gap-3 lg:items-end">
                     <p className="text-zinc-500 lg:text-right">
-                      {formatDateTime(log.createdAt)}
+                      {formatDateTime(log.createdAt, timeZone)}
                     </p>
                     {isPaymentLog && (
                       <button
@@ -877,11 +878,11 @@ export default function BusinessWalletMerchantsPage() {
                   <div className="space-y-4">
                     <div>
                       <p className="font-semibold">{t("merchantPayments.created")}</p>
-                      <p className="text-zinc-500 text-xs">{formatDateTime(selectedPayment.createdAt)}</p>
+                      <p className="text-zinc-500 text-xs">{formatDateTime(selectedPayment.createdAt, timeZone)}</p>
                     </div>
                     <div>
                       <p className="font-semibold">{t("merchantPayments.awaitingPayment")}</p>
-                      <p className="text-zinc-500 text-xs">{t("merchantPayments.expires")} {formatDateTime(selectedPayment.expiresAt)}</p>
+                      <p className="text-zinc-500 text-xs">{t("merchantPayments.expires")} {formatDateTime(selectedPayment.expiresAt, timeZone)}</p>
                     </div>
                   </div>
                 </div>
@@ -1004,11 +1005,11 @@ export default function BusinessWalletMerchantsPage() {
                             </div>
                             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
                               <p className="text-zinc-500">{t("merchantPayments.nextRetry")}</p>
-                              <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.nextRetryAt)}</p>
+                              <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.nextRetryAt, timeZone)}</p>
                             </div>
                             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3">
                               <p className="text-zinc-500">{t("merchantPayments.delivered")}</p>
-                              <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.deliveredAt)}</p>
+                              <p className="mt-1 font-semibold text-zinc-100">{formatDateTime(webhook.deliveredAt, timeZone)}</p>
                             </div>
                           </div>
 

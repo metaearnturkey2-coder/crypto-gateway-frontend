@@ -108,6 +108,10 @@ export default function BasicPreferencesPage() {
       window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: value }));
     }
 
+    if (key === "timeZone") {
+      window.dispatchEvent(new CustomEvent("dashboardTimeZoneChange", { detail: value }));
+    }
+
     if (key === "dashboardTheme") {
       if (value === "dark") {
         document.documentElement.classList.add("dark-dashboard");

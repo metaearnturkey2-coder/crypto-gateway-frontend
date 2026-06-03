@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
 import { apiUrl } from "@/lib/api";
-import { getTranslation, useDashboardLanguage } from "@/lib/i18n";
+import { formatDashboardDateTime, getTranslation, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const formatTimeLeft = (expiresAt, now, t) => {
   if (!expiresAt) {
@@ -98,6 +98,7 @@ export default function PaymentCheckoutPage() {
   const params = useParams();
   const paymentId = params.id;
   const { language, t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
 
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -313,7 +314,7 @@ export default function PaymentCheckoutPage() {
                 <p className="text-zinc-500 text-xs mb-1">{t("checkout.expires")}</p>
                 <p>
                   {payment.expiresAt
-                    ? new Date(payment.expiresAt).toLocaleString()
+                    ? formatDashboardDateTime(payment.expiresAt, timeZone)
                     : t("checkout.noExpiration")}
                 </p>
               </div>

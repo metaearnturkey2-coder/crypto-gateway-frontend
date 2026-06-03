@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const getActivityMeta = (action) => {
   if (action?.includes("webhook")) {
@@ -86,6 +86,7 @@ export default function BusinessWalletPage() {
   const [note, setNote] = useState("");
   const [notice, setNotice] = useState(null);
   const { t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
 
   const loadDashboard = async () => {
     const token = localStorage.getItem("token");
@@ -316,7 +317,7 @@ export default function BusinessWalletPage() {
                       </p>
                     </div>
                     <p className="text-zinc-500 md:text-right">
-                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : "-"}
+                      {formatDashboardDateTime(log.createdAt, timeZone)}
                     </p>
                   </div>
                 );
@@ -386,7 +387,7 @@ export default function BusinessWalletPage() {
                   <div>
                     <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${payoutStatusClass(request.status)}`}>{request.status}</span>
                   </div>
-                  <p className="text-zinc-500 lg:text-right">{new Date(request.createdAt).toLocaleString()}</p>
+                  <p className="text-zinc-500 lg:text-right">{formatDashboardDateTime(request.createdAt, timeZone)}</p>
                 </div>
               ))
             )}

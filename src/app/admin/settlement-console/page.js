@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "REJECTED", "PAID"];
 const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
@@ -145,6 +145,7 @@ const readJsonResponse = async (response) => {
 
 export default function AdminPayoutsPage() {
   const { t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
   const primaryButtonClass =
     "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const secondaryButtonClass =
@@ -1028,12 +1029,12 @@ export default function AdminPayoutsPage() {
                     )}
                     <p>
                       <span className="text-zinc-500">{t("admin.created")}:</span>{" "}
-                      {new Date(request.createdAt).toLocaleString()}
+                      {formatDashboardDateTime(request.createdAt, timeZone)}
                     </p>
                     {request.processedAt && (
                       <p>
                         <span className="text-zinc-500">{t("admin.processed")}:</span>{" "}
-                        {new Date(request.processedAt).toLocaleString()}
+                        {formatDashboardDateTime(request.processedAt, timeZone)}
                       </p>
                     )}
                   </div>
@@ -1227,7 +1228,7 @@ export default function AdminPayoutsPage() {
                 </div>
                 <div className="text-left text-xs text-zinc-500 md:text-right">
                   <p>{event.ipAddress || t("admin.unknownIp")}</p>
-                  <p className="mt-1">{new Date(event.createdAt).toLocaleString()}</p>
+                  <p className="mt-1">{formatDashboardDateTime(event.createdAt, timeZone)}</p>
                 </div>
               </div>
             ))}
@@ -1289,10 +1290,10 @@ export default function AdminPayoutsPage() {
                   {session.status}
                 </span>
                 <p className="text-zinc-400">
-                  {t("admin.sessionCreated")} <span className="text-zinc-200">{new Date(session.createdAt).toLocaleString()}</span>
+                  {t("admin.sessionCreated")} <span className="text-zinc-200">{formatDashboardDateTime(session.createdAt, timeZone)}</span>
                 </p>
                 <p className="text-zinc-400">
-                  {t("admin.sessionExpires")} <span className="text-zinc-200">{new Date(session.expiresAt).toLocaleString()}</span>
+                  {t("admin.sessionExpires")} <span className="text-zinc-200">{formatDashboardDateTime(session.expiresAt, timeZone)}</span>
                 </p>
               </div>
             ))}
@@ -1467,14 +1468,14 @@ export default function AdminPayoutsPage() {
 
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                     <p className="text-zinc-500 text-xs mb-1">{t("admin.created")}</p>
-                    <p>{new Date(selectedPayout.createdAt).toLocaleString()}</p>
+                    <p>{formatDashboardDateTime(selectedPayout.createdAt, timeZone)}</p>
                   </div>
 
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                     <p className="text-zinc-500 text-xs mb-1">{t("admin.processed")}</p>
                     <p>
                       {selectedPayout.processedAt
-                        ? new Date(selectedPayout.processedAt).toLocaleString()
+                        ? formatDashboardDateTime(selectedPayout.processedAt, timeZone)
                         : t("admin.notProcessed")}
                     </p>
                   </div>
@@ -1518,7 +1519,7 @@ export default function AdminPayoutsPage() {
                               <p className="text-zinc-400 mt-2">{log.message}</p>
                             </div>
                             <p className="text-zinc-500 text-xs sm:text-right">
-                              {new Date(log.createdAt).toLocaleString()}
+                              {formatDashboardDateTime(log.createdAt, timeZone)}
                             </p>
                           </div>
 

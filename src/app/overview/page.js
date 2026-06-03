@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { formatDashboardTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const fallbackDisplayCurrencyRates = {
   USD: 1,
@@ -48,6 +48,7 @@ export default function OverviewPage() {
   const [pricesError, setPricesError] = useState("");
   const [pricesUpdatedAt, setPricesUpdatedAt] = useState("");
   const { t } = useDashboardLanguage();
+  const timeZone = useDashboardTimeZone();
   const [balances, setBalances] = useState({
     BTC: 0,
     ETH: 0,
@@ -522,7 +523,7 @@ export default function OverviewPage() {
                 : pricesError
                 ? pricesError
                 : pricesUpdatedAt
-                ? `${t("overview.updated")} ${new Date(pricesUpdatedAt).toLocaleTimeString()}`
+                ? `${t("overview.updated")} ${formatDashboardTime(pricesUpdatedAt, timeZone)}`
                 : t("overview.livePrices")}
             </div>
 
