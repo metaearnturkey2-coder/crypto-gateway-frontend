@@ -275,58 +275,6 @@ export default function BusinessWalletPage() {
         </section>
 
         <section className="rounded-2xl border border-zinc-200 bg-white p-6">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold">{t("businessWallet.recentActivity")}</h2>
-              <p className="text-zinc-500">{t("businessWallet.activityDescription")}</p>
-            </div>
-            <a
-              href="/business-wallet/merchants"
-              className="w-fit rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
-            >
-              {t("businessWallet.viewAllActivity")}
-            </a>
-          </div>
-
-          {recentActivity.some((log) => getActivityMeta(log.action).critical) && (
-            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {t("businessWallet.reviewWarning")}
-            </div>
-          )}
-
-          {recentActivity.length === 0 ? (
-            <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-500">
-              {t("businessWallet.noActivity")}
-            </p>
-          ) : (
-            <div className="divide-y divide-zinc-200 rounded-xl border border-zinc-200">
-              {recentActivity.map((log) => {
-                const activityMeta = getActivityMeta(log.action);
-
-                return (
-                  <div key={log.id} className="grid grid-cols-1 gap-3 p-4 md:grid-cols-[120px_1fr_180px] md:items-center">
-                    <div>
-                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
-                        {activityMeta.label}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-zinc-900">{log.message || formatActivityAction(log.action)}</p>
-                      <p className="mt-1 break-all text-xs text-zinc-500">
-                        {formatActivityAction(log.action)} · {log.targetType || "merchant"}: {log.targetId || "-"}
-                      </p>
-                    </div>
-                    <p className="text-zinc-500 md:text-right">
-                      {formatDashboardDateTime(log.createdAt, timeZone)}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section className="rounded-2xl border border-zinc-200 bg-white p-6">
           <div className="flex flex-col gap-3 mb-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-2xl font-semibold">{t("businessWallet.finance")}</h2>
@@ -392,6 +340,58 @@ export default function BusinessWalletPage() {
               ))
             )}
           </div>
+        </section>
+
+        <section className="rounded-2xl border border-zinc-200 bg-white p-6">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold">{t("businessWallet.recentActivity")}</h2>
+              <p className="text-zinc-500">{t("businessWallet.activityDescription")}</p>
+            </div>
+            <a
+              href="/business-wallet/merchants"
+              className="w-fit rounded-full border border-zinc-300 bg-zinc-100 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-white"
+            >
+              {t("businessWallet.viewAllActivity")}
+            </a>
+          </div>
+
+          {recentActivity.some((log) => getActivityMeta(log.action).critical) && (
+            <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {t("businessWallet.reviewWarning")}
+            </div>
+          )}
+
+          {recentActivity.length === 0 ? (
+            <p className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-zinc-500">
+              {t("businessWallet.noActivity")}
+            </p>
+          ) : (
+            <div className="divide-y divide-zinc-200 rounded-xl border border-zinc-200">
+              {recentActivity.map((log) => {
+                const activityMeta = getActivityMeta(log.action);
+
+                return (
+                  <div key={log.id} className="grid grid-cols-1 gap-3 p-4 md:grid-cols-[120px_1fr_180px] md:items-center">
+                    <div>
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
+                        {activityMeta.label}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-zinc-900">{log.message || formatActivityAction(log.action)}</p>
+                      <p className="mt-1 break-all text-xs text-zinc-500">
+                        {formatActivityAction(log.action)} · {log.targetType || "merchant"}: {log.targetId || "-"}
+                      </p>
+                    </div>
+                    <p className="text-zinc-500 md:text-right">
+                      {formatDashboardDateTime(log.createdAt, timeZone)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </section>
       </div>
     </OverviewShell>

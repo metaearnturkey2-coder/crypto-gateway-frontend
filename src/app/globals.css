@@ -548,3 +548,391 @@ body {
   background: #27272a !important;
   color: #ffffff !important;
 }
+
+.merchant-setup-status-ready,
+.dark-dashboard .merchant-setup-status-ready {
+  border-color: rgba(52, 211, 153, 0.4) !important;
+  background: rgba(52, 211, 153, 0.1) !important;
+  color: #a7f3d0 !important;
+}
+
+.merchant-setup-status-warning,
+.dark-dashboard .merchant-setup-status-warning {
+  border-color: rgba(251, 191, 36, 0.4) !important;
+  background: rgba(251, 191, 36, 0.1) !important;
+  color: #fde68a !important;
+}
+
+.light-dashboard .merchant-setup-status-ready {
+  border-color: #059669 !important;
+  background: #d1fae5 !important;
+  color: #064e3b !important;
+}
+
+.light-dashboard .merchant-setup-status-warning {
+  border-color: #d97706 !important;
+  background: #fef3c7 !important;
+  color: #78350f !important;
+}
+
+.merchant-setup-chip,
+.dark-dashboard .merchant-setup-chip {
+  border-color: rgba(52, 211, 153, 0.22) !important;
+  background: rgba(52, 211, 153, 0.08) !important;
+  color: #a7f3d0 !important;
+}
+
+.light-dashboard .merchant-setup-chip {
+  border-color: #10b981 !important;
+  background: #d1fae5 !important;
+  color: #064e3b !important;
+}
+
+.light-dashboard .merchant-setup-chip span {
+  background: #059669 !important;
+}
+
+.payment-create-input,
+.dark-dashboard .payment-create-input {
+  border-color: #3f3f46 !important;
+  background: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.payment-create-input:focus,
+.dark-dashboard .payment-create-input:focus {
+  border-color: #a1a1aa !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .payment-create-input {
+  border-color: #9ca3af !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .payment-create-input:focus {
+  border-color: #111827 !important;
+  background: #ffffff !important;
+}
+
+.payment-create-button,
+.dark-dashboard .payment-create-button {
+  border-color: #52525b !important;
+  background: #f4f4f5 !important;
+  color: #111827 !important;
+}
+
+.payment-create-button:hover,
+.dark-dashboard .payment-create-button:hover {
+  border-color: #ffffff !important;
+  background: #ffffff !important;
+}
+
+.light-dashboard .payment-create-button {
+  border-color: #111827 !important;
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .payment-create-button:hover {
+  border-color: #000000 !important;
+  background: #000000 !important;
+}
+
+.operation-action-button,
+.dark-dashboard .operation-action-button {
+  border-color: #3f3f46 !important;
+}
+
+.operation-action-button:disabled,
+.dark-dashboard .operation-action-button:disabled {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+  color: #71717a !important;
+  cursor: not-allowed !important;
+}
+
+.operation-action-muted,
+.dark-dashboard .operation-action-muted,
+.operation-action-secondary,
+.dark-dashboard .operation-action-secondary {
+  background: #18181b !important;
+  color: #e4e4e7 !important;
+}
+
+.operation-action-muted:hover,
+.dark-dashboard .operation-action-muted:hover,
+.operation-action-secondary:hover,
+.dark-dashboard .operation-action-secondary:hover {
+  border-color: #71717a !important;
+  background: #27272a !important;
+  color: #ffffff !important;
+}
+
+.operation-action-primary,
+.dark-dashboard .operation-action-primary {
+  border-color: #e5e7eb !important;
+  background: #f4f4f5 !important;
+  color: #111827 !important;
+}
+
+.operation-action-primary:hover,
+.dark-dashboard .operation-action-primary:hover {
+  background: #ffffff !important;
+}
+
+.operation-action-success,
+.dark-dashboard .operation-action-success {
+  border-color: rgba(52, 211, 153, 0.45) !important;
+  background: rgba(52, 211, 153, 0.08) !important;
+  color: #a7f3d0 !important;
+}
+
+.operation-action-success:hover,
+.dark-dashboard .operation-action-success:hover {
+  background: rgba(52, 211, 153, 0.16) !important;
+}
+
+.operation-action-danger,
+.dark-dashboard .operation-action-danger {
+  border-color: rgba(248, 113, 113, 0.45) !important;
+  background: rgba(248, 113, 113, 0.08) !important;
+  color: #fecaca !important;
+}
+
+.operation-action-danger:hover,
+.dark-dashboard .operation-action-danger:hover {
+  background: rgba(248, 113, 113, 0.16) !important;
+}
+
+.light-dashboard .operation-action-button {
+  border-color: #d1d5db !important;
+}
+
+.light-dashboard .operation-action-button:disabled {
+  border-color: #d1d5db !important;
+  background: #f3f4f6 !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+}
+
+.light-dashboard .operation-action-muted,
+.light-dashboard .operation-action-secondary {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .operation-action-muted:hover,
+.light-dashboard .operation-action-secondary:hover {
+  border-color: #9ca3af !important;
+  background: #f3f4f6 !important;
+}
+
+.light-dashboard .operation-action-primary {
+  border-color: #111827 !important;
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .operation-action-primary:hover {
+  background: #000000 !important;
+}
+
+.light-dashboard .operation-action-success {
+  border-color: #059669 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+.light-dashboard .operation-action-success:hover {
+  background: #d1fae5 !important;
+}
+
+.light-dashboard .operation-action-danger {
+  border-color: #dc2626 !important;
+  background: #fef2f2 !important;
+  color: #b91c1c !important;
+}
+
+.light-dashboard .operation-action-danger:hover {
+  background: #fee2e2 !important;
+}
+
+.payment-card-meta-row {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.payment-card-meta-row span {
+  color: #71717a !important;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.payment-card-meta-row p {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: #d4d4d8 !important;
+  font-weight: 600;
+}
+
+.light-dashboard .payment-card-meta-row span {
+  color: #6b7280 !important;
+}
+
+.light-dashboard .payment-card-meta-row p {
+  color: #111827 !important;
+}
+
+.light-dashboard .webhook-status-badge {
+  border-color: #10b981 !important;
+  background: #d1fae5 !important;
+  color: #047857 !important;
+}
+
+.light-dashboard .payment-status-badge {
+  font-weight: 800 !important;
+}
+
+.light-dashboard .payment-status-badge[class*="text-amber"],
+.light-dashboard .payment-status-badge[class*="bg-amber"] {
+  border-color: #f59e0b !important;
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+.light-dashboard .payment-status-badge[class*="text-rose"],
+.light-dashboard .payment-status-badge[class*="bg-rose"] {
+  border-color: #fb7185 !important;
+  background: #ffe4e6 !important;
+  color: #be123c !important;
+}
+
+.operations-filter-field,
+.dark-dashboard .operations-filter-field {
+  border-color: #3f3f46 !important;
+  background: #27272a !important;
+  color: #f4f4f5 !important;
+}
+
+.operations-filter-field:focus,
+.dark-dashboard .operations-filter-field:focus {
+  border-color: #a1a1aa !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .operations-filter-field {
+  border-color: #9ca3af !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .operations-filter-field:focus {
+  border-color: #111827 !important;
+}
+
+.operations-filter-button,
+.dark-dashboard .operations-filter-button {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+  color: #e4e4e7 !important;
+}
+
+.operations-filter-button:hover,
+.dark-dashboard .operations-filter-button:hover {
+  border-color: #71717a !important;
+  background: #27272a !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .operations-filter-button {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .operations-filter-button:hover {
+  border-color: #9ca3af !important;
+  background: #f3f4f6 !important;
+}
+
+.payment-card-qr,
+.dark-dashboard .payment-card-qr {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+}
+
+.payment-card-qr p:first-child,
+.dark-dashboard .payment-card-qr p:first-child {
+  color: #e4e4e7 !important;
+}
+
+.payment-card-qr p:last-child,
+.dark-dashboard .payment-card-qr p:last-child {
+  color: #71717a !important;
+}
+
+.light-dashboard .payment-card-qr {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+}
+
+.light-dashboard .payment-card-qr p:first-child {
+  color: #111827 !important;
+}
+
+.light-dashboard .payment-card-qr p:last-child {
+  color: #6b7280 !important;
+}
+
+.activity-meta-chip,
+.dark-dashboard .activity-meta-chip {
+  border-color: #27272a !important;
+  background: #18181b !important;
+  color: #e4e4e7 !important;
+}
+
+.activity-meta-chip span:first-child,
+.dark-dashboard .activity-meta-chip span:first-child {
+  color: #71717a !important;
+  font-weight: 800;
+}
+
+.activity-meta-chip span:last-child,
+.dark-dashboard .activity-meta-chip span:last-child {
+  color: #f4f4f5 !important;
+  font-weight: 700;
+}
+
+.light-dashboard .activity-meta-chip {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .activity-meta-chip span:first-child {
+  color: #6b7280 !important;
+}
+
+.light-dashboard .activity-meta-chip span:last-child {
+  color: #111827 !important;
+}
+
+.light-dashboard .activity-type-badge {
+  border-color: #10b981 !important;
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  font-weight: 800 !important;
+}
+
+.light-dashboard .activity-list {
+  border-color: #d1d5db !important;
+}
+
+.light-dashboard .activity-list.divide-y > * + * {
+  border-top-color: #d1d5db !important;
+}

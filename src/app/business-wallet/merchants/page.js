@@ -483,7 +483,7 @@ export default function BusinessWalletMerchantsPage() {
             placeholder={t("merchantPayments.amountPlaceholder")}
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="payment-create-input p-3 rounded-xl border outline-none transition"
           />
           <input
             type="text"
@@ -491,7 +491,7 @@ export default function BusinessWalletMerchantsPage() {
             maxLength={80}
             value={newOrderId}
             onChange={(e) => setNewOrderId(e.target.value)}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="payment-create-input p-3 rounded-xl border outline-none transition"
           />
           <input
             type="email"
@@ -499,12 +499,12 @@ export default function BusinessWalletMerchantsPage() {
             maxLength={254}
             value={newCustomerEmail}
             onChange={(e) => setNewCustomerEmail(e.target.value)}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="payment-create-input p-3 rounded-xl border outline-none transition"
           />
           <button
             onClick={createPayment}
             disabled={creatingPayment}
-            className="h-[50px] rounded-xl bg-zinc-100 text-zinc-900 px-6 font-semibold hover:bg-white transition disabled:opacity-60"
+            className="payment-create-button h-[50px] rounded-xl border px-6 font-semibold transition disabled:opacity-60"
           >
             {creatingPayment ? t("merchantPayments.creating") : t("merchantPayments.createPayment")}
           </button>
@@ -531,7 +531,7 @@ export default function BusinessWalletMerchantsPage() {
               setWebhookStatusFilter("ALL");
               setPaymentPage(1);
             }}
-            className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+            className="operations-filter-button rounded-xl border px-4 py-2 font-semibold transition"
           >
             {t("merchantPayments.clearFilters")}
           </button>
@@ -546,7 +546,7 @@ export default function BusinessWalletMerchantsPage() {
               setPaymentSearch(e.target.value);
               setPaymentPage(1);
             }}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="operations-filter-field p-3 rounded-xl border outline-none transition"
           />
           <select
             value={statusFilter}
@@ -554,7 +554,7 @@ export default function BusinessWalletMerchantsPage() {
               setStatusFilter(e.target.value);
               setPaymentPage(1);
             }}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="operations-filter-field p-3 rounded-xl border outline-none transition"
           >
             <option value="ALL">{t("merchantPayments.allPaymentStatuses")}</option>
             <option value="PENDING">Pending</option>
@@ -568,7 +568,7 @@ export default function BusinessWalletMerchantsPage() {
               setWebhookStatusFilter(e.target.value);
               setPaymentPage(1);
             }}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="operations-filter-field p-3 rounded-xl border outline-none transition"
           >
             <option value="ALL">{t("merchantPayments.allWebhookStatuses")}</option>
             <option value="SUCCESS">Webhook success</option>
@@ -579,10 +579,6 @@ export default function BusinessWalletMerchantsPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="hidden lg:grid grid-cols-[160px_1fr_130px_460px] gap-3 px-4 py-2 text-xs uppercase tracking-wide text-zinc-500 border border-zinc-800 rounded-xl bg-zinc-950/70">
-            <span>Amount</span><span>Payment</span><span>Status</span><span>Actions</span>
-          </div>
-
           {!loading && payments.length === 0 && <p className="text-zinc-400">{t("merchantPayments.noPayments")}</p>}
 
           {payments.map((payment) => {
@@ -594,53 +590,81 @@ export default function BusinessWalletMerchantsPage() {
                     <p className="font-semibold text-2xl lg:text-xl">{payment.amount} {payment.currency}</p>
                     <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
                   </div>
-                  <div className="text-sm text-zinc-400 space-y-1">
-                    <p className="break-all"><span className="text-zinc-500">{t("merchantPayments.paymentId")}:</span> {payment.id}</p>
-                    {payment.orderId && <p className="break-all"><span className="text-zinc-500">Order ID:</span> {payment.orderId}</p>}
-                    <p className="break-all"><span className="text-zinc-500">Wallet:</span> {payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
-                    <p><span className="text-zinc-500">Created:</span> {formatDateTime(payment.createdAt, timeZone)}</p>
-                    <p><span className="text-zinc-500">Expires:</span> {formatTimeLeft(payment.expiresAt, now)}</p>
+                  <div className="payment-card-meta grid gap-2 text-sm">
+                    <div className="payment-card-meta-row">
+                      <span>{t("merchantPayments.paymentId")}</span>
+                      <p>{payment.id}</p>
+                    </div>
+                    {payment.orderId && (
+                      <div className="payment-card-meta-row">
+                        <span>Order ID</span>
+                        <p>{payment.orderId}</p>
+                      </div>
+                    )}
+                    <div className="payment-card-meta-row">
+                      <span>Wallet</span>
+                      <p>{payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="payment-card-meta-row">
+                        <span>Created</span>
+                        <p>{formatDateTime(payment.createdAt, timeZone)}</p>
+                      </div>
+                      <div className="payment-card-meta-row">
+                        <span>Expires</span>
+                        <p>{formatTimeLeft(payment.expiresAt, now)}</p>
+                      </div>
+                    </div>
                     {latestWebhook && (
                       <div className="pt-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook.status)}`}>
+                        <span className={`webhook-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook.status)}`}>
                           Webhook: {latestWebhook.status}
                         </span>
-                        <p className="mt-2"><span className="text-zinc-500">Attempts:</span> {latestWebhook.attempts}/{latestWebhook.maxAttempts}</p>
+                        <div className="payment-card-meta-row mt-2">
+                          <span>Attempts</span>
+                          <p>{latestWebhook.attempts}/{latestWebhook.maxAttempts}</p>
+                        </div>
                       </div>
                     )}
                   </div>
                   <div>
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
+                    <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
                   </div>
                   <div className="flex flex-col gap-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-2">
-                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700">Copy Wallet</button>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="operation-action-button operation-action-muted h-10 rounded-lg border px-3 text-xs font-semibold transition">Copy Wallet</button>
                       <button
                         onClick={() => runPaymentAction(payment.id, "verify")}
-                        className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700 disabled:opacity-40"
+                        className="operation-action-button operation-action-success h-10 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
                         disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
                       >
                         {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verify")}
                       </button>
                       <button
                         onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
-                        className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700 disabled:opacity-40"
+                        className="operation-action-button operation-action-danger h-10 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
                         disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
                       >
                         {t("merchantPayments.cancel")}
                       </button>
-                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="h-10 rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700">{t("merchantPayments.copyLink")}</button>
-                      <a href={getCheckoutUrl(payment)} target="_blank" className="flex h-10 items-center justify-center rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-center text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700">{t("merchantPayments.checkout")}</a>
+                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="operation-action-button operation-action-secondary h-10 rounded-lg border px-3 text-xs font-semibold transition">{t("merchantPayments.copyLink")}</button>
+                      <a href={getCheckoutUrl(payment)} target="_blank" className="operation-action-button operation-action-secondary flex h-10 items-center justify-center rounded-lg border px-3 text-center text-xs font-semibold transition">{t("merchantPayments.checkout")}</a>
                       <button
                         onClick={() => openPaymentDetails(payment)}
-                        className="flex h-10 items-center justify-center rounded-lg border border-zinc-600 bg-zinc-800/80 px-3 text-xs font-semibold text-zinc-100 transition hover:border-zinc-400 hover:bg-zinc-700"
+                        className="operation-action-button operation-action-primary flex h-10 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition"
                       >
                         {t("merchantPayments.details")}
                       </button>
                     </div>
                     {payment.status === "PENDING" && (
-                      <div className="hidden xl:flex justify-end">
-                        <div className="bg-white p-1.5 rounded-lg"><QRCodeSVG value={payment.walletAddress} size={72} /></div>
+                      <div className="payment-card-qr hidden xl:flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase">QR preview</p>
+                          <p className="mt-0.5 text-xs">Full payment view in Details</p>
+                        </div>
+                        <div className="rounded-lg bg-white p-1">
+                          <QRCodeSVG value={payment.walletAddress} size={56} />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -695,7 +719,7 @@ export default function BusinessWalletMerchantsPage() {
               setAuditActionFilter(e.target.value);
               setAuditPage(1);
             }}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="operations-filter-field p-3 rounded-xl border outline-none transition"
           >
             <option value="ALL">All actions</option>
             {auditActions.map((action) => (
@@ -709,7 +733,7 @@ export default function BusinessWalletMerchantsPage() {
               setAuditTargetTypeFilter(e.target.value);
               setAuditPage(1);
             }}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="operations-filter-field p-3 rounded-xl border outline-none transition"
           >
             <option value="ALL">All target types</option>
             {auditTargetTypes.map((targetType) => (
@@ -723,7 +747,7 @@ export default function BusinessWalletMerchantsPage() {
               setAuditTargetTypeFilter("ALL");
               setAuditPage(1);
             }}
-            className="bg-zinc-800 px-4 py-3 rounded-xl hover:bg-zinc-700 transition"
+            className="operations-filter-button rounded-xl border px-4 py-3 font-semibold transition"
           >
             Clear
           </button>
@@ -732,16 +756,16 @@ export default function BusinessWalletMerchantsPage() {
         {auditPagination.totalCount === 0 && <p className="text-zinc-400">No activity recorded yet.</p>}
 
         {auditLogs.length > 0 && (
-          <div className="divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="activity-list divide-y divide-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
             {auditLogs.map((log) => {
               const activityMeta = getActivityMeta(log.action);
-              const metadataEntries = Object.entries(log.metadata || {}).slice(0, 4);
+              const metadataEntries = Object.entries(log.metadata || {}).slice(0, 3);
               const isPaymentLog = (log.targetType || log.entityType) === "payment" && log.targetId;
 
               return (
-                <div key={log.id} className="grid grid-cols-1 lg:grid-cols-[180px_1fr_220px] gap-4 bg-zinc-950 p-4 text-sm">
+                <div key={log.id} className="grid grid-cols-1 gap-4 bg-zinc-950 p-4 text-sm lg:grid-cols-[160px_1fr_180px]">
                   <div>
-                    <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
+                    <span className={`activity-type-badge inline-block rounded-full px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
                       {activityMeta.label}
                     </span>
                     <p className="mt-2 text-xs capitalize text-zinc-500">{formatActivityAction(log.action)}</p>
@@ -750,12 +774,12 @@ export default function BusinessWalletMerchantsPage() {
                     <p className="font-semibold">{log.message || log.description || `${formatActivityAction(log.action)} from dashboard`}</p>
                     <p className="text-zinc-500 text-xs break-all mt-1">{log.targetType || log.entityType || "merchant"}: {log.targetId || log.entityId || "-"}</p>
                     {metadataEntries.length > 0 && (
-                      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                      <div className="mt-3 flex flex-wrap gap-2">
                         {metadataEntries.map(([key, value]) => (
-                          <div key={key} className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
-                            <p className="text-[11px] uppercase text-zinc-500">{key}</p>
-                            <p className="mt-1 break-all text-xs text-zinc-200">{formatMetadataValue(value)}</p>
-                          </div>
+                          <span key={key} className="activity-meta-chip inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
+                            <span className="shrink-0 uppercase">{key}</span>
+                            <span className="min-w-0 truncate">{formatMetadataValue(value)}</span>
+                          </span>
                         ))}
                       </div>
                     )}
@@ -767,7 +791,7 @@ export default function BusinessWalletMerchantsPage() {
                     {isPaymentLog && (
                       <button
                         onClick={() => openPaymentDetails({ id: log.targetId })}
-                        className="w-fit rounded-lg border border-zinc-700 px-4 py-2 text-xs font-semibold text-zinc-100 hover:bg-zinc-800"
+                        className="operation-action-button operation-action-secondary w-fit rounded-lg border px-4 py-2 text-xs font-semibold transition"
                       >
                         {t("merchantPayments.details")}
                       </button>

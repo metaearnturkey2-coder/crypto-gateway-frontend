@@ -287,12 +287,12 @@ export default function OverviewPage() {
     ? {
         label: t("overview.setupInProgress"),
         description: t("overview.setupDescription"),
-        className: "border-amber-400/40 bg-amber-400/10 text-amber-200",
+        className: "merchant-setup-status-warning",
       }
     : {
         label: t("overview.ready"),
         description: "",
-        className: "border-emerald-400/40 bg-emerald-400/10 text-emerald-200",
+        className: "merchant-setup-status-ready",
       };
 
   useEffect(() => {
@@ -394,7 +394,7 @@ export default function OverviewPage() {
             <div>
               <div className="flex flex-wrap items-center gap-4">
                 <h2 className="text-xl font-semibold text-white">{t("overview.merchantSetup")}</h2>
-                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${setupStatus.className}`}>
+                <span className={`merchant-setup-status rounded-full border px-3 py-1 text-xs font-semibold ${setupStatus.className}`}>
                   {onboardingComplete
                     ? `${setupStatus.label} · ${completedOnboardingSteps}/${onboardingSteps.length} ${t("overview.completed")}`
                     : setupStatus.label}
@@ -410,7 +410,7 @@ export default function OverviewPage() {
                   {onboardingSteps.map((step) => (
                     <div
                       key={step.title}
-                      className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/5 px-3 py-1.5 text-xs font-semibold text-emerald-200"
+                      className="merchant-setup-chip inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold"
                     >
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-300/80" />
                       {step.shortTitle}
