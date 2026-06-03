@@ -124,7 +124,7 @@ export default function BusinessWalletMerchantsPage() {
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditPagination, setAuditPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 5,
     totalCount: 0,
     totalPages: 1,
   });
@@ -166,7 +166,7 @@ export default function BusinessWalletMerchantsPage() {
       window.location.href = "/login";
       return;
     }
-    const params = new URLSearchParams({ page: String(paymentPage), limit: "10" });
+    const params = new URLSearchParams({ page: String(paymentPage), limit: "5" });
     if (paymentSearch.trim()) params.set("search", paymentSearch.trim());
     if (statusFilter !== "ALL") params.set("status", statusFilter);
     if (webhookStatusFilter !== "ALL") params.set("webhookStatus", webhookStatusFilter);

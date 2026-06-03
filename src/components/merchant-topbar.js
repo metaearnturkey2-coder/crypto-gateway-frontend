@@ -83,7 +83,7 @@ export default function MerchantTopbar() {
   };
 
   return (
-    <header className="relative z-50 border-b border-black bg-black text-white">
+    <header className="merchant-topbar relative z-50 border-b text-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 md:px-8">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400" />

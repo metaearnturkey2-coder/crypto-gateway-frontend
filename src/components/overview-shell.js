@@ -58,7 +58,7 @@ export default function OverviewShell({ children }) {
     <main className="dashboard-shell min-h-screen bg-zinc-100 text-zinc-900">
       <MerchantTopbar />
 
-      <nav className="relative z-40 bg-white border-b border-zinc-200">
+      <nav className="dashboard-main-nav relative z-40 border-b">
         <div className="max-w-7xl mx-auto px-4 md:px-8">
           <div className="flex items-center gap-2 overflow-x-auto py-3 md:gap-4 lg:overflow-visible">
             {navItems.map((item) => {
@@ -71,8 +71,8 @@ export default function OverviewShell({ children }) {
                         e.stopPropagation();
                         setBusinessOpen((v) => !v);
                       }}
-                      className={`relative rounded-lg px-3 py-2 text-sm font-semibold transition md:px-4 md:text-base ${
-                        active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                      className={`dashboard-main-nav-link relative rounded-lg px-3 py-2 text-sm font-semibold transition md:px-4 md:text-base ${
+                        active ? "dashboard-main-nav-link-active" : "dashboard-main-nav-link-idle"
                       }`}
                     >
                       <span className="inline-flex items-center gap-1">
@@ -125,8 +125,8 @@ export default function OverviewShell({ children }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition md:px-4 md:text-base ${
-                    active ? "bg-zinc-900 text-white" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900"
+                  className={`dashboard-main-nav-link relative shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition md:px-4 md:text-base ${
+                    active ? "dashboard-main-nav-link-active" : "dashboard-main-nav-link-idle"
                   }`}
                 >
                   {t(item.labelKey)}

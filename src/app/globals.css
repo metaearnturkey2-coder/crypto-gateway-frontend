@@ -500,3 +500,51 @@ body {
 .light-dashboard .merchant-user-menu-logout:hover {
   background: #fef2f2 !important;
 }
+
+.merchant-topbar,
+.dark-dashboard .merchant-topbar,
+.light-dashboard .merchant-topbar {
+  border-color: #000000 !important;
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+.merchant-topbar h1,
+.dark-dashboard .merchant-topbar h1,
+.light-dashboard .merchant-topbar h1 {
+  color: #ffffff !important;
+}
+
+.merchant-topbar p,
+.dark-dashboard .merchant-topbar p,
+.light-dashboard .merchant-topbar p {
+  color: #a1a1aa !important;
+}
+
+.dashboard-main-nav,
+.dark-dashboard .dashboard-main-nav,
+.light-dashboard .dashboard-main-nav {
+  border-color: #27272a !important;
+  background: #18181b !important;
+}
+
+.dashboard-main-nav-link-active,
+.dark-dashboard .dashboard-main-nav-link-active,
+.light-dashboard .dashboard-main-nav-link-active {
+  background: #09090b !important;
+  color: #ffffff !important;
+}
+
+.dashboard-main-nav-link-idle,
+.dark-dashboard .dashboard-main-nav-link-idle,
+.light-dashboard .dashboard-main-nav-link-idle {
+  background: transparent !important;
+  color: #a1a1aa !important;
+}
+
+.dashboard-main-nav-link-idle:hover,
+.dark-dashboard .dashboard-main-nav-link-idle:hover,
+.light-dashboard .dashboard-main-nav-link-idle:hover {
+  background: #27272a !important;
+  color: #ffffff !important;
+}
