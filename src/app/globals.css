@@ -799,6 +799,230 @@ body {
   color: #e11d48 !important;
 }
 
+.business-wallet-panel,
+.dark-dashboard .business-wallet-panel {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .business-wallet-panel {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+}
+
+.business-wallet-metric,
+.dark-dashboard .business-wallet-metric {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+}
+
+.light-dashboard .business-wallet-metric {
+  border-color: #d1d5db !important;
+  background: #f9fafb !important;
+}
+
+.business-wallet-pill,
+.dark-dashboard .business-wallet-pill {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+  color: #e4e4e7 !important;
+}
+
+.business-wallet-pill:hover,
+.dark-dashboard .business-wallet-pill:hover {
+  border-color: #71717a !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .business-wallet-pill {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .business-wallet-pill:hover {
+  border-color: #9ca3af !important;
+  background: #f3f4f6 !important;
+}
+
+.business-wallet-alert-pill,
+.dark-dashboard .business-wallet-alert-pill {
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  background: rgba(251, 191, 36, 0.1) !important;
+  color: #fde68a !important;
+}
+
+.light-dashboard .business-wallet-alert-pill {
+  border-color: #fbbf24 !important;
+  background: #fffbeb !important;
+  color: #92400e !important;
+}
+
+.business-wallet-activity-list,
+.dark-dashboard .business-wallet-activity-list,
+.business-wallet-empty-state,
+.dark-dashboard .business-wallet-empty-state {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+  color: #a1a1aa !important;
+}
+
+.business-wallet-activity-list.divide-y > * + *,
+.dark-dashboard .business-wallet-activity-list.divide-y > * + * {
+  border-top-color: #27272a !important;
+}
+
+.dark-dashboard .dashboard-shell .business-wallet-activity-list,
+.dark-dashboard .dashboard-shell .business-wallet-payout-list {
+  border-color: #2f2f35 !important;
+}
+
+.dark-dashboard .dashboard-shell .business-wallet-activity-list.divide-y > * + *,
+.dark-dashboard .dashboard-shell .business-wallet-payout-list > * + * {
+  border-top-color: #1f1f23 !important;
+}
+
+.light-dashboard .business-wallet-activity-list,
+.light-dashboard .business-wallet-empty-state {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #4b5563 !important;
+}
+
+.light-dashboard .business-wallet-activity-list.divide-y > * + * {
+  border-top-color: #d1d5db !important;
+}
+
+.business-wallet-payout-list,
+.dark-dashboard .business-wallet-payout-list {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+}
+
+.business-wallet-payout-list > * + *,
+.dark-dashboard .business-wallet-payout-list > * + * {
+  border-top-color: #27272a !important;
+}
+
+.light-dashboard .business-wallet-payout-list {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+}
+
+.light-dashboard .business-wallet-payout-list > * + * {
+  border-top-color: #d1d5db !important;
+}
+
+.business-wallet-activity-badge,
+.dark-dashboard .business-wallet-activity-badge {
+  font-weight: 700 !important;
+}
+
+.dark-dashboard .business-wallet-activity-badge[class*="bg-emerald"] {
+  border-color: rgba(52, 211, 153, 0.35) !important;
+  background: rgba(52, 211, 153, 0.1) !important;
+  color: #a7f3d0 !important;
+}
+
+.dark-dashboard .business-wallet-activity-badge[class*="bg-sky"] {
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  background: rgba(56, 189, 248, 0.1) !important;
+  color: #bae6fd !important;
+}
+
+.dark-dashboard .business-wallet-activity-badge[class*="bg-red"] {
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  background: rgba(248, 113, 113, 0.1) !important;
+  color: #fecaca !important;
+}
+
+.dark-dashboard .business-wallet-activity-badge[class*="bg-amber"] {
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  background: rgba(251, 191, 36, 0.1) !important;
+  color: #fde68a !important;
+}
+
+.business-wallet-input,
+.dark-dashboard .business-wallet-input {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+  color: #f4f4f5 !important;
+}
+
+.business-wallet-input:focus,
+.dark-dashboard .business-wallet-input:focus {
+  border-color: #a1a1aa !important;
+  background: #09090b !important;
+}
+
+.light-dashboard .business-wallet-input {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .dashboard-shell .business-wallet-input {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+.light-dashboard .business-wallet-input:focus {
+  border-color: #111827 !important;
+  background: #ffffff !important;
+}
+
+.light-dashboard .dashboard-shell .business-wallet-input:focus {
+  border-color: #111827 !important;
+  background: #ffffff !important;
+}
+
+.business-wallet-input::placeholder,
+.dark-dashboard .business-wallet-input::placeholder {
+  color: #71717a !important;
+}
+
+.light-dashboard .business-wallet-input::placeholder {
+  color: #6b7280 !important;
+}
+
+.light-dashboard .dashboard-shell .business-wallet-input::placeholder {
+  color: #64748b !important;
+}
+
+.business-wallet-field-label,
+.dark-dashboard .business-wallet-field-label {
+  color: #a1a1aa !important;
+  letter-spacing: 0;
+}
+
+.light-dashboard .business-wallet-field-label {
+  color: #4b5563 !important;
+}
+
+.business-wallet-primary-button,
+.dark-dashboard .business-wallet-primary-button {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
+  color: #ffffff !important;
+}
+
+.business-wallet-primary-button:hover,
+.dark-dashboard .business-wallet-primary-button:hover {
+  border-color: #71717a !important;
+  background: #18181b !important;
+}
+
+.light-dashboard .business-wallet-primary-button {
+  border-color: #111827 !important;
+  background: #111827 !important;
+  color: #ffffff !important;
+}
+
+.light-dashboard .business-wallet-primary-button:hover {
+  background: #000000 !important;
+}
+
 .payment-create-input,
 .dark-dashboard .payment-create-input {
   border-color: #3f3f46 !important;
