@@ -472,9 +472,9 @@ export default function BusinessWalletMerchantsPage() {
         </div>
       )}
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-6 text-white">
+      <div className="merchant-payments-panel rounded-2xl border p-5 mb-5">
         <h2 className="text-2xl font-bold mb-4">{t("merchantPayments.createPayment")}</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr_1fr_auto] gap-3">
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1fr_1fr_210px]">
           <input
             type="number"
             min={MIN_PAYMENT_AMOUNT}
@@ -514,7 +514,7 @@ export default function BusinessWalletMerchantsPage() {
         </p>
       </div>
 
-      <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 mb-10 text-white">
+      <div className="merchant-payments-panel rounded-2xl border p-5 mb-8">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
           <div>
             <h2 className="text-2xl font-bold">{t("merchantPayments.operations")}</h2>
@@ -578,14 +578,14 @@ export default function BusinessWalletMerchantsPage() {
           </select>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {!loading && payments.length === 0 && <p className="text-zinc-400">{t("merchantPayments.noPayments")}</p>}
 
           {payments.map((payment) => {
             const latestWebhook = payment.webhookEvents?.[0];
             return (
-              <div key={payment.id} className="border border-zinc-700/60 bg-zinc-900/70 rounded-xl p-4">
-                <div className="grid grid-cols-1 lg:grid-cols-[140px_1fr_120px_460px] gap-3 lg:items-center">
+              <div key={payment.id} className="merchant-payment-card rounded-xl border p-4">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[130px_minmax(0,1fr)_110px_minmax(300px,430px)] xl:items-center">
                   <div>
                     <p className="font-semibold text-2xl lg:text-xl">{payment.amount} {payment.currency}</p>
                     <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
@@ -630,8 +630,8 @@ export default function BusinessWalletMerchantsPage() {
                   <div>
                     <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
+                  <div className="flex flex-col gap-3 xl:items-end">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 xl:max-w-[430px]">
                       <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="operation-action-button operation-action-muted h-10 rounded-lg border px-3 text-xs font-semibold transition">Copy Wallet</button>
                       <button
                         onClick={() => runPaymentAction(payment.id, "verify")}
@@ -694,14 +694,18 @@ export default function BusinessWalletMerchantsPage() {
           })}
         </div>
 
-        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <p className="text-zinc-500 text-sm">Page {paymentPagination.page} of {paymentPagination.totalPages}</p>
           <div className="flex gap-3">
-            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">{t("merchantPayments.previous")}</button>
-            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="bg-zinc-800 px-4 py-2 rounded-xl disabled:opacity-40">{t("merchantPayments.next")}</button>
+            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="operations-filter-button rounded-xl border px-4 py-2 font-semibold transition disabled:opacity-40">{t("merchantPayments.previous")}</button>
+            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="operations-filter-button rounded-xl border px-4 py-2 font-semibold transition disabled:opacity-40">{t("merchantPayments.next")}</button>
           </div>
         </div>
-        <p className="text-zinc-500 text-xs mt-4">Auto refresh active: payments update every 10 seconds.</p>
+        <div className="mt-4 flex justify-start">
+          <span className="operations-refresh-pill rounded-full border px-3 py-1 text-xs font-semibold">
+            Auto refresh · 10s
+          </span>
+        </div>
       </div>
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
