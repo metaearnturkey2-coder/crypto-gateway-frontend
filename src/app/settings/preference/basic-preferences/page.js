@@ -176,25 +176,25 @@ export default function BasicPreferencesPage() {
           {notice.message}
         </div>
       )}
-      <div className="max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+      <div className="max-w-4xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 light-dashboard:border-zinc-200 light-dashboard:bg-white">
         {rows.map((row) => {
           const Icon = row.icon;
           return (
             <div
               key={row.key}
-              className="flex items-center justify-between gap-4 border-b border-zinc-800 px-4 py-4 last:border-b-0 light-dashboard:border-zinc-200"
+              className="flex flex-col items-start justify-between gap-3 border-b border-zinc-800 px-4 py-3 last:border-b-0 light-dashboard:border-zinc-200 sm:flex-row sm:items-center sm:gap-4"
             >
-              <div className="flex min-w-0 items-center gap-4">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
-                  <Icon size={19} strokeWidth={2.2} />
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                  <Icon size={17} strokeWidth={2.2} />
                 </span>
-                <p className="font-semibold text-white light-dashboard:text-zinc-950">{t(row.labelKey)}</p>
+                <p className="text-sm font-semibold text-white light-dashboard:text-zinc-950">{t(row.labelKey)}</p>
               </div>
               <select
                 value={preferences[row.key]}
                 onChange={(event) => updatePreference(row.key, event.target.value)}
                 disabled={!ready || savingKey === row.key}
-                className="h-10 min-w-[132px] rounded-lg border border-zinc-700 bg-zinc-950 px-3 text-sm font-semibold text-white outline-none transition hover:bg-zinc-900 disabled:opacity-60 light-dashboard:border-zinc-200 light-dashboard:bg-white light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
+                className="h-9 w-full rounded-xl border border-zinc-700/80 bg-zinc-800/60 px-3 text-sm font-semibold text-white outline-none transition hover:border-zinc-500 hover:bg-zinc-800 focus:border-zinc-400 disabled:opacity-60 light-dashboard:border-zinc-300 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-950 light-dashboard:hover:border-zinc-400 light-dashboard:hover:bg-white light-dashboard:focus:border-zinc-500 sm:w-[168px]"
               >
                 {row.options.map((option) => (
                   <option key={option} value={option}>
@@ -206,27 +206,32 @@ export default function BasicPreferencesPage() {
           );
         })}
 
-        <div className="flex items-center justify-between gap-4 px-4 py-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
-              <Moon size={19} strokeWidth={2.2} />
+        <div className="flex flex-col items-start justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+              <Moon size={17} strokeWidth={2.2} />
             </span>
-            <p className="font-semibold text-white light-dashboard:text-zinc-950">{t("preferences.darkTheme")}</p>
+            <p className="text-sm font-semibold text-white light-dashboard:text-zinc-950">{t("preferences.darkTheme")}</p>
           </div>
-          <button
-            type="button"
-            onClick={() => updatePreference("dashboardTheme", darkThemeEnabled ? "light" : "dark")}
-            disabled={!ready || savingKey === "dashboardTheme"}
-            className={`relative h-7 w-12 rounded-full transition disabled:opacity-60 ${
-              darkThemeEnabled ? "bg-zinc-600" : "bg-zinc-300"
-            }`}
-          >
-            <span
-              className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
-                darkThemeEnabled ? "left-6" : "left-1"
+          <div className="flex items-center gap-3 self-end sm:self-auto">
+            <span className="min-w-[34px] text-right text-xs font-semibold text-zinc-400 light-dashboard:text-zinc-500">
+              {darkThemeEnabled ? t("preferences.themeOn") : t("preferences.themeOff")}
+            </span>
+            <button
+              type="button"
+              onClick={() => updatePreference("dashboardTheme", darkThemeEnabled ? "light" : "dark")}
+              disabled={!ready || savingKey === "dashboardTheme"}
+              className={`relative h-7 w-12 rounded-full transition disabled:opacity-60 ${
+                darkThemeEnabled ? "bg-zinc-600" : "bg-zinc-300"
               }`}
-            />
-          </button>
+            >
+              <span
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition ${
+                  darkThemeEnabled ? "left-6" : "left-1"
+                }`}
+              />
+            </button>
+          </div>
         </div>
       </div>
     </SettingsShell>

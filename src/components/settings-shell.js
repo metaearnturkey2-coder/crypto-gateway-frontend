@@ -53,7 +53,7 @@ export default function SettingsShell({ title, activeSection, children }) {
 
   return (
     <OverviewShell>
-      <div className="grid gap-8 lg:grid-cols-[210px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[210px_1fr]">
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <nav className="flex gap-2 overflow-x-auto pb-1 lg:block lg:space-y-2 lg:overflow-visible lg:pb-0">
             {settingsNavItems.map((item) => {
@@ -79,7 +79,7 @@ export default function SettingsShell({ title, activeSection, children }) {
           <h2 className="text-2xl font-bold text-white light-dashboard:text-zinc-950">{title}</h2>
 
           {tabs.length > 0 && (
-            <div className="mt-6 flex gap-3 overflow-x-auto pb-1">
+            <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
               {tabs.map((tab, index) => {
                 const active = pathname === tab.href || (activeSection === "preference" && pathname.startsWith(`${tab.href}/`));
                 return (
@@ -99,7 +99,7 @@ export default function SettingsShell({ title, activeSection, children }) {
             </div>
           )}
 
-          <div className="mt-6">{children}</div>
+          <div className="mt-5">{children}</div>
         </div>
       </div>
     </OverviewShell>
