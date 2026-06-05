@@ -1114,6 +1114,16 @@ body {
   background: #ffffff !important;
 }
 
+.payment-create-helper,
+.dark-dashboard .payment-create-helper {
+  color: #b6c2d4;
+  line-height: 1.45;
+}
+
+.light-dashboard .payment-create-helper {
+  color: #475569;
+}
+
 .merchant-payments-panel,
 .dark-dashboard .merchant-payments-panel {
   border-color: #27272a !important;
@@ -1207,6 +1217,21 @@ body {
   background: #18181b !important;
 }
 
+.operation-action-details,
+.dark-dashboard .operation-action-details {
+  border-color: rgba(161, 161, 170, 0.42) !important;
+  background: transparent !important;
+  color: #e4e4e7 !important;
+  box-shadow: none !important;
+}
+
+.operation-action-details:hover,
+.dark-dashboard .operation-action-details:hover {
+  border-color: #a1a1aa !important;
+  background: #18181b !important;
+  color: #ffffff !important;
+}
+
 .operation-action-success,
 .dark-dashboard .operation-action-success {
   border-color: rgba(52, 211, 153, 0.45) !important;
@@ -1264,6 +1289,19 @@ body {
   background: #000000 !important;
 }
 
+.light-dashboard .operation-action-details {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+}
+
+.light-dashboard .operation-action-details:hover {
+  border-color: #94a3b8 !important;
+  background: #f8fafc !important;
+  color: #020617 !important;
+}
+
 .light-dashboard .operation-action-success {
   border-color: #059669 !important;
   background: #ecfdf5 !important;
@@ -1291,10 +1329,34 @@ body {
   color: #a1a1aa !important;
 }
 
+.operations-list-footer,
+.dark-dashboard .operations-list-footer {
+  border-color: #27272a !important;
+  background: rgba(9, 9, 11, 0.55) !important;
+}
+
+.operations-page-pill,
+.dark-dashboard .operations-page-pill {
+  border-color: #3f3f46 !important;
+  background: #18181b !important;
+  color: #d4d4d8 !important;
+}
+
 .light-dashboard .operations-refresh-pill {
   border-color: #d1d5db !important;
   background: #ffffff !important;
   color: #64748b !important;
+}
+
+.light-dashboard .operations-list-footer {
+  border-color: #d1d5db !important;
+  background: #f9fafb !important;
+}
+
+.light-dashboard .operations-page-pill {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #334155 !important;
 }
 
 .api-docs-panel,
@@ -1596,13 +1658,13 @@ body {
 
 .payment-card-meta-row {
   display: grid;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
 }
 
 .payment-card-meta-row span {
   color: #71717a !important;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
@@ -1612,7 +1674,32 @@ body {
   min-width: 0;
   overflow-wrap: anywhere;
   color: #d4d4d8 !important;
+  font-size: 13px;
   font-weight: 600;
+}
+
+.payment-card-info-cluster,
+.dark-dashboard .payment-card-info-cluster {
+  border: 1px solid rgba(63, 63, 70, 0.28);
+  border-radius: 10px;
+  background: rgba(9, 9, 11, 0.18);
+  padding: 7px 9px;
+}
+
+.payment-card-time-grid .payment-card-meta-row {
+  border-top: 1px solid rgba(63, 63, 70, 0.34);
+  padding-top: 7px;
+}
+
+.payment-card-attempts-row,
+.dark-dashboard .payment-card-attempts-row {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #27272a;
+  border-radius: 999px;
+  padding: 4px 10px;
 }
 
 .light-dashboard .payment-card-meta-row span {
@@ -1621,6 +1708,20 @@ body {
 
 .light-dashboard .payment-card-meta-row p {
   color: #111827 !important;
+}
+
+.light-dashboard .payment-card-info-cluster {
+  border-color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.light-dashboard .payment-card-time-grid .payment-card-meta-row {
+  border-color: #e5e7eb;
+}
+
+.light-dashboard .payment-card-attempts-row {
+  border-color: #d1d5db;
+  background: #ffffff;
 }
 
 .light-dashboard .webhook-status-badge {
@@ -1652,6 +1753,17 @@ body {
   border-color: #3f3f46 !important;
   background: #27272a !important;
   color: #f4f4f5 !important;
+}
+
+.activity-filter-bar,
+.dark-dashboard .activity-filter-bar {
+  border-color: #27272a !important;
+  background: rgba(9, 9, 11, 0.52) !important;
+}
+
+.light-dashboard .activity-filter-bar {
+  border-color: #e5e7eb !important;
+  background: #f9fafb !important;
 }
 
 .operations-filter-field:focus,
@@ -1758,16 +1870,26 @@ body {
 }
 
 .light-dashboard .activity-type-badge {
-  border-color: #10b981 !important;
-  background: #d1fae5 !important;
-  color: #065f46 !important;
+  border-color: #059669 !important;
+  background: #bbf7d0 !important;
+  color: #064e3b !important;
   font-weight: 800 !important;
 }
 
 .light-dashboard .activity-list {
-  border-color: #d1d5db !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.04);
 }
 
 .light-dashboard .activity-list.divide-y > * + * {
-  border-top-color: #d1d5db !important;
+  border-top-color: rgba(148, 163, 184, 0.16) !important;
+}
+
+.light-dashboard .activity-list > div {
+  background: rgba(255, 255, 255, 0.48) !important;
+}
+
+.light-dashboard .activity-list > div:hover {
+  background: rgba(248, 250, 252, 0.8) !important;
 }

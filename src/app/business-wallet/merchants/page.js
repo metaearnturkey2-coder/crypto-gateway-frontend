@@ -472,9 +472,11 @@ export default function BusinessWalletMerchantsPage() {
         </div>
       )}
 
-      <div className="merchant-payments-panel rounded-2xl border p-5 mb-5">
-        <h2 className="text-2xl font-bold mb-4">{t("merchantPayments.createPayment")}</h2>
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1fr_1fr_210px]">
+      <div className="merchant-payments-panel rounded-2xl border p-4 mb-5">
+        <div className="mb-4 flex flex-col">
+          <h2 className="text-xl font-bold">{t("merchantPayments.createPayment")}</h2>
+        </div>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(150px,0.8fr)_minmax(180px,1fr)_minmax(220px,1fr)_180px]">
           <input
             type="number"
             min={MIN_PAYMENT_AMOUNT}
@@ -483,7 +485,7 @@ export default function BusinessWalletMerchantsPage() {
             placeholder={t("merchantPayments.amountPlaceholder")}
             value={newAmount}
             onChange={(e) => setNewAmount(e.target.value)}
-            className="payment-create-input p-3 rounded-xl border outline-none transition"
+            className="payment-create-input rounded-lg border px-4 py-2.5 outline-none transition"
           />
           <input
             type="text"
@@ -491,7 +493,7 @@ export default function BusinessWalletMerchantsPage() {
             maxLength={80}
             value={newOrderId}
             onChange={(e) => setNewOrderId(e.target.value)}
-            className="payment-create-input p-3 rounded-xl border outline-none transition"
+            className="payment-create-input rounded-lg border px-4 py-2.5 outline-none transition"
           />
           <input
             type="email"
@@ -499,17 +501,17 @@ export default function BusinessWalletMerchantsPage() {
             maxLength={254}
             value={newCustomerEmail}
             onChange={(e) => setNewCustomerEmail(e.target.value)}
-            className="payment-create-input p-3 rounded-xl border outline-none transition"
+            className="payment-create-input rounded-lg border px-4 py-2.5 outline-none transition"
           />
           <button
             onClick={createPayment}
             disabled={creatingPayment}
-            className="payment-create-button h-[50px] rounded-xl border px-6 font-semibold transition disabled:opacity-60"
+            className="payment-create-button h-[45px] rounded-lg border px-5 font-semibold transition disabled:opacity-60"
           >
             {creatingPayment ? t("merchantPayments.creating") : t("merchantPayments.createPayment")}
           </button>
         </div>
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className="payment-create-helper mt-2 text-xs">
           {t("merchantPayments.helper")}
         </p>
       </div>
@@ -583,29 +585,35 @@ export default function BusinessWalletMerchantsPage() {
 
           {payments.map((payment) => {
             const latestWebhook = payment.webhookEvents?.[0];
+            const canManagePayment =
+              payment.status === "PENDING" && paymentAction?.paymentId !== payment.id;
             return (
-              <div key={payment.id} className="merchant-payment-card rounded-xl border p-4">
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[130px_minmax(0,1fr)_110px_minmax(300px,430px)] xl:items-center">
+              <div key={payment.id} className="merchant-payment-card rounded-xl border p-3 sm:p-4">
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[120px_minmax(0,1fr)_105px_minmax(280px,360px)] xl:items-center">
                   <div>
-                    <p className="font-semibold text-2xl lg:text-xl">{payment.amount} {payment.currency}</p>
-                    <p className="text-xs text-zinc-500 mt-1">{payment.network}</p>
+                    <p className="text-xl font-semibold">{payment.amount} {payment.currency}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">{payment.network}</p>
                   </div>
                   <div className="payment-card-meta grid gap-2 text-sm">
-                    <div className="payment-card-meta-row">
-                      <span>{t("merchantPayments.paymentId")}</span>
-                      <p>{payment.id}</p>
-                    </div>
-                    {payment.orderId && (
+                    <div className="payment-card-info-cluster grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(120px,0.55fr)]">
                       <div className="payment-card-meta-row">
-                        <span>Order ID</span>
-                        <p>{payment.orderId}</p>
+                        <span>{t("merchantPayments.paymentId")}</span>
+                        <p>{payment.id}</p>
                       </div>
-                    )}
-                    <div className="payment-card-meta-row">
-                      <span>Wallet</span>
-                      <p>{payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
+                      {payment.orderId && (
+                        <div className="payment-card-meta-row">
+                          <span>Order ID</span>
+                          <p>{payment.orderId}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="payment-card-info-cluster">
+                      <div className="payment-card-meta-row">
+                        <span>Wallet</span>
+                        <p>{payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
+                      </div>
+                    </div>
+                    <div className="payment-card-time-grid grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
                       <div className="payment-card-meta-row">
                         <span>Created</span>
                         <p>{formatDateTime(payment.createdAt, timeZone)}</p>
@@ -616,54 +624,58 @@ export default function BusinessWalletMerchantsPage() {
                       </div>
                     </div>
                     {latestWebhook && (
-                      <div className="pt-2">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         <span className={`webhook-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook.status)}`}>
                           Webhook: {latestWebhook.status}
                         </span>
-                        <div className="payment-card-meta-row mt-2">
+                        <div className="payment-card-meta-row payment-card-attempts-row">
                           <span>Attempts</span>
                           <p>{latestWebhook.attempts}/{latestWebhook.maxAttempts}</p>
                         </div>
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="xl:justify-self-center">
                     <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
                   </div>
-                  <div className="flex flex-col gap-3 xl:items-end">
-                    <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3 xl:max-w-[430px]">
-                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="operation-action-button operation-action-muted h-10 rounded-lg border px-3 text-xs font-semibold transition">Copy Wallet</button>
-                      <button
-                        onClick={() => runPaymentAction(payment.id, "verify")}
-                        className="operation-action-button operation-action-success h-10 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
-                        disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
-                      >
-                        {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verify")}
-                      </button>
-                      <button
-                        onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
-                        className="operation-action-button operation-action-danger h-10 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
-                        disabled={payment.status !== "PENDING" || paymentAction?.paymentId === payment.id}
-                      >
-                        {t("merchantPayments.cancel")}
-                      </button>
-                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="operation-action-button operation-action-secondary h-10 rounded-lg border px-3 text-xs font-semibold transition">{t("merchantPayments.copyLink")}</button>
-                      <a href={getCheckoutUrl(payment)} target="_blank" className="operation-action-button operation-action-secondary flex h-10 items-center justify-center rounded-lg border px-3 text-center text-xs font-semibold transition">{t("merchantPayments.checkout")}</a>
-                      <button
-                        onClick={() => openPaymentDetails(payment)}
-                        className="operation-action-button operation-action-primary flex h-10 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition"
-                      >
-                        {t("merchantPayments.details")}
-                      </button>
+                  <div className="flex flex-col gap-2 xl:items-end">
+                    <div className="grid w-full grid-cols-2 gap-2 xl:max-w-[320px]">
+                      <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="operation-action-button operation-action-muted h-8 rounded-lg border px-3 text-xs font-semibold transition">Copy Wallet</button>
+                      {payment.status === "PENDING" && (
+                        <button
+                          onClick={() => runPaymentAction(payment.id, "verify")}
+                          className="operation-action-button operation-action-success h-8 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
+                          disabled={!canManagePayment}
+                        >
+                          {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verify")}
+                        </button>
+                      )}
+                      {payment.status === "PENDING" && (
+                        <button
+                          onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
+                          className="operation-action-button operation-action-danger h-8 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
+                          disabled={!canManagePayment}
+                        >
+                          {t("merchantPayments.cancel")}
+                        </button>
+                      )}
+                      <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="operation-action-button operation-action-muted h-8 rounded-lg border px-3 text-xs font-semibold transition">{t("merchantPayments.copyLink")}</button>
+                      <a href={getCheckoutUrl(payment)} target="_blank" className="operation-action-button operation-action-secondary flex h-8 items-center justify-center rounded-lg border px-3 text-center text-xs font-semibold transition">{t("merchantPayments.checkout")}</a>
+                    <button
+                      onClick={() => openPaymentDetails(payment)}
+                      className={`operation-action-button operation-action-details flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${payment.status === "PENDING" ? "col-span-2" : ""}`}
+                    >
+                      {t("merchantPayments.details")}
+                    </button>
                     </div>
                     {payment.status === "PENDING" && (
-                      <div className="payment-card-qr hidden xl:flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
+                      <div className="payment-card-qr hidden items-center justify-between gap-3 rounded-xl border px-3 py-1.5 xl:flex xl:max-w-[360px]">
                         <div>
                           <p className="text-xs font-bold uppercase">QR preview</p>
                           <p className="mt-0.5 text-xs">Full payment view in Details</p>
                         </div>
                         <div className="rounded-lg bg-white p-1">
-                          <QRCodeSVG value={payment.walletAddress} size={56} />
+                          <QRCodeSVG value={payment.walletAddress} size={48} />
                         </div>
                       </div>
                     )}
@@ -694,36 +706,37 @@ export default function BusinessWalletMerchantsPage() {
           })}
         </div>
 
-        <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <p className="text-zinc-500 text-sm">Page {paymentPagination.page} of {paymentPagination.totalPages}</p>
-          <div className="flex gap-3">
-            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="operations-filter-button rounded-xl border px-4 py-2 font-semibold transition disabled:opacity-40">{t("merchantPayments.previous")}</button>
-            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="operations-filter-button rounded-xl border px-4 py-2 font-semibold transition disabled:opacity-40">{t("merchantPayments.next")}</button>
+        <div className="operations-list-footer mt-4 flex flex-col gap-3 rounded-xl border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="operations-page-pill rounded-full border px-3 py-1 text-xs font-semibold">
+              Page {paymentPagination.page} of {paymentPagination.totalPages}
+            </span>
+            <span className="operations-refresh-pill rounded-full border px-3 py-1 text-xs font-semibold">
+              Auto refresh · 10s
+            </span>
           </div>
-        </div>
-        <div className="mt-4 flex justify-start">
-          <span className="operations-refresh-pill rounded-full border px-3 py-1 text-xs font-semibold">
-            Auto refresh · 10s
-          </span>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button onClick={() => setPaymentPage((p) => Math.max(p - 1, 1))} disabled={paymentPagination.page <= 1} className="operations-filter-button h-9 rounded-lg border px-4 text-sm font-semibold transition disabled:opacity-40">{t("merchantPayments.previous")}</button>
+            <button onClick={() => setPaymentPage((p) => Math.min(p + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="operations-filter-button h-9 rounded-lg border px-4 text-sm font-semibold transition disabled:opacity-40">{t("merchantPayments.next")}</button>
+          </div>
         </div>
       </div>
       <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 text-white mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
           <div>
             <h2 className="text-2xl font-bold">Activity</h2>
             <p className="text-zinc-500 text-sm">Showing {auditLogs.length} of {auditPagination.totalCount} matching events.</p>
           </div>
-          <span className="text-zinc-500 text-sm">Page {auditPagination.page} of {auditPagination.totalPages}</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr_auto] gap-4 mb-5">
+        <div className="activity-filter-bar mb-4 grid grid-cols-1 gap-2 rounded-xl border p-1.5 sm:grid-cols-[minmax(220px,420px)_minmax(220px,420px)_96px]">
           <select
             value={auditActionFilter}
             onChange={(e) => {
               setAuditActionFilter(e.target.value);
               setAuditPage(1);
             }}
-            className="operations-filter-field p-3 rounded-xl border outline-none transition"
+            className="operations-filter-field h-10 rounded-lg border px-3 text-sm outline-none transition"
           >
             <option value="ALL">All actions</option>
             {auditActions.map((action) => (
@@ -737,7 +750,7 @@ export default function BusinessWalletMerchantsPage() {
               setAuditTargetTypeFilter(e.target.value);
               setAuditPage(1);
             }}
-            className="operations-filter-field p-3 rounded-xl border outline-none transition"
+            className="operations-filter-field h-10 rounded-lg border px-3 text-sm outline-none transition"
           >
             <option value="ALL">All target types</option>
             {auditTargetTypes.map((targetType) => (
@@ -751,7 +764,7 @@ export default function BusinessWalletMerchantsPage() {
               setAuditTargetTypeFilter("ALL");
               setAuditPage(1);
             }}
-            className="operations-filter-button rounded-xl border px-4 py-3 font-semibold transition"
+            className="operations-filter-button h-10 rounded-lg border px-4 text-sm font-semibold transition"
           >
             Clear
           </button>
@@ -767,7 +780,7 @@ export default function BusinessWalletMerchantsPage() {
               const isPaymentLog = (log.targetType || log.entityType) === "payment" && log.targetId;
 
               return (
-                <div key={log.id} className="grid grid-cols-1 gap-4 bg-zinc-950 p-4 text-sm lg:grid-cols-[160px_1fr_180px]">
+                <div key={log.id} className="grid grid-cols-1 gap-3 bg-zinc-950 px-4 py-3 text-sm lg:grid-cols-[150px_1fr_160px] lg:items-center">
                   <div>
                     <span className={`activity-type-badge inline-block rounded-full px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
                       {activityMeta.label}
@@ -778,7 +791,7 @@ export default function BusinessWalletMerchantsPage() {
                     <p className="font-semibold">{log.message || log.description || `${formatActivityAction(log.action)} from dashboard`}</p>
                     <p className="text-zinc-500 text-xs break-all mt-1">{log.targetType || log.entityType || "merchant"}: {log.targetId || log.entityId || "-"}</p>
                     {metadataEntries.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
+                      <div className="mt-2 flex flex-wrap gap-2">
                         {metadataEntries.map(([key, value]) => (
                           <span key={key} className="activity-meta-chip inline-flex max-w-full items-center gap-2 rounded-full border px-3 py-1.5 text-xs">
                             <span className="shrink-0 uppercase">{key}</span>
@@ -793,12 +806,12 @@ export default function BusinessWalletMerchantsPage() {
                       {formatDateTime(log.createdAt, timeZone)}
                     </p>
                     {isPaymentLog && (
-                      <button
-                        onClick={() => openPaymentDetails({ id: log.targetId })}
-                        className="operation-action-button operation-action-secondary w-fit rounded-lg border px-4 py-2 text-xs font-semibold transition"
-                      >
-                        {t("merchantPayments.details")}
-                      </button>
+                  <button
+                    onClick={() => openPaymentDetails({ id: log.targetId })}
+                    className="operation-action-button operation-action-details w-fit rounded-lg border px-4 py-2 text-xs font-semibold transition"
+                  >
+                    {t("merchantPayments.details")}
+                  </button>
                     )}
                   </div>
                 </div>
@@ -807,11 +820,13 @@ export default function BusinessWalletMerchantsPage() {
           </div>
         )}
 
-        <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <p className="text-zinc-500 text-sm">Page {auditPagination.page} of {auditPagination.totalPages}</p>
-          <div className="flex gap-3">
-            <button onClick={() => setAuditPage((currentPage) => Math.max(currentPage - 1, 1))} disabled={auditPagination.page <= 1} className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
-            <button onClick={() => setAuditPage((currentPage) => Math.min(currentPage + 1, auditPagination.totalPages))} disabled={auditPagination.page >= auditPagination.totalPages} className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40">Next</button>
+        <div className="operations-list-footer mt-4 flex flex-col gap-3 rounded-xl border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <span className="operations-page-pill w-fit rounded-full border px-3 py-1 text-xs font-semibold">
+            Page {auditPagination.page} of {auditPagination.totalPages}
+          </span>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button onClick={() => setAuditPage((currentPage) => Math.max(currentPage - 1, 1))} disabled={auditPagination.page <= 1} className="operations-filter-button h-9 rounded-lg border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40">Previous</button>
+            <button onClick={() => setAuditPage((currentPage) => Math.min(currentPage + 1, auditPagination.totalPages))} disabled={auditPagination.page >= auditPagination.totalPages} className="operations-filter-button h-9 rounded-lg border px-4 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-40">Next</button>
           </div>
         </div>
       </div>
