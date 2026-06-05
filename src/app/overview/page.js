@@ -324,8 +324,8 @@ export default function OverviewPage() {
   return (
     <OverviewShell>
       <div className="max-w-[1108px]">
-        <div className="overview-summary-card rounded-2xl border px-5 py-4 md:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="overview-summary-card rounded-2xl border px-5 py-3.5 md:px-6">
+          <div className="flex flex-col gap-3.5 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <p className="mb-1.5 text-sm font-semibold text-white">{t("overview.totalFunds")}</p>
               {loading ? (
@@ -355,8 +355,8 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="overview-summary-metric rounded-xl border px-4 py-2.5">
+          <div className="mt-2.5 grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="overview-summary-metric rounded-xl border px-4 py-2">
               <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.available")}</p>
               <p className="text-[22px] font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(available)}
@@ -366,7 +366,7 @@ export default function OverviewPage() {
               </p>
             </div>
 
-            <div className="overview-summary-metric rounded-xl border px-4 py-2.5">
+            <div className="overview-summary-metric rounded-xl border px-4 py-2">
               <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.grossPaid")}</p>
               <p className="text-[22px] font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(grossPaid)}
@@ -376,7 +376,7 @@ export default function OverviewPage() {
               </p>
             </div>
 
-            <div className="overview-summary-metric rounded-xl border px-4 py-2.5">
+            <div className="overview-summary-metric rounded-xl border px-4 py-2">
               <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.reserved")}</p>
               <p className="text-[22px] font-bold leading-none text-white">
                 {loading ? "..." : formatDisplayAmount(reserved)}
@@ -513,7 +513,7 @@ export default function OverviewPage() {
                   {t("overview.business")}
                 </button>
               </div>
-              <Link href="/business-wallet" className="assets-wallet-link rounded-lg px-3 py-2 text-xs font-semibold transition">
+              <Link href="/business-wallet" className="assets-wallet-link rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition">
                 {t("overview.walletDetails")}
               </Link>
             </div>

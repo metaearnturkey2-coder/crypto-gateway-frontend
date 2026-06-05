@@ -263,8 +263,8 @@ export default function BusinessWalletPage() {
           </div>
         )}
 
-        <section className="business-wallet-panel rounded-2xl border p-5">
-          <h2 className="mb-1 text-[22px] font-semibold">{t("businessWallet.overview")}</h2>
+        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+          <h2 className="mb-1 text-xl font-semibold sm:text-[22px]">{t("businessWallet.overview")}</h2>
           <p className="mb-4 text-sm text-zinc-500">{t("businessWallet.snapshot")}</p>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("businessWallet.totalPayments")}</p><p className="text-2xl font-bold">{paymentStats.total}</p></div>
@@ -274,34 +274,23 @@ export default function BusinessWalletPage() {
           </div>
         </section>
 
-        <section className="business-wallet-panel rounded-2xl border p-5">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <section className="business-wallet-panel rounded-2xl border p-4">
+          <div className="mb-3">
             <div>
-              <h2 className="text-[22px] font-semibold">{t("businessWallet.finance")}</h2>
+              <h2 className="text-xl font-semibold sm:text-[22px]">{t("businessWallet.finance")}</h2>
               <p className="text-sm text-zinc-500">{t("businessWallet.financeDescription")}</p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="business-wallet-pill rounded-full border px-3 py-1 text-xs font-semibold">
-                {settlements.summary.network} {settlements.summary.currency}
-              </span>
-              <button
-                onClick={loadDashboard}
-                className="business-wallet-pill rounded-full border px-3 py-1 text-xs font-semibold"
-              >
-                {t("businessWallet.refresh")}
-              </button>
-            </div>
           </div>
 
-          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("overview.available")}</p><p className="break-words text-2xl font-bold">{settlements.summary.available} {settlements.summary.currency}</p></div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("overview.grossPaid")}</p><p className="break-words text-2xl font-bold">{settlements.summary.grossPaid} {settlements.summary.currency}</p></div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("overview.reserved")}</p><p className="break-words text-2xl font-bold">{settlements.summary.reservedForPayouts} {settlements.summary.currency}</p></div>
+          <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-3">
+            <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.available")}</p><p className="break-words text-xl font-bold">{settlements.summary.available} {settlements.summary.currency}</p></div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.grossPaid")}</p><p className="break-words text-xl font-bold">{settlements.summary.grossPaid} {settlements.summary.currency}</p></div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.reserved")}</p><p className="break-words text-xl font-bold">{settlements.summary.reservedForPayouts} {settlements.summary.currency}</p></div>
           </div>
 
-          <form onSubmit={createPayoutRequest} className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-[150px_1.2fr_1fr_190px] lg:items-end">
+          <form onSubmit={createPayoutRequest} className="mb-2.5 grid grid-cols-1 gap-2.5 lg:grid-cols-[160px_minmax(250px,1.15fr)_minmax(210px,0.95fr)_190px] lg:items-end">
             <label className="grid gap-1.5">
-              <span className="business-wallet-field-label text-[11px] font-semibold uppercase">{t("businessWallet.amount")}</span>
+              <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">{t("businessWallet.amount")}</span>
               <input
                 type="number"
                 min={MIN_PAYOUT_AMOUNT}
@@ -310,38 +299,38 @@ export default function BusinessWalletPage() {
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="business-wallet-input h-11 rounded-xl border px-4 outline-none"
+                className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none"
               />
             </label>
             <label className="grid gap-1.5">
-              <span className="business-wallet-field-label text-[11px] font-semibold uppercase">{t("businessWallet.walletPlaceholder")}</span>
+              <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">{t("businessWallet.walletPlaceholder")}</span>
               <input
                 type="text"
                 placeholder={t("businessWallet.walletPlaceholder")}
                 value={walletAddress}
                 onChange={(e) => setWalletAddress(e.target.value)}
-                className="business-wallet-input h-11 rounded-xl border px-4 outline-none"
+                className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none"
               />
             </label>
             <label className="grid gap-1.5">
-              <span className="business-wallet-field-label text-[11px] font-semibold uppercase">{t("businessWallet.optionalNote")}</span>
+              <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">{t("businessWallet.optionalNote")}</span>
               <input
                 type="text"
                 placeholder={t("businessWallet.optionalNote")}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="business-wallet-input h-11 rounded-xl border px-4 outline-none"
+                className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none"
               />
             </label>
-            <button className="business-wallet-primary-button h-11 rounded-xl border px-5 font-semibold">{t("businessWallet.requestPayout")}</button>
+            <button className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold">{t("businessWallet.requestPayout")}</button>
           </form>
-          <p className="mb-4 text-xs text-zinc-500">
+          <p className="mb-2.5 text-xs text-zinc-500">
             {t("businessWallet.minimumPayout")} {MIN_PAYOUT_AMOUNT} USDT. {t("businessWallet.availableNow")}: {settlements.summary.available} {settlements.summary.currency}. {t("businessWallet.validWallet")}
           </p>
 
           <div className="business-wallet-payout-list overflow-hidden rounded-xl border">
             {settlements.payoutRequests.length === 0 ? (
-              <p className="business-wallet-empty-state p-4 text-sm">{t("businessWallet.noPayoutRequests")}</p>
+              <p className="business-wallet-empty-state px-4 py-3 text-sm">{t("businessWallet.noPayoutRequests")}</p>
             ) : (
               settlements.payoutRequests.map((request) => (
                 <div key={request.id} className="grid grid-cols-1 gap-3 border-t px-4 py-3 first:border-t-0 lg:grid-cols-[160px_1fr_140px_170px]">
@@ -363,11 +352,11 @@ export default function BusinessWalletPage() {
           </div>
         </section>
 
-        <section className="business-wallet-panel rounded-2xl border p-5">
+        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-[22px] font-semibold">{t("businessWallet.recentActivity")}</h2>
+                <h2 className="text-xl font-semibold sm:text-[22px]">{t("businessWallet.recentActivity")}</h2>
                 {recentActivity.some((log) => getActivityMeta(log.action).critical) && (
                   <span className="business-wallet-alert-pill rounded-full border px-3 py-1 text-xs font-semibold">
                     {t("businessWallet.reviewWarning")}
@@ -378,14 +367,14 @@ export default function BusinessWalletPage() {
             </div>
             <a
               href="/business-wallet/merchants"
-              className="business-wallet-pill w-fit rounded-full border px-4 py-2 text-sm font-semibold"
+              className="business-wallet-pill flex w-full justify-center rounded-full border px-4 py-2 text-sm font-semibold sm:w-fit"
             >
               {t("businessWallet.viewAllActivity")}
             </a>
           </div>
 
           {recentActivity.length === 0 ? (
-            <p className="business-wallet-empty-state rounded-xl border p-4 text-sm">
+            <p className="business-wallet-empty-state rounded-xl border px-4 py-3 text-sm">
               {t("businessWallet.noActivity")}
             </p>
           ) : (
@@ -394,19 +383,20 @@ export default function BusinessWalletPage() {
                 const activityMeta = getActivityMeta(log.action);
 
                 return (
-                  <div key={log.id} className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[120px_1fr_170px] md:items-center">
-                    <div>
+                  <div key={log.id} className="business-wallet-activity-row grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[140px_1fr_155px] md:items-center">
+                    <div className="space-y-1">
                       <span className={`business-wallet-activity-badge inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${activityMeta.className}`}>
                         {activityMeta.label}
                       </span>
+                      <p className="break-words text-[11px] text-zinc-500">{formatActivityAction(log.action)}</p>
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-900">{log.message || formatActivityAction(log.action)}</p>
-                      <p className="mt-1 break-all text-[11px] text-zinc-500">
-                        {formatActivityAction(log.action)} · {log.targetType || "merchant"}: {log.targetId || "-"}
+                    <div className="min-w-0">
+                      <p className="business-wallet-activity-title text-sm font-semibold">{log.message || formatActivityAction(log.action)}</p>
+                      <p className="mt-1 truncate text-[11px] text-zinc-500" title={`${log.targetType || "merchant"}: ${log.targetId || "-"}`}>
+                        {log.targetType || "merchant"}: {log.targetId || "-"}
                       </p>
                     </div>
-                    <p className="text-xs font-medium text-zinc-500 md:text-right">
+                    <p className="business-wallet-activity-date justify-self-start text-xs font-medium text-zinc-500 md:justify-self-end md:text-right">
                       {formatDashboardDateTime(log.createdAt, timeZone)}
                     </p>
                   </div>

@@ -718,20 +718,26 @@ body {
 
 .assets-wallet-link,
 .dark-dashboard .assets-wallet-link {
+  border-color: #3f3f46 !important;
+  background: #09090b !important;
   color: #a1a1aa !important;
 }
 
 .assets-wallet-link:hover,
 .dark-dashboard .assets-wallet-link:hover {
+  border-color: #71717a !important;
   background: #18181b !important;
   color: #ffffff !important;
 }
 
 .light-dashboard .assets-wallet-link {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
   color: #374151 !important;
 }
 
 .light-dashboard .assets-wallet-link:hover {
+  border-color: #9ca3af !important;
   background: #f4f4f5 !important;
   color: #111827 !important;
 }
@@ -872,6 +878,22 @@ body {
   border-top-color: #27272a !important;
 }
 
+.business-wallet-activity-row,
+.dark-dashboard .business-wallet-activity-row {
+  background: #09090b !important;
+}
+
+.business-wallet-activity-title,
+.dark-dashboard .business-wallet-activity-title {
+  color: #f4f4f5 !important;
+}
+
+.business-wallet-activity-date,
+.dark-dashboard .business-wallet-activity-date {
+  color: #a1a1aa !important;
+  white-space: nowrap;
+}
+
 .dark-dashboard .dashboard-shell .business-wallet-activity-list,
 .dark-dashboard .dashboard-shell .business-wallet-payout-list {
   border-color: #2f2f35 !important;
@@ -890,7 +912,24 @@ body {
 }
 
 .light-dashboard .business-wallet-activity-list.divide-y > * + * {
-  border-top-color: #d1d5db !important;
+  border-top-color: #e5e7eb !important;
+}
+
+.light-dashboard .business-wallet-activity-row {
+  background: #ffffff !important;
+}
+
+.light-dashboard .business-wallet-activity-row:hover {
+  background: #f9fafb !important;
+}
+
+.light-dashboard .business-wallet-activity-title {
+  color: #111827 !important;
+}
+
+.light-dashboard .business-wallet-activity-date {
+  color: #475569 !important;
+  white-space: nowrap;
 }
 
 .business-wallet-payout-list,
@@ -916,6 +955,34 @@ body {
 .business-wallet-activity-badge,
 .dark-dashboard .business-wallet-activity-badge {
   font-weight: 700 !important;
+}
+
+.light-dashboard .business-wallet-activity-badge {
+  font-weight: 700 !important;
+}
+
+.light-dashboard .business-wallet-activity-badge[class*="bg-emerald"] {
+  border-color: #a7f3d0 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+.light-dashboard .business-wallet-activity-badge[class*="bg-sky"] {
+  border-color: #bae6fd !important;
+  background: #f0f9ff !important;
+  color: #0369a1 !important;
+}
+
+.light-dashboard .business-wallet-activity-badge[class*="bg-red"] {
+  border-color: #fecaca !important;
+  background: #fff1f2 !important;
+  color: #be123c !important;
+}
+
+.light-dashboard .business-wallet-activity-badge[class*="bg-amber"] {
+  border-color: #fde68a !important;
+  background: #fffbeb !important;
+  color: #92400e !important;
 }
 
 .dark-dashboard .business-wallet-activity-badge[class*="bg-emerald"] {
