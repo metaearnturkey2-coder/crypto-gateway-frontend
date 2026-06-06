@@ -5,7 +5,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, parseMoneyAmount } from "@/lib/money";
 
-const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "REJECTED", "PAID"];
+const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "FAILED", "REJECTED", "PAID"];
 const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
 
 const getStatusClassName = (status) => {
@@ -13,7 +13,7 @@ const getStatusClassName = (status) => {
     return "bg-green-500 text-black";
   }
 
-  if (status === "REJECTED") {
+  if (status === "REJECTED" || status === "FAILED") {
     return "bg-red-500 text-black";
   }
 
@@ -31,6 +31,14 @@ const getAllowedActions = (status) => {
   if (status === "APPROVED") {
     return [
       { label: "Mark Paid", status: "PAID", className: "bg-blue-500" },
+      { label: "Mark Failed", status: "FAILED", className: "bg-red-500" },
+      { label: "Reject", status: "REJECTED", className: "bg-red-500" },
+    ];
+  }
+
+  if (status === "FAILED") {
+    return [
+      { label: "Retry", status: "APPROVED", className: "bg-yellow-500" },
       { label: "Reject", status: "REJECTED", className: "bg-red-500" },
     ];
   }
@@ -47,7 +55,8 @@ const formatAuditAction = (action) =>
 const getAuditActionClassName = (action) => {
   if (action?.includes("paid")) return "bg-blue-500/20 text-blue-200 border border-blue-400/40";
   if (action?.includes("approved")) return "bg-emerald-500/20 text-emerald-200 border border-emerald-400/40";
-  if (action?.includes("rejected")) return "bg-red-500/20 text-red-200 border border-red-400/40";
+  if (action?.includes("rejected") || action?.includes("failed")) return "bg-red-500/20 text-red-200 border border-red-400/40";
+  if (action?.includes("retry")) return "bg-yellow-500/20 text-yellow-100 border border-yellow-400/40";
   return "bg-zinc-700/40 text-zinc-200 border border-zinc-500/40";
 };
 
@@ -66,6 +75,9 @@ const getAuditMetadataEntries = (metadata = {}) => {
     "currency",
     "txHash",
     "rejectReason",
+    "failureReason",
+    "providerError",
+    "retryCount",
     "confirmationRequired",
     "confirmationProvided",
     "actorType",
@@ -76,7 +88,8 @@ const getAuditMetadataEntries = (metadata = {}) => {
     .map((key) => [key, metadata[key]]);
 };
 
-const isCriticalPayoutStatus = (status) => status === "PAID" || status === "REJECTED";
+const isCriticalPayoutStatus = (status) =>
+  ["APPROVED", "FAILED", "PAID", "REJECTED"].includes(status);
 
 const formatSecurityEvent = (event) =>
   String(event || "security_event")
@@ -107,6 +120,14 @@ const getPayoutAuditSummary = (request) => {
       label: "Settlement tx",
       value: metadata.txHash,
       className: "border-blue-500/30 bg-blue-500/10 text-blue-100",
+    };
+  }
+
+  if (request.status === "FAILED" && (metadata.failureReason || request.failureReason || request.note)) {
+    return {
+      label: "Failure reason",
+      value: metadata.failureReason || request.failureReason || request.note,
+      className: "border-red-500/30 bg-red-500/10 text-red-100",
     };
   }
 
@@ -183,8 +204,13 @@ export default function AdminPayoutsPage() {
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [statusNote, setStatusNote] = useState("");
+  const [providerError, setProviderError] = useState("");
   const [settlementTxHash, setSettlementTxHash] = useState("");
+  const [settlementFee, setSettlementFee] = useState("");
+  const [settlementConfirmations, setSettlementConfirmations] = useState("");
+  const [settlementStatus, setSettlementStatus] = useState("CONFIRMED");
   const [criticalConfirmationText, setCriticalConfirmationText] = useState("");
+  const [adminMfaCode, setAdminMfaCode] = useState("");
   const sessionRestoreStartedRef = useRef(false);
   const baseUrl = API_BASE_URL;
 
@@ -565,8 +591,13 @@ export default function AdminPayoutsPage() {
 
   const openStatusConfirm = (payoutId, status) => {
     setStatusNote("");
+    setProviderError("");
     setSettlementTxHash("");
+    setSettlementFee("");
+    setSettlementConfirmations("");
+    setSettlementStatus("CONFIRMED");
     setCriticalConfirmationText("");
+    setAdminMfaCode("");
     setConfirmAction({
       type: "payoutStatus",
       payoutId,
@@ -577,9 +608,22 @@ export default function AdminPayoutsPage() {
   const updatePayoutStatus = async (payoutId, status) => {
     const trimmedTxHash = settlementTxHash.trim();
     const trimmedNote = statusNote.trim();
+    const trimmedProviderError = providerError.trim();
+    const trimmedSettlementFee = settlementFee.trim();
+    const trimmedSettlementConfirmations = settlementConfirmations.trim();
 
     if (status === "PAID" && !trimmedTxHash) {
       showNotice("error", t("admin.settlementTxRequired"));
+      return;
+    }
+
+    if (status === "PAID" && !trimmedSettlementConfirmations) {
+      showNotice("error", t("admin.settlementConfirmationsRequired"));
+      return;
+    }
+
+    if (status === "PAID" && trimmedSettlementFee && parseMoneyAmount(trimmedSettlementFee, -1) < 0) {
+      showNotice("error", t("admin.settlementFeeInvalid"));
       return;
     }
 
@@ -593,8 +637,18 @@ export default function AdminPayoutsPage() {
       return;
     }
 
+    if (status === "FAILED" && !trimmedNote) {
+      showNotice("error", t("admin.failureReasonRequired"));
+      return;
+    }
+
     if (isCriticalPayoutStatus(status) && criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) {
       showNotice("error", t("admin.criticalConfirmRequired"));
+      return;
+    }
+
+    if (!adminMfaCode.trim()) {
+      showNotice("error", t("admin.mfaCodeRequired"));
       return;
     }
 
@@ -609,11 +663,17 @@ export default function AdminPayoutsPage() {
           body: JSON.stringify({
             status,
             txHash: trimmedTxHash || undefined,
+            settlementConfirmations: status === "PAID" ? Number(trimmedSettlementConfirmations) : undefined,
+            settlementFee: status === "PAID" ? trimmedSettlementFee || "0" : undefined,
+            settlementStatus: status === "PAID" ? settlementStatus : undefined,
+            failureReason: status === "FAILED" ? trimmedNote : undefined,
+            providerError: status === "FAILED" ? trimmedProviderError || undefined : undefined,
             rejectReason: status === "REJECTED" ? trimmedNote : undefined,
-            note: status !== "REJECTED" ? trimmedNote || undefined : undefined,
+            note: status !== "REJECTED" && status !== "FAILED" ? trimmedNote || undefined : undefined,
             confirmationText: isCriticalPayoutStatus(status)
               ? criticalConfirmationText.trim()
               : undefined,
+            mfaCode: adminMfaCode.trim(),
           }),
         }
       );
@@ -628,8 +688,13 @@ export default function AdminPayoutsPage() {
       showNotice("success", data.message || `Payout moved to ${status}.`);
       clearConfirmAction();
       setStatusNote("");
+      setProviderError("");
       setSettlementTxHash("");
+      setSettlementFee("");
+      setSettlementConfirmations("");
+      setSettlementStatus("CONFIRMED");
       setCriticalConfirmationText("");
+      setAdminMfaCode("");
       fetchPayouts();
       if (selectedPayout?.id === payoutId) {
         setSelectedPayout(data.payoutRequest);
@@ -1017,7 +1082,11 @@ export default function AdminPayoutsPage() {
                     {request.note && (
                       <p className="break-all">
                         <span className="text-zinc-500">
-                          {request.status === "REJECTED" ? t("admin.rejectReason") : t("admin.adminNote")}:
+                          {request.status === "REJECTED"
+                            ? t("admin.rejectReason")
+                            : request.status === "FAILED"
+                            ? t("admin.failureReason")
+                            : t("admin.adminNote")}:
                         </span>{" "}
                         {request.note}
                       </p>
@@ -1026,6 +1095,19 @@ export default function AdminPayoutsPage() {
                       <div className={`rounded-xl border p-3 ${auditSummary.className}`}>
                         <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{auditSummary.label}</p>
                         <p className="mt-1 break-all text-sm">{auditSummary.value}</p>
+                      </div>
+                    )}
+                    {request.settlementTxHash && (
+                      <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 text-blue-100">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                          {t("admin.settlementTracking")}
+                        </p>
+                        <p className="mt-1 break-all text-sm">{request.settlementTxHash}</p>
+                        <div className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                          <span>{t("admin.settlementStatus")}: {request.settlementStatus || "-"}</span>
+                          <span>{t("admin.settlementConfirmations")}: {request.settlementConfirmations ?? "-"}</span>
+                          <span>{t("admin.settlementFee")}: {formatTokenAmount(request.settlementFee || 0, request.currency)}</span>
+                        </div>
                       </div>
                     )}
                     <p>
@@ -1072,13 +1154,42 @@ export default function AdminPayoutsPage() {
                         {t("admin.movePrompt").replace("{status}", confirmAction.status)}
                       </p>
                       {confirmAction.status === "PAID" && (
-                        <input
-                          type="text"
-                          value={settlementTxHash}
-                          onChange={(e) => setSettlementTxHash(e.target.value)}
-                          placeholder={t("admin.settlementTxHash")}
-                          className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
-                        />
+                        <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+                          <input
+                            type="text"
+                            value={settlementTxHash}
+                            onChange={(e) => setSettlementTxHash(e.target.value)}
+                            placeholder={t("admin.settlementTxHash")}
+                            className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          />
+                          <select
+                            value={settlementStatus}
+                            onChange={(e) => setSettlementStatus(e.target.value)}
+                            className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          >
+                            <option value="BROADCASTED">BROADCASTED</option>
+                            <option value="CONFIRMING">CONFIRMING</option>
+                            <option value="CONFIRMED">CONFIRMED</option>
+                          </select>
+                          <input
+                            type="number"
+                            min="0"
+                            step="1"
+                            value={settlementConfirmations}
+                            onChange={(e) => setSettlementConfirmations(e.target.value)}
+                            placeholder={t("admin.settlementConfirmations")}
+                            className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.000001"
+                            value={settlementFee}
+                            onChange={(e) => setSettlementFee(e.target.value)}
+                            placeholder={t("admin.settlementFee")}
+                            className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          />
+                        </div>
                       )}
                       {confirmAction.status === "REJECTED" && (
                         <textarea
@@ -1087,6 +1198,23 @@ export default function AdminPayoutsPage() {
                           placeholder={t("admin.rejectReason")}
                           className="mb-3 min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                         />
+                      )}
+                      {confirmAction.status === "FAILED" && (
+                        <div className="mb-3 grid grid-cols-1 gap-3">
+                          <textarea
+                            value={statusNote}
+                            onChange={(e) => setStatusNote(e.target.value)}
+                            placeholder={t("admin.failureReason")}
+                            className="min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          />
+                          <input
+                            type="text"
+                            value={providerError}
+                            onChange={(e) => setProviderError(e.target.value)}
+                            placeholder={t("admin.providerError")}
+                            className="w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                          />
+                        </div>
                       )}
                       {confirmAction.status === "APPROVED" && (
                         <input
@@ -1111,6 +1239,18 @@ export default function AdminPayoutsPage() {
                           />
                         </div>
                       )}
+                      <div className="mb-3 rounded-lg border border-yellow-500/30 bg-black/20 p-3">
+                        <p className="mb-2 text-xs text-yellow-100/80">
+                          {t("admin.mfaCodePrompt")}
+                        </p>
+                        <input
+                          type="password"
+                          value={adminMfaCode}
+                          onChange={(e) => setAdminMfaCode(e.target.value)}
+                          placeholder={t("admin.mfaCode")}
+                          className="w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                        />
+                      </div>
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={() =>
@@ -1122,6 +1262,9 @@ export default function AdminPayoutsPage() {
                           disabled={
                             (isCriticalPayoutStatus(confirmAction.status) &&
                               criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) ||
+                            (confirmAction.status === "PAID" && (!settlementTxHash.trim() || !settlementConfirmations.trim())) ||
+                            (confirmAction.status === "FAILED" && !statusNote.trim()) ||
+                            !adminMfaCode.trim() ||
                             (confirmAction.status === "APPROVED" && !statusNote.trim())
                           }
                           className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1355,15 +1498,44 @@ export default function AdminPayoutsPage() {
                   <p className="mb-3">
                     {t("admin.movePrompt").replace("{status}", confirmAction.status)}
                   </p>
-                  {confirmAction.status === "PAID" && (
+                {confirmAction.status === "PAID" && (
+                  <div className="mb-3 grid grid-cols-1 gap-3 md:grid-cols-2">
                     <input
                       type="text"
                       value={settlementTxHash}
                       onChange={(e) => setSettlementTxHash(e.target.value)}
                       placeholder={t("admin.settlementTxHash")}
-                      className="mb-3 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                      className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                     />
-                  )}
+                    <select
+                      value={settlementStatus}
+                      onChange={(e) => setSettlementStatus(e.target.value)}
+                      className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    >
+                      <option value="BROADCASTED">BROADCASTED</option>
+                      <option value="CONFIRMING">CONFIRMING</option>
+                      <option value="CONFIRMED">CONFIRMED</option>
+                    </select>
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={settlementConfirmations}
+                      onChange={(e) => setSettlementConfirmations(e.target.value)}
+                      placeholder={t("admin.settlementConfirmations")}
+                      className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    />
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.000001"
+                      value={settlementFee}
+                      onChange={(e) => setSettlementFee(e.target.value)}
+                      placeholder={t("admin.settlementFee")}
+                      className="rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    />
+                  </div>
+                )}
                   {confirmAction.status === "REJECTED" && (
                     <textarea
                       value={statusNote}
@@ -1371,6 +1543,23 @@ export default function AdminPayoutsPage() {
                       placeholder={t("admin.rejectReason")}
                       className="mb-3 min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
                     />
+                  )}
+                  {confirmAction.status === "FAILED" && (
+                    <div className="mb-3 grid grid-cols-1 gap-3">
+                      <textarea
+                        value={statusNote}
+                        onChange={(e) => setStatusNote(e.target.value)}
+                        placeholder={t("admin.failureReason")}
+                        className="min-h-24 w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                      />
+                      <input
+                        type="text"
+                        value={providerError}
+                        onChange={(e) => setProviderError(e.target.value)}
+                        placeholder={t("admin.providerError")}
+                        className="w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                      />
+                    </div>
                   )}
                   {confirmAction.status === "APPROVED" && (
                     <input
@@ -1395,6 +1584,18 @@ export default function AdminPayoutsPage() {
                       />
                     </div>
                   )}
+                  <div className="mb-3 rounded-lg border border-yellow-500/30 bg-black/20 p-3">
+                    <p className="mb-2 text-xs text-yellow-100/80">
+                      {t("admin.mfaCodePrompt")}
+                    </p>
+                    <input
+                      type="password"
+                      value={adminMfaCode}
+                      onChange={(e) => setAdminMfaCode(e.target.value)}
+                      placeholder={t("admin.mfaCode")}
+                      className="w-full rounded-lg border border-yellow-500/30 bg-black/30 px-3 py-2 text-yellow-50 outline-none"
+                    />
+                  </div>
                   <div className="flex flex-wrap gap-3">
                     <button
                       onClick={() =>
@@ -1406,6 +1607,9 @@ export default function AdminPayoutsPage() {
                       disabled={
                         (isCriticalPayoutStatus(confirmAction.status) &&
                           criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) ||
+                        (confirmAction.status === "PAID" && (!settlementTxHash.trim() || !settlementConfirmations.trim())) ||
+                        (confirmAction.status === "FAILED" && !statusNote.trim()) ||
+                        !adminMfaCode.trim() ||
                         (confirmAction.status === "APPROVED" && !statusNote.trim())
                       }
                       className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
@@ -1486,6 +1690,51 @@ export default function AdminPayoutsPage() {
                     <p className="break-all">
                       {selectedPayout.note || t("admin.noNote")}
                     </p>
+                  </div>
+
+                  {(selectedPayout.failureReason || selectedPayout.providerError || selectedPayout.retryCount > 0) && (
+                    <div className="bg-zinc-900 border border-red-500/30 rounded-xl p-4 md:col-span-2">
+                      <p className="text-red-100/70 text-xs mb-1">{t("admin.failureRetryTracking")}</p>
+                      <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                        <div>
+                          <p className="text-zinc-500 text-xs">{t("admin.failureReason")}</p>
+                          <p className="break-all">{selectedPayout.failureReason || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500 text-xs">{t("admin.providerError")}</p>
+                          <p className="break-all">{selectedPayout.providerError || "-"}</p>
+                        </div>
+                        <div>
+                          <p className="text-zinc-500 text-xs">{t("admin.retryCount")}</p>
+                          <p>{selectedPayout.retryCount || 0}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="bg-zinc-900 border border-blue-500/30 rounded-xl p-4 md:col-span-2">
+                    <p className="text-blue-100/70 text-xs mb-1">{t("admin.settlementTracking")}</p>
+                    {selectedPayout.settlementTxHash ? (
+                      <div className="space-y-3">
+                        <p className="break-all text-blue-100">{selectedPayout.settlementTxHash}</p>
+                        <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-3">
+                          <div>
+                            <p className="text-zinc-500 text-xs">{t("admin.settlementStatus")}</p>
+                            <p>{selectedPayout.settlementStatus || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-zinc-500 text-xs">{t("admin.settlementConfirmations")}</p>
+                            <p>{selectedPayout.settlementConfirmations ?? "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-zinc-500 text-xs">{t("admin.settlementFee")}</p>
+                            <p>{formatTokenAmount(selectedPayout.settlementFee || 0, selectedPayout.currency)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-zinc-500">{t("admin.noSettlementTracking")}</p>
+                    )}
                   </div>
                 </div>
               </section>
