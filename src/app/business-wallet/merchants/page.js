@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
+import { formatTokenAmount, hasMoreThanDecimals, parseMoneyAmount } from "@/lib/money";
 
 const getWebhookStatusClassName = (status) => {
   if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
@@ -219,7 +220,7 @@ export default function BusinessWalletMerchantsPage() {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    const amountNumber = Number(newAmount);
+    const amountNumber = parseMoneyAmount(newAmount, NaN);
     if (!Number.isFinite(amountNumber)) {
       setNotice({ type: "error", message: t("merchantPayments.validAmount") });
       return;
@@ -233,7 +234,7 @@ export default function BusinessWalletMerchantsPage() {
       return;
     }
 
-    if (String(newAmount).split(".")[1]?.length > 2) {
+    if (hasMoreThanDecimals(newAmount, 2)) {
       setNotice({ type: "error", message: "Amount can have at most 2 decimal places." });
       return;
     }
@@ -263,7 +264,7 @@ export default function BusinessWalletMerchantsPage() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          amount: amountNumber,
+          amount: newAmount.trim(),
           orderId: trimmedOrderId || undefined,
           customerEmail: trimmedCustomerEmail || undefined,
         }),
@@ -591,7 +592,7 @@ export default function BusinessWalletMerchantsPage() {
               <div key={payment.id} className="merchant-payment-card rounded-xl border p-3 sm:p-4">
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[120px_minmax(0,1fr)_105px_minmax(280px,360px)] xl:items-center">
                   <div>
-                    <p className="text-xl font-semibold">{payment.amount} {payment.currency}</p>
+                    <p className="text-xl font-semibold">{formatTokenAmount(payment.amount, payment.currency)}</p>
                     <p className="mt-0.5 text-xs text-zinc-500">{payment.network}</p>
                   </div>
                   <div className="payment-card-meta grid gap-2 text-sm">
@@ -843,7 +844,7 @@ export default function BusinessWalletMerchantsPage() {
                   </span>
                 </div>
                 <p className="text-zinc-400 text-sm">
-                  {selectedPayment.amount} {selectedPayment.currency}
+                  {formatTokenAmount(selectedPayment.amount, selectedPayment.currency)}
                   {selectedPayment.orderId ? ` - ${selectedPayment.orderId}` : ""}
                 </p>
               </div>

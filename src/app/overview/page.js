@@ -5,6 +5,7 @@ import Link from "next/link";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
 import { formatDashboardTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
+import { formatMoneyAmount, parseMoneyAmount } from "@/lib/money";
 
 const fallbackDisplayCurrencyRates = {
   USD: 1,
@@ -73,10 +74,10 @@ export default function OverviewPage() {
     { symbol: "XMR", name: "Monero" },
   ];
 
-  const convertDisplayAmount = (value) => Number(value || 0) * (displayCurrencyRates[displayCurrency] || 1);
+  const convertDisplayAmount = (value) => parseMoneyAmount(value) * (displayCurrencyRates[displayCurrency] || 1);
 
   const formatDisplayAmount = (value) => {
-    const numeric = Number(value || 0);
+    const numeric = parseMoneyAmount(value);
     const converted = convertDisplayAmount(numeric);
     return new Intl.NumberFormat(displayCurrencyLocales[displayCurrency] || "en-US", {
       style: "currency",
@@ -123,7 +124,7 @@ export default function OverviewPage() {
     });
 
   const totalUsdBalance = assetRows.reduce((sum, asset) => {
-    const balance = Number(balances?.[asset.symbol] || 0);
+    const balance = parseMoneyAmount(balances?.[asset.symbol]);
     const priceUsd = Number(prices?.[asset.symbol]?.usd || 0);
     return sum + balance * priceUsd;
   }, 0);
@@ -218,14 +219,14 @@ export default function OverviewPage() {
 
         const summary = settlementsData?.summary;
         if (summary) {
-          setAvailable(Number(summary.available || 0));
-          setGrossPaid(Number(summary.grossPaid || 0));
-          setReserved(Number(summary.reservedForPayouts || 0));
+          setAvailable(summary.available || "0");
+          setGrossPaid(summary.grossPaid || "0");
+          setReserved(summary.reservedForPayouts || "0");
           setNetwork(summary.network || "TRC20");
           setCurrency(summary.currency || "USDT");
           setBalances((prev) => ({
             ...prev,
-            USDT: Number(summary.available || 0),
+            USDT: summary.available || "0",
           }));
         }
       } finally {
@@ -362,7 +363,7 @@ export default function OverviewPage() {
                 {loading ? "..." : formatDisplayAmount(available)}
               </p>
               <p className="mt-2.5 text-xs font-semibold text-zinc-500">
-                {Number(available || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} · {network}
+                {formatMoneyAmount(available, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} · {network}
               </p>
             </div>
 
@@ -372,7 +373,7 @@ export default function OverviewPage() {
                 {loading ? "..." : formatDisplayAmount(grossPaid)}
               </p>
               <p className="mt-2.5 text-xs font-semibold text-zinc-500">
-                {Number(grossPaid || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.settledVolume")}
+                {formatMoneyAmount(grossPaid, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.settledVolume")}
               </p>
             </div>
 
@@ -382,7 +383,7 @@ export default function OverviewPage() {
                 {loading ? "..." : formatDisplayAmount(reserved)}
               </p>
               <p className="mt-2.5 text-xs font-semibold text-zinc-500">
-                {Number(reserved || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.onHold")}
+                {formatMoneyAmount(reserved, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.onHold")}
               </p>
             </div>
           </div>
@@ -537,7 +538,7 @@ export default function OverviewPage() {
             <div>
               {assetRows.map((asset) => (
                 (() => {
-                  const balance = Number(balances?.[asset.symbol] || 0);
+                  const balance = parseMoneyAmount(balances?.[asset.symbol]);
                   const priceUsd = Number(prices?.[asset.symbol]?.usd || 0);
                   const usdValue = balance * priceUsd;
                   const allocation = totalUsdBalance > 0 ? (usdValue / totalUsdBalance) * 100 : 0;

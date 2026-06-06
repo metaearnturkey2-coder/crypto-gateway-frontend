@@ -5,6 +5,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
 import { apiUrl } from "@/lib/api";
 import { formatDashboardDateTime, getTranslation, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
+import { formatTokenAmount } from "@/lib/money";
 
 const formatTimeLeft = (expiresAt, now, t) => {
   if (!expiresAt) {
@@ -190,7 +191,7 @@ export default function PaymentCheckoutPage() {
   const isPayable =
     checkoutState.canPay &&
     (!payment.expiresAt || new Date(payment.expiresAt).getTime() > now);
-  const amountLabel = `${payment.amount} ${payment.currency}`;
+  const amountLabel = formatTokenAmount(payment.amount, payment.currency);
 
   return (
     <main className="min-h-screen bg-black text-white px-5 py-6 md:py-8">

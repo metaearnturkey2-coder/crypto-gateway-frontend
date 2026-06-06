@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
+import { formatTokenAmount, parseMoneyAmount } from "@/lib/money";
 
 const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "REJECTED", "PAID"];
 const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
@@ -641,7 +642,7 @@ export default function AdminPayoutsPage() {
   };
 
   const totalAmount = useMemo(() => {
-    return payoutRequests.reduce((sum, request) => sum + request.amount, 0);
+    return payoutRequests.reduce((sum, request) => sum + parseMoneyAmount(request.amount), 0);
   }, [payoutRequests]);
 
   const visiblePayoutRequests = useMemo(() => {
@@ -895,7 +896,7 @@ export default function AdminPayoutsPage() {
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
             <p className="text-zinc-500 text-sm mb-2">{t("admin.pageAmount")}</p>
             <p className="text-2xl font-bold">
-              {totalAmount.toFixed(2)} USDT
+              {formatTokenAmount(totalAmount, "USDT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
 
@@ -988,7 +989,7 @@ export default function AdminPayoutsPage() {
                 <div className="grid grid-cols-1 xl:grid-cols-[180px_1fr_220px] gap-5">
                   <div>
                     <p className="text-xl md:text-2xl font-bold">
-                      {request.amount} {request.currency}
+                      {formatTokenAmount(request.amount, request.currency)}
                     </p>
                     <p className="text-zinc-500 text-sm">{request.network}</p>
                     <span
@@ -1320,7 +1321,7 @@ export default function AdminPayoutsPage() {
                   </span>
                 </div>
                 <p className="text-zinc-400">
-                  {selectedPayout.amount} {selectedPayout.currency} {t("admin.to")}{" "}
+                  {formatTokenAmount(selectedPayout.amount, selectedPayout.currency)} {t("admin.to")}{" "}
                   {selectedPayout.walletAddress}
                 </p>
               </div>
@@ -1437,7 +1438,7 @@ export default function AdminPayoutsPage() {
                   <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
                     <p className="text-zinc-500 text-xs mb-1">{t("admin.amount")}</p>
                     <p className="text-xl font-bold">
-                      {selectedPayout.amount} {selectedPayout.currency}
+                      {formatTokenAmount(selectedPayout.amount, selectedPayout.currency)}
                     </p>
                     <p className="text-zinc-400">{selectedPayout.network}</p>
                   </div>
