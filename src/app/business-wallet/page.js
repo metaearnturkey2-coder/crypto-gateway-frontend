@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, fetchApi } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, hasMoreThanDecimals, parseMoneyAmount } from "@/lib/money";
 
@@ -131,9 +131,11 @@ export default function BusinessWalletPage() {
 
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
+  const [whitelistAddress, setWhitelistAddress] = useState("");
   const [payoutAddressLabel, setPayoutAddressLabel] = useState("");
   const [note, setNote] = useState("");
   const [notice, setNotice] = useState(null);
+  const [whitelisting, setWhitelisting] = useState(false);
   const { t } = useDashboardLanguage();
   const timeZone = useDashboardTimeZone();
 
@@ -349,7 +351,7 @@ export default function BusinessWalletPage() {
   };
 
   const addPayoutAddress = async () => {
-    const trimmedAddress = walletAddress.trim();
+    const trimmedAddress = whitelistAddress.trim();
 
     if (!trimmedAddress) {
       setNotice({ type: "error", message: t("businessWallet.enterWallet") });
@@ -362,30 +364,55 @@ export default function BusinessWalletPage() {
     }
 
     const token = localStorage.getItem("token");
-    const response = await fetch(apiUrl("/api/merchant/payout-addresses"), {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        label: payoutAddressLabel || undefined,
-        walletAddress: trimmedAddress,
-      }),
-    });
-    const data = await response.json();
-
-    if (!response.ok) {
-      setNotice({
-        type: "error",
-        message: data.errors?.join(" ") || data.message || "Payout address could not be whitelisted.",
-      });
+    if (!token) {
+      window.location.href = "/login";
       return;
     }
 
-    setPayoutAddressLabel("");
-    setNotice({ type: "success", message: data.message || "Payout address whitelisted." });
-    await loadDashboard();
+    setWhitelisting(true);
+    setNotice(null);
+
+    try {
+      const response = await fetchApi("/api/merchant/payout-addresses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          label: payoutAddressLabel || undefined,
+          walletAddress: trimmedAddress,
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        setNotice({
+          type: "error",
+          message: data.errors?.join(" ") || data.message || "Payout address could not be whitelisted.",
+        });
+        return;
+      }
+
+      setPayoutAddressLabel("");
+      setWhitelistAddress("");
+      setWalletAddress(data.address?.walletAddress || trimmedAddress);
+      setNotice({
+        type: "success",
+        message:
+          data.address?.effectiveStatus === "ACTIVE" || data.address?.status === "ACTIVE"
+            ? data.message || "Payout address whitelisted."
+            : `${data.message || "Payout address whitelisted."} Activation pending until ${formatDashboardDateTime(data.address?.activatesAt, timeZone)}.`,
+      });
+      await loadDashboard();
+    } catch (error) {
+      setNotice({
+        type: "error",
+        message: `Payout address could not be whitelisted. ${error.message}`,
+      });
+    } finally {
+      setWhitelisting(false);
+    }
   };
 
   if (loading) {
@@ -548,12 +575,23 @@ export default function BusinessWalletPage() {
                   className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none"
                 />
               </label>
+              <label className="grid flex-[1.4] gap-1.5">
+                <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">Whitelist wallet address</span>
+                <input
+                  type="text"
+                  placeholder="TRON payout wallet address"
+                  value={whitelistAddress}
+                  onChange={(e) => setWhitelistAddress(e.target.value)}
+                  className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none"
+                />
+              </label>
               <button
                 type="button"
                 onClick={addPayoutAddress}
-                className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold"
+                disabled={whitelisting}
+                className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Whitelist address
+                {whitelisting ? "Whitelisting..." : "Whitelist address"}
               </button>
             </div>
             {payoutAddresses.length === 0 ? (

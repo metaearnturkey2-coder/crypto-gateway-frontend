@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export const languageStorageKey = "dashboardLanguage";
 export const timeZoneStorageKey = "timeZone";
@@ -370,6 +370,11 @@ export const translations = {
     "security.webhookSecretRegenerateError": "Webhook secret regenerate error",
     "security.webhookSecretRegenerated": "Webhook secret regenerated",
     "security.apiKeyCopied": "API key copied",
+    "security.apiKeyCopyUnavailable": "Full API key is only shown after regeneration.",
+    "security.apiKeyHidden": "full key hidden",
+    "security.apiKeyHiddenHelp": "For security, existing full API keys cannot be shown again. Regenerate a key to reveal and copy the new value once.",
+    "security.loadingApiKey": "Loading API key...",
+    "security.noApiKeyPreview": "No API key preview available",
     "security.copyFailed": "Copy failed",
     "security.apiKeyRegenerateError": "API key regenerate error",
     "security.apiKeyRegenerated": "API key regenerated",
@@ -1003,6 +1008,11 @@ export const translations = {
     "security.webhookSecretRegenerated": "Webhook secret yenilendi",
     "security.apiKeyCopied": "API key kopyalandı",
     "security.copyFailed": "Kopyalama başarısız",
+    "security.apiKeyCopyUnavailable": "Tam API key sadece yenileme sonrasinda gosterilir.",
+    "security.apiKeyHidden": "tam key gizli",
+    "security.apiKeyHiddenHelp": "Guvenlik icin mevcut tam API key tekrar gosterilemez. Yeni degeri gormek ve kopyalamak icin key'i yenileyin.",
+    "security.loadingApiKey": "API key yukleniyor...",
+    "security.noApiKeyPreview": "API key on izlemesi yok",
     "security.apiKeyRegenerateError": "API key yenilenemedi",
     "security.apiKeyRegenerated": "API key yenilendi",
     "security.saving": "Kaydediliyor...",
@@ -1338,6 +1348,7 @@ export function useDashboardTimeZone() {
 
 export function useDashboardLanguage() {
   const [language, setLanguage] = useState("English");
+  const t = useCallback((key) => getTranslation(language, key), [language]);
 
   useEffect(() => {
     const updateLanguage = (value) => {
@@ -1361,6 +1372,6 @@ export function useDashboardLanguage() {
 
   return {
     language,
-    t: (key) => getTranslation(language, key),
+    t,
   };
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { apiUrl } from "@/lib/api";
+import { fetchApi } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { useDashboardLanguage } from "@/lib/i18n";
 
@@ -28,7 +28,7 @@ export default function LoginPage() {
     setMessage("");
 
     try {
-      const response = await fetch(apiUrl("/api/auth/login"), {
+      const response = await fetchApi("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

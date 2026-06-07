@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, fetchApi } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 import { useDashboardLanguage } from "@/lib/i18n";
 
 function Notice({ notice }) {
@@ -64,6 +65,13 @@ const validateWebhookUrlInput = (value, t) => {
 const getMerchantApiKeyMode = (merchant) =>
   merchant?.apiKeyMode || (merchant?.apiKeyPrefix?.startsWith("cg_test") ? "TEST" : "LIVE");
 
+const getApiCredentialDisplayValue = (merchant, t) => {
+  if (merchant?.apiKey) return merchant.apiKey;
+  if (merchant?.apiKeyPreview) return merchant.apiKeyPreview;
+  if (merchant?.apiKeyPrefix) return `${merchant.apiKeyPrefix} (${t("security.apiKeyHidden")})`;
+  return "";
+};
+
 export default function SecuritySettingsPage() {
   const { t } = useDashboardLanguage();
   const [merchant, setMerchant] = useState(null);
@@ -89,7 +97,7 @@ export default function SecuritySettingsPage() {
     }
     setLoading(true);
     try {
-      const response = await fetch(apiUrl("/api/merchant/dashboard"), {
+      const response = await fetchApi("/api/merchant/dashboard", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await readJsonResponse(response);
@@ -101,7 +109,8 @@ export default function SecuritySettingsPage() {
       setMerchant(nextMerchant);
       setSelectedApiKeyMode(getMerchantApiKeyMode(nextMerchant));
       setWebhookUrl(data.merchant?.callbackUrl || data.merchant?.webhookUrl || "");
-    } catch {
+    } catch (error) {
+      reportClientError("settings.security.loadDashboard", error);
       showNotice("error", t("security.merchantDataError"));
     } finally {
       setLoading(false);
@@ -217,7 +226,11 @@ export default function SecuritySettingsPage() {
   };
 
   const copyApiKey = async () => {
-    if (!merchant?.apiKey) return;
+    if (!merchant?.apiKey) {
+      showNotice("error", t("security.apiKeyCopyUnavailable"));
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(merchant.apiKey);
       showNotice("success", t("security.apiKeyCopied"));
@@ -225,6 +238,9 @@ export default function SecuritySettingsPage() {
       showNotice("error", t("security.copyFailed"));
     }
   };
+
+  const apiCredentialDisplayValue = getApiCredentialDisplayValue(merchant, t);
+  const hasFullApiKey = Boolean(merchant?.apiKey);
 
   const regenerateApiKey = async () => {
     const token = localStorage.getItem("token");
@@ -397,13 +413,15 @@ export default function SecuritySettingsPage() {
           <div className="flex flex-col md:flex-row gap-3">
             <input
               type="text"
-              value={merchant?.apiKey || ""}
+              value={apiCredentialDisplayValue}
               readOnly
+              placeholder={loading ? t("security.loadingApiKey") : t("security.noApiKeyPreview")}
               className="flex-1 rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-zinc-100"
             />
             <button
               onClick={copyApiKey}
-              className="rounded-xl border border-zinc-600 bg-zinc-900 px-6 py-3 font-semibold text-zinc-100 hover:bg-zinc-800"
+              disabled={!hasFullApiKey}
+              className="rounded-xl border border-zinc-600 bg-zinc-900 px-6 py-3 font-semibold text-zinc-100 hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {t("security.copyApiKey")}
             </button>
@@ -434,6 +452,11 @@ export default function SecuritySettingsPage() {
                 </button>
               </div>
             </div>
+          )}
+          {!hasFullApiKey && (
+            <p className="mt-3 text-xs text-zinc-500">
+              {t("security.apiKeyHiddenHelp")}
+            </p>
           )}
         </div>
       </div>
