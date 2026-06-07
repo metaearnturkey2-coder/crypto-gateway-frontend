@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 
 const readJsonResponse = async (response) => {
   const contentType = response.headers.get("content-type") || "";
@@ -99,7 +100,7 @@ export default function AdminMerchantOnboardingPage() {
           total: nextChecklists.length,
         });
       } catch (error) {
-        console.error(error);
+        reportClientError("admin.merchantOnboarding.load", error);
         setNotice({ type: "error", message: "Merchant onboarding request failed." });
       } finally {
         setLoading(false);
@@ -132,12 +133,12 @@ export default function AdminMerchantOnboardingPage() {
       }
 
       localStorage.setItem("adminAccessToken", data.accessToken);
-      localStorage.setItem("adminToken", trimmedToken);
+      localStorage.removeItem("adminToken");
       setAdminAccessToken(data.accessToken);
       setTokenState("valid");
       await loadChecklists(data.accessToken);
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.merchantOnboarding.login", error);
       setNotice({ type: "error", message: "Admin login hatasi." });
     } finally {
       setLoading(false);
@@ -146,9 +147,8 @@ export default function AdminMerchantOnboardingPage() {
 
   useEffect(() => {
     queueMicrotask(() => {
-      const savedToken = localStorage.getItem("adminToken") || "";
+      localStorage.removeItem("adminToken");
       const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
-      setAdminToken(savedToken);
       if (savedAccessToken) {
         setAdminAccessToken(savedAccessToken);
         setTokenState("valid");

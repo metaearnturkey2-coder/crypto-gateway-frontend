@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -137,7 +137,7 @@ export default function BusinessWalletPage() {
   const { t } = useDashboardLanguage();
   const timeZone = useDashboardTimeZone();
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/login";
@@ -248,7 +248,7 @@ export default function BusinessWalletPage() {
         message: t("businessWallet.dataRefreshError"),
       });
     }
-  };
+  }, [t]);
 
   useEffect(() => {
     const run = async () => {
@@ -265,7 +265,7 @@ export default function BusinessWalletPage() {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [loadDashboard]);
 
   const createPayoutRequest = async (e) => {
     e.preventDefault();

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 
 const STATUS_OPTIONS = ["ALL", "PENDING", "BROADCASTED", "CONFIRMED", "FAILED", "CANCELLED"];
 
@@ -100,7 +101,7 @@ export default function AdminTreasuryPage() {
         setStats(sweepsData.stats || { byStatus: {}, total: 0 });
         setPolicy(policyData);
       } catch (error) {
-        console.error(error);
+        reportClientError("admin.treasury.load", error);
         setNotice({ type: "error", message: "Treasury verileri yuklenemedi." });
       } finally {
         setLoading(false);
@@ -136,12 +137,12 @@ export default function AdminTreasuryPage() {
       }
 
       localStorage.setItem("adminAccessToken", data.accessToken);
-      localStorage.setItem("adminToken", trimmedToken);
+      localStorage.removeItem("adminToken");
       setAdminAccessToken(data.accessToken);
       setTokenState("valid");
       await fetchTreasuryData(data.accessToken);
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.treasury.login", error);
       setNotice({ type: "error", message: "Admin login hatasi." });
     } finally {
       setLoading(false);
@@ -150,9 +151,8 @@ export default function AdminTreasuryPage() {
 
   useEffect(() => {
     queueMicrotask(() => {
-      const savedToken = localStorage.getItem("adminToken") || "";
+      localStorage.removeItem("adminToken");
       const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
-      setAdminToken(savedToken);
 
       if (savedAccessToken) {
         setAdminAccessToken(savedAccessToken);

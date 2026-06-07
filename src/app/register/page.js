@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiUrl } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 import { useDashboardLanguage } from "@/lib/i18n";
 
 export default function RegisterPage() {
@@ -63,7 +64,7 @@ export default function RegisterPage() {
         text: data.message || t("auth.registerFailed"),
       });
     } catch (error) {
-      console.error(error);
+      reportClientError("auth.register", error);
       setMessage({
         type: "error",
         text: t("auth.registerError"),

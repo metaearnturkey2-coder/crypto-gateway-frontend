@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
 import { apiUrl } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, getTranslation, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount } from "@/lib/money";
 
@@ -236,7 +237,7 @@ export default function PaymentCheckoutPage() {
       setPayment(data.payment);
       setLastCheckedAt(new Date().toISOString());
     } catch (error) {
-      console.error(error);
+      reportClientError("checkout.payment.load", error);
       setError(getTranslation(language, "checkout.error"));
     } finally {
       setLoading(false);

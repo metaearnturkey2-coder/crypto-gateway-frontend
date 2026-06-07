@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 
 const CHECK_FIELDS = [
   "grossPaid",
@@ -129,7 +130,7 @@ export default function AdminReconciliationPage() {
           setCheckedAt(data.checkedAt);
         }
       } catch (error) {
-        console.error(error);
+        reportClientError("admin.reconciliation.load", error);
         setNotice({ type: "error", message: "Reconciliation request failed." });
       } finally {
         setLoading(false);
@@ -162,12 +163,12 @@ export default function AdminReconciliationPage() {
       }
 
       localStorage.setItem("adminAccessToken", data.accessToken);
-      localStorage.setItem("adminToken", trimmedToken);
+      localStorage.removeItem("adminToken");
       setAdminAccessToken(data.accessToken);
       setTokenState("valid");
       await loadReconciliation(data.accessToken);
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.reconciliation.login", error);
       setNotice({ type: "error", message: "Admin login hatasi." });
     } finally {
       setLoading(false);
@@ -176,9 +177,8 @@ export default function AdminReconciliationPage() {
 
   useEffect(() => {
     queueMicrotask(() => {
-      const savedToken = localStorage.getItem("adminToken") || "";
+      localStorage.removeItem("adminToken");
       const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
-      setAdminToken(savedToken);
       if (savedAccessToken) {
         setAdminAccessToken(savedAccessToken);
         setTokenState("valid");

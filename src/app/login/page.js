@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { apiUrl } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 import { useDashboardLanguage } from "@/lib/i18n";
 
 export default function LoginPage() {
@@ -55,7 +56,7 @@ export default function LoginPage() {
 
       setMessage(data.message || t("auth.loginFailed"));
     } catch (error) {
-      console.error(error);
+      reportClientError("auth.login", error);
       setMessage(t("auth.loginError"));
     } finally {
       setLoading(false);

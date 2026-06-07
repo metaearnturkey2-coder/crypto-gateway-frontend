@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -52,7 +52,7 @@ export default function BusinessWalletWebhooksPage() {
     return params.toString();
   }, [eventFilter, page, search, statusFilter]);
 
-  const loadWebhooks = async () => {
+  const loadWebhooks = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/login";
@@ -86,7 +86,7 @@ export default function BusinessWalletWebhooksPage() {
       webhooks: body.webhooks || [],
     });
     setNotice(null);
-  };
+  }, [queryString, t]);
 
   useEffect(() => {
     queueMicrotask(async () => {
@@ -96,7 +96,7 @@ export default function BusinessWalletWebhooksPage() {
         setLoading(false);
       }
     });
-  }, [queryString]);
+  }, [loadWebhooks]);
 
   const sendTestWebhook = async () => {
     const token = localStorage.getItem("token");

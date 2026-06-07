@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 
 const STATUS_OPTIONS = ["ALL", "OPEN", "REVIEWING", "RESOLVED", "DISMISSED"];
 const SEVERITY_OPTIONS = ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"];
@@ -111,7 +112,7 @@ export default function AdminRiskReviewPage() {
           totalPages: data.totalPages || 1,
         });
       } catch (error) {
-        console.error(error);
+        reportClientError("admin.riskReview.load", error);
         setNotice({ type: "error", message: "Risk review data could not be loaded." });
       } finally {
         setLoading(false);
@@ -144,12 +145,12 @@ export default function AdminRiskReviewPage() {
       }
 
       localStorage.setItem("adminAccessToken", data.accessToken);
-      localStorage.setItem("adminToken", trimmedToken);
+      localStorage.removeItem("adminToken");
       setAdminAccessToken(data.accessToken);
       setTokenState("valid");
       await fetchRiskEvents(data.accessToken, 1);
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.riskReview.login", error);
       setNotice({ type: "error", message: "Admin login hatasi." });
     } finally {
       setLoading(false);
@@ -175,7 +176,7 @@ export default function AdminRiskReviewPage() {
       setEvents((current) => current.map((event) => (event.id === eventId ? data.event : event)));
       setNotice({ type: "success", message: "Risk event updated." });
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.riskReview.update", error);
       setNotice({ type: "error", message: "Risk event update failed." });
     } finally {
       setUpdatingId("");
@@ -184,9 +185,8 @@ export default function AdminRiskReviewPage() {
 
   useEffect(() => {
     queueMicrotask(() => {
-      const savedToken = localStorage.getItem("adminToken") || "";
+      localStorage.removeItem("adminToken");
       const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
-      setAdminToken(savedToken);
       if (savedAccessToken) {
         setAdminAccessToken(savedAccessToken);
         setTokenState("valid");

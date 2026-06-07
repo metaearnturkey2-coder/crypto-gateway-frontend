@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl } from "@/lib/api";
@@ -561,13 +562,15 @@ export default function OverviewPage() {
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div className="asset-coin-avatar flex h-7 w-7 items-center justify-center rounded-full text-[9px] font-bold">
-                      <img
+                      <Image
                         src={`/coins/${asset.symbol.toLowerCase()}.svg`}
                         alt=""
+                        width={28}
+                        height={28}
                         className="h-full w-full rounded-full object-contain"
                         onError={(event) => {
                           event.currentTarget.style.display = "none";
-                          event.currentTarget.nextElementSibling.style.display = "inline";
+                          event.currentTarget.nextElementSibling?.style.setProperty("display", "inline");
                         }}
                       />
                       <span className="hidden">{asset.symbol.slice(0, 3)}</span>

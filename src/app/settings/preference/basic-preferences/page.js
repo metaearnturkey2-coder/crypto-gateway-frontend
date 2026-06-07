@@ -95,7 +95,7 @@ export default function BasicPreferencesPage() {
     };
 
     loadPreferences();
-  }, []);
+  }, [t]);
 
   const applyPreferenceSideEffects = (key, value) => {
     localStorage.setItem(key, value);

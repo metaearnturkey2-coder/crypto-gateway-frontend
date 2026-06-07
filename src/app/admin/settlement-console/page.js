@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
+import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, parseMoneyAmount } from "@/lib/money";
 
@@ -266,7 +267,7 @@ export default function AdminPayoutsPage() {
       setTokenState("valid");
       return data.accessToken;
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.refreshSession", error);
       resetAdminSession("invalid");
       return null;
     }
@@ -324,7 +325,7 @@ export default function AdminPayoutsPage() {
       setTokenState("valid");
       return true;
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.verifySession", error);
       resetAdminSession("invalid");
       return false;
     }
@@ -373,7 +374,7 @@ export default function AdminPayoutsPage() {
         totalPages: data.totalPages || 1,
       });
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.fetchPayouts", error);
       showNotice("error", "Admin payouts error.");
     } finally {
       setLoading(false);
@@ -390,7 +391,7 @@ export default function AdminPayoutsPage() {
 
     setSavingToken(true);
     setNotice(null);
-    localStorage.setItem("adminToken", trimmedToken);
+    localStorage.removeItem("adminToken");
     try {
       const loginResponse = await fetch(`${baseUrl}/api/admin/login`, {
         method: "POST",
@@ -414,25 +415,18 @@ export default function AdminPayoutsPage() {
       }
       localStorage.setItem("adminAccessToken", loginData.accessToken);
       setAdminAccessToken(loginData.accessToken);
+      setTokenState("valid");
+      fetchPayouts({ page: 1, accessToken: loginData.accessToken });
+      fetchSecurityEvents(loginData.accessToken);
+      fetchAdminSessions(loginData.accessToken);
+      showNotice("success", "Admin session verified.");
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.login", error);
       resetAdminSession("invalid");
       showNotice("error", "Admin login error.");
       return;
     } finally {
       setSavingToken(false);
-    }
-
-    const isValid = await verifyAdminToken(localStorage.getItem("adminAccessToken") || "");
-
-    if (isValid) {
-      fetchPayouts({ page: 1, accessToken: localStorage.getItem("adminAccessToken") || "" });
-      fetchSecurityEvents(localStorage.getItem("adminAccessToken") || "");
-      fetchAdminSessions(localStorage.getItem("adminAccessToken") || "");
-      showNotice("success", "Admin session verified.");
-    } else {
-      resetAdminSession("invalid");
-      showNotice("error", "Invalid admin token.");
     }
   };
 
@@ -488,7 +482,7 @@ export default function AdminPayoutsPage() {
       setAdminMfaCode("");
       clearToken();
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.logoutAll", error);
       showNotice("error", "Logout all sessions error.");
     }
   };
@@ -530,7 +524,7 @@ export default function AdminPayoutsPage() {
 
       setSelectedAuditLogs(data.auditLogs || []);
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.fetchPayoutAuditLogs", error);
       showNotice("error", "Payout audit logs error.");
     } finally {
       setDetailsLoading(false);
@@ -552,7 +546,7 @@ export default function AdminPayoutsPage() {
         setSecurityEvents(data.events || []);
       }
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.fetchSecurityEvents", error);
     }
   }, [adminAccessToken, adminFetch]);
 
@@ -579,7 +573,7 @@ export default function AdminPayoutsPage() {
         );
       }
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.fetchAdminSessions", error);
     }
   }, [adminAccessToken, adminFetch]);
 
@@ -590,12 +584,10 @@ export default function AdminPayoutsPage() {
 
     sessionRestoreStartedRef.current = true;
 
-    const savedAdminToken = localStorage.getItem("adminToken") || "";
+    localStorage.removeItem("adminToken");
     const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
 
     queueMicrotask(() => {
-      setAdminToken(savedAdminToken);
-
       if (!savedAccessToken) {
         return;
       }
@@ -742,7 +734,7 @@ export default function AdminPayoutsPage() {
         fetchPayoutAuditLogs(payoutId);
       }
     } catch (error) {
-      console.error(error);
+      reportClientError("admin.settlement.updatePayoutStatus", error);
       showNotice("error", "Update payout status error.");
     }
   };
