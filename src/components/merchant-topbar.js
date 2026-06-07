@@ -44,9 +44,11 @@ export default function MerchantTopbar() {
   }, []);
 
   useEffect(() => {
-    const stored = localStorage.getItem("dashboardTheme");
-    if (stored === "light") setIsDarkTheme(false);
-    setThemeReady(true);
+    queueMicrotask(() => {
+      const stored = localStorage.getItem("dashboardTheme");
+      if (stored === "light") setIsDarkTheme(false);
+      setThemeReady(true);
+    });
   }, []);
 
   useEffect(() => {

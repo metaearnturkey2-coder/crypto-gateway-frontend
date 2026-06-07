@@ -91,7 +91,7 @@ export default function BusinessWalletLedgerPage() {
   }, [direction, entryType, page, search, sourceType]);
 
   useEffect(() => {
-    loadLedger();
+    queueMicrotask(loadLedger);
   }, [loadLedger]);
 
   const totals = useMemo(() => {

@@ -43,7 +43,7 @@ export default function PreferenceActiveSessionsPage() {
   }, []);
 
   useEffect(() => {
-    loadSessions();
+    queueMicrotask(loadSessions);
   }, [loadSessions]);
 
   const terminateSession = async (sessionId, isCurrent) => {
@@ -62,7 +62,7 @@ export default function PreferenceActiveSessionsPage() {
 
     if (isCurrent) {
       localStorage.removeItem("token");
-      window.location.href = "/login";
+      window.location.assign("/login");
       return;
     }
 

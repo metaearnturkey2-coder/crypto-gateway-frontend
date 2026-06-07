@@ -213,7 +213,7 @@ export default function PaymentCheckoutPage() {
 
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [copiedKey, setCopiedKey] = useState("");
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
@@ -259,7 +259,7 @@ export default function PaymentCheckoutPage() {
   };
 
   useEffect(() => {
-    fetchPayment();
+    queueMicrotask(fetchPayment);
 
     const interval = setInterval(() => {
       fetchPayment();

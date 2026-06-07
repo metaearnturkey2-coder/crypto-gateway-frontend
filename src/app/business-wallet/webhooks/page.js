@@ -43,7 +43,6 @@ export default function BusinessWalletWebhooksPage() {
     const params = new URLSearchParams({
       limit: "20",
       page: String(page),
-      t: String(Date.now()),
     });
 
     if (eventFilter !== "ALL") params.set("event", eventFilter);
@@ -90,15 +89,13 @@ export default function BusinessWalletWebhooksPage() {
   };
 
   useEffect(() => {
-    const run = async () => {
+    queueMicrotask(async () => {
       try {
         await loadWebhooks();
       } finally {
         setLoading(false);
       }
-    };
-
-    run();
+    });
   }, [queryString]);
 
   const sendTestWebhook = async () => {

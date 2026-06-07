@@ -456,10 +456,6 @@ export default function BusinessWalletMerchantsPage() {
     };
   }, [fetchActivity, fetchOps]);
 
-  useEffect(() => {
-    setNow(Date.now());
-  }, []);
-
   return (
     <OverviewShell>
       {notice && (

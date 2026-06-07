@@ -149,15 +149,17 @@ export default function AdminTreasuryPage() {
   };
 
   useEffect(() => {
-    const savedToken = localStorage.getItem("adminToken") || "";
-    const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
-    setAdminToken(savedToken);
+    queueMicrotask(() => {
+      const savedToken = localStorage.getItem("adminToken") || "";
+      const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
+      setAdminToken(savedToken);
 
-    if (savedAccessToken) {
-      setAdminAccessToken(savedAccessToken);
-      setTokenState("valid");
-      fetchTreasuryData(savedAccessToken);
-    }
+      if (savedAccessToken) {
+        setAdminAccessToken(savedAccessToken);
+        setTokenState("valid");
+        fetchTreasuryData(savedAccessToken);
+      }
+    });
   }, [fetchTreasuryData]);
 
   const statusCards = useMemo(

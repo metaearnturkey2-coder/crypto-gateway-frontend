@@ -59,7 +59,7 @@ export default function MerchantPaymentDetailPage() {
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
   const [copiedLabel, setCopiedLabel] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [webhookAction, setWebhookAction] = useState(null);
@@ -132,7 +132,7 @@ export default function MerchantPaymentDetailPage() {
   };
 
   useEffect(() => {
-    fetchPayment();
+    queueMicrotask(fetchPayment);
   }, [fetchPayment]);
 
   useEffect(() => {

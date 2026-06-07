@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
 import { apiUrl } from "@/lib/api";
 import { useDashboardLanguage } from "@/lib/i18n";
@@ -81,7 +81,7 @@ export default function SecuritySettingsPage() {
     setNotice({ type, message });
   };
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) {
       window.location.href = "/login";
@@ -106,11 +106,11 @@ export default function SecuritySettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
   useEffect(() => {
-    loadDashboard();
-  }, []);
+    queueMicrotask(loadDashboard);
+  }, [loadDashboard]);
 
   const saveWebhookUrl = async () => {
     const token = localStorage.getItem("token");

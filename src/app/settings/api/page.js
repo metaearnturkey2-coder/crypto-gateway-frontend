@@ -54,7 +54,7 @@ export default function ApiSettingsPage() {
   }, [t]);
 
   useEffect(() => {
-    loadApiKeys();
+    queueMicrotask(loadApiKeys);
   }, [loadApiKeys]);
 
   const revokeApiKey = async (prefix) => {

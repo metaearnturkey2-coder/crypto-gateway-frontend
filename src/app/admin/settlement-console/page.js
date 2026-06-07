@@ -270,7 +270,7 @@ export default function AdminPayoutsPage() {
       resetAdminSession("invalid");
       return null;
     }
-  }, [resetAdminSession]);
+  }, [baseUrl, resetAdminSession]);
 
   const adminFetch = useCallback(
     async (path, options = {}) => {
@@ -298,7 +298,7 @@ export default function AdminPayoutsPage() {
       response = await makeRequest(nextAccessToken);
       return response;
     },
-    [adminAccessToken, refreshAccessToken]
+    [adminAccessToken, baseUrl, refreshAccessToken]
   );
 
   const verifyAdminToken = useCallback(async (token) => {
@@ -593,28 +593,30 @@ export default function AdminPayoutsPage() {
     const savedAdminToken = localStorage.getItem("adminToken") || "";
     const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
 
-    setAdminToken(savedAdminToken);
+    queueMicrotask(() => {
+      setAdminToken(savedAdminToken);
 
-    if (!savedAccessToken) {
-      return;
-    }
-
-    setAdminAccessToken(savedAccessToken);
-
-    const restoreSession = async () => {
-      const isValid = await verifyAdminToken(savedAccessToken);
-
-      if (!isValid) {
-        resetAdminSession("invalid");
+      if (!savedAccessToken) {
         return;
       }
 
-      fetchPayouts({ page: 1, accessToken: savedAccessToken });
-      fetchSecurityEvents(savedAccessToken);
-      fetchAdminSessions(savedAccessToken);
-    };
+      setAdminAccessToken(savedAccessToken);
 
-    restoreSession();
+      const restoreSession = async () => {
+        const isValid = await verifyAdminToken(savedAccessToken);
+
+        if (!isValid) {
+          resetAdminSession("invalid");
+          return;
+        }
+
+        fetchPayouts({ page: 1, accessToken: savedAccessToken });
+        fetchSecurityEvents(savedAccessToken);
+        fetchAdminSessions(savedAccessToken);
+      };
+
+      restoreSession();
+    });
   }, [fetchAdminSessions, fetchPayouts, fetchSecurityEvents, resetAdminSession, verifyAdminToken]);
 
   const openPayoutDetails = (request) => {
