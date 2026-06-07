@@ -221,6 +221,7 @@ export default function AdminPayoutsPage() {
   const clearConfirmAction = () => {
     setConfirmAction(null);
     setCriticalConfirmationText("");
+    setAdminMfaCode("");
   };
 
   const resetAdminSession = useCallback((nextTokenState = "unknown") => {
@@ -246,6 +247,7 @@ export default function AdminPayoutsPage() {
     });
     setConfirmAction(null);
     setCriticalConfirmationText("");
+    setAdminMfaCode("");
   }, []);
 
   const refreshAccessToken = useCallback(async () => {
@@ -455,7 +457,17 @@ export default function AdminPayoutsPage() {
       return;
     }
 
+    if (!adminMfaCode.trim()) {
+      showNotice("error", t("admin.mfaCodeRequired"));
+      return;
+    }
+
     try {
+      const stepUpToken = await requestAdminStepUpToken(adminMfaCode.trim());
+      if (!stepUpToken) {
+        return;
+      }
+
       const response = await adminFetch("/api/admin/logout-all", {
         method: "POST",
         headers: {
@@ -463,6 +475,7 @@ export default function AdminPayoutsPage() {
         },
         body: JSON.stringify({
           confirmationText: criticalConfirmationText.trim(),
+          stepUpToken,
         }),
       });
       const data = await readJsonResponse(response);
@@ -472,11 +485,32 @@ export default function AdminPayoutsPage() {
       }
       showNotice("success", data.message || "All sessions revoked.");
       setCriticalConfirmationText("");
+      setAdminMfaCode("");
       clearToken();
     } catch (error) {
       console.error(error);
       showNotice("error", "Logout all sessions error.");
     }
+  };
+
+  const requestAdminStepUpToken = async (mfaCode) => {
+    const response = await adminFetch("/api/admin/step-up", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        mfaCode,
+      }),
+    });
+    const data = await readJsonResponse(response);
+
+    if (!response.ok || !data.stepUpToken) {
+      showNotice("error", data.message || "Admin step-up verification error.");
+      return null;
+    }
+
+    return data.stepUpToken;
   };
 
   const fetchPayoutAuditLogs = async (payoutId) => {
@@ -653,6 +687,11 @@ export default function AdminPayoutsPage() {
     }
 
     try {
+      const stepUpToken = await requestAdminStepUpToken(adminMfaCode.trim());
+      if (!stepUpToken) {
+        return;
+      }
+
       const response = await adminFetch(
         `/api/admin/payout-requests/${payoutId}/status`,
         {
@@ -673,7 +712,7 @@ export default function AdminPayoutsPage() {
             confirmationText: isCriticalPayoutStatus(status)
               ? criticalConfirmationText.trim()
               : undefined,
-            mfaCode: adminMfaCode.trim(),
+            stepUpToken,
           }),
         }
       );
@@ -831,6 +870,7 @@ export default function AdminPayoutsPage() {
                 <button
                   onClick={() => {
                     setCriticalConfirmationText("");
+                    setAdminMfaCode("");
                     setConfirmAction({ type: "logoutAll" });
                   }}
                   disabled={!adminAccessToken}
@@ -887,10 +927,18 @@ export default function AdminPayoutsPage() {
                 placeholder={CRITICAL_CONFIRMATION_TEXT}
                 className="mb-3 w-full rounded-lg border border-red-500/30 bg-black/30 px-3 py-2 text-red-50 outline-none"
               />
+              <input
+                type="password"
+                inputMode="numeric"
+                value={adminMfaCode}
+                onChange={(e) => setAdminMfaCode(e.target.value)}
+                placeholder={t("admin.mfaCode")}
+                className="mb-3 w-full rounded-lg border border-red-500/30 bg-black/30 px-3 py-2 text-red-50 outline-none"
+              />
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={logoutAllSessions}
-                  disabled={criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT}
+                  disabled={criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT || !adminMfaCode.trim()}
                   className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {t("admin.confirmLogoutAll")}
