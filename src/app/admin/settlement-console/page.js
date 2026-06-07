@@ -5,6 +5,7 @@ import { API_BASE_URL } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, parseMoneyAmount } from "@/lib/money";
+import { AdminAccessRequired, AdminConsoleNav } from "@/components/admin-auth";
 
 const STATUS_OPTIONS = ["ALL", "REQUESTED", "APPROVED", "FAILED", "REJECTED", "PAID"];
 const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
@@ -173,9 +174,6 @@ export default function AdminPayoutsPage() {
     "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const secondaryButtonClass =
     "border border-zinc-700 bg-zinc-900 px-4 py-3 rounded-xl font-semibold text-zinc-100 hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed";
-  const dangerButtonClass =
-    "border border-red-500/40 bg-red-500/10 px-6 py-3 rounded-xl font-semibold text-red-200 hover:bg-red-500/20 transition disabled:opacity-40 disabled:cursor-not-allowed";
-  const [adminToken, setAdminToken] = useState("");
   const [adminAccessToken, setAdminAccessToken] = useState("");
   const [payoutRequests, setPayoutRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -201,7 +199,6 @@ export default function AdminPayoutsPage() {
   });
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [tokenState, setTokenState] = useState("unknown");
-  const [savingToken, setSavingToken] = useState(false);
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [statusNote, setStatusNote] = useState("");
@@ -337,7 +334,7 @@ export default function AdminPayoutsPage() {
     const accessToken = options.accessToken || adminAccessToken;
 
     if (!accessToken) {
-      showNotice("error", "Admin token is required.");
+      showNotice("error", "Admin session is required.");
       return;
     }
 
@@ -380,112 +377,6 @@ export default function AdminPayoutsPage() {
       setLoading(false);
     }
   }, [adminAccessToken, adminFetch, page, pagination.limit, resetAdminSession, statusFilter]);
-
-  const saveToken = async () => {
-    const trimmedToken = adminToken.trim();
-    if (!trimmedToken) {
-      showNotice("error", "Enter the current internal admin token.");
-      setTokenState("invalid");
-      return;
-    }
-
-    setSavingToken(true);
-    setNotice(null);
-    localStorage.removeItem("adminToken");
-    try {
-      const loginResponse = await fetch(`${baseUrl}/api/admin/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          token: trimmedToken,
-        }),
-      });
-      const loginData = await readJsonResponse(loginResponse);
-      if (!loginResponse.ok || !loginData.accessToken) {
-        resetAdminSession("invalid");
-        if (loginResponse.status === 429) {
-          showNotice("error", `Too many failed attempts. Try again in ${loginData.retryAfterSeconds || "a while"} seconds.`);
-          return;
-        }
-        showNotice("error", loginData.message || "Invalid admin token.");
-        return;
-      }
-      localStorage.setItem("adminAccessToken", loginData.accessToken);
-      setAdminAccessToken(loginData.accessToken);
-      setTokenState("valid");
-      fetchPayouts({ page: 1, accessToken: loginData.accessToken });
-      fetchSecurityEvents(loginData.accessToken);
-      fetchAdminSessions(loginData.accessToken);
-      showNotice("success", "Admin session verified.");
-    } catch (error) {
-      reportClientError("admin.settlement.login", error);
-      resetAdminSession("invalid");
-      showNotice("error", "Admin login error.");
-      return;
-    } finally {
-      setSavingToken(false);
-    }
-  };
-
-  const clearToken = () => {
-    fetch(`${baseUrl}/api/admin/logout`, {
-      method: "POST",
-      credentials: "include",
-    }).catch(() => {});
-    localStorage.removeItem("adminToken");
-    setAdminToken("");
-    resetAdminSession("unknown");
-  };
-
-  const logoutAllSessions = async () => {
-    if (!adminAccessToken) {
-      showNotice("error", "Admin token is required.");
-      return;
-    }
-
-    if (criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT) {
-      showNotice("error", `Type ${CRITICAL_CONFIRMATION_TEXT} to confirm this critical action.`);
-      return;
-    }
-
-    if (!adminMfaCode.trim()) {
-      showNotice("error", t("admin.mfaCodeRequired"));
-      return;
-    }
-
-    try {
-      const stepUpToken = await requestAdminStepUpToken(adminMfaCode.trim());
-      if (!stepUpToken) {
-        return;
-      }
-
-      const response = await adminFetch("/api/admin/logout-all", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          confirmationText: criticalConfirmationText.trim(),
-          stepUpToken,
-        }),
-      });
-      const data = await readJsonResponse(response);
-      if (!response.ok) {
-        showNotice("error", data.message || "Logout all sessions error.");
-        return;
-      }
-      showNotice("success", data.message || "All sessions revoked.");
-      setCriticalConfirmationText("");
-      setAdminMfaCode("");
-      clearToken();
-    } catch (error) {
-      reportClientError("admin.settlement.logoutAll", error);
-      showNotice("error", "Logout all sessions error.");
-    }
-  };
 
   const requestAdminStepUpToken = async (mfaCode) => {
     const response = await adminFetch("/api/admin/step-up", {
@@ -773,6 +664,10 @@ export default function AdminPayoutsPage() {
     );
   }, [securityEvents]);
 
+  if (tokenState !== "valid") {
+    return <AdminAccessRequired title="Settlement console access required" />;
+  }
+
   return (
     <main className="min-h-screen bg-black text-white">
       <header className="border-b border-zinc-800 bg-zinc-950/70">
@@ -805,148 +700,15 @@ export default function AdminPayoutsPage() {
           </div>
         )}
 
-        <section className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900">
-          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_.8fr]">
-            <div className="p-4">
-              <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <h2 className="text-lg font-bold">{t("admin.restrictedAccess")}</h2>
-                  <p className="mt-1 max-w-2xl text-sm text-zinc-500">
-                    {t("admin.accessDescription")}
-                  </p>
-                </div>
-                <span
-                  className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
-                    tokenState === "valid"
-                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                      : tokenState === "invalid"
-                      ? "border-red-500/40 bg-red-500/10 text-red-200"
-                      : "border-zinc-700 bg-zinc-800 text-zinc-300"
-                  }`}
-                >
-                  {tokenState === "valid"
-                    ? t("admin.verifiedSession")
-                    : tokenState === "invalid"
-                    ? t("admin.verificationFailed")
-                    : t("admin.awaitingVerification")}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_auto_auto]">
-                <input
-                  type="password"
-                  placeholder={t("admin.tokenPlaceholder")}
-                  value={adminToken}
-                  onChange={(e) => setAdminToken(e.target.value)}
-                  className="h-10 rounded-xl border border-zinc-700 bg-zinc-950 px-3 text-sm text-zinc-100 outline-none focus:border-zinc-500"
-                />
-
-                <button
-                  onClick={saveToken}
-                  disabled={savingToken}
-                  className={`${primaryButtonClass} h-10 w-full px-4 py-2 lg:w-auto`}
-                >
-                  {savingToken ? t("admin.verifying") : t("admin.verifyToken")}
-                </button>
-
-                <button
-                  onClick={clearToken}
-                  className={`${secondaryButtonClass} h-10 w-full px-4 py-2 lg:w-auto`}
-                >
-                  {t("admin.clear")}
-                </button>
-              </div>
-
-              <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <p className="text-xs text-zinc-500">
-                  {t("admin.tokenHint")}
-                </p>
-                <button
-                  onClick={() => {
-                    setCriticalConfirmationText("");
-                    setAdminMfaCode("");
-                    setConfirmAction({ type: "logoutAll" });
-                  }}
-                  disabled={!adminAccessToken}
-                  className={`${dangerButtonClass} w-full px-4 py-2 md:w-auto`}
-                >
-                  {t("admin.revokeAllSessions")}
-                </button>
-              </div>
-
-              {tokenState === "invalid" && (
-                <p className="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                  {t("admin.invalidTokenHint")}
-                </p>
-              )}
-            </div>
-
-            <div className="border-t border-zinc-800 bg-zinc-950 p-4 lg:border-l lg:border-t-0">
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.guardedData")}</p>
-                {tokenState === "valid" && (
-                  <button
-                    onClick={() => fetchAdminSessions()}
-                    className="rounded-lg border border-zinc-700 px-2.5 py-1 text-xs font-semibold text-zinc-300 hover:bg-zinc-900"
-                  >
-                    {t("admin.refresh")}
-                  </button>
-                )}
-              </div>
-              <div className="mt-3 grid grid-cols-1 gap-2 text-sm sm:grid-cols-2">
-                {[
-                  t("admin.payoutRequests"),
-                  t("admin.settlementActions"),
-                  t("admin.auditTrail"),
-                  t("admin.securityEvents"),
-                ].map((item) => (
-                  <div key={item} className="flex items-center justify-between rounded-xl border border-zinc-800 bg-black px-3 py-2.5">
-                    <span className="text-zinc-300">{item}</span>
-                    <span className={tokenState === "valid" ? "text-emerald-300" : "text-zinc-600"}>
-                      {tokenState === "valid" ? t("admin.unlocked") : t("admin.locked")}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {confirmAction?.type === "logoutAll" && (
-            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-              <p className="mb-3">{t("admin.logoutAllPrompt")}</p>
-              <input
-                type="text"
-                value={criticalConfirmationText}
-                onChange={(e) => setCriticalConfirmationText(e.target.value)}
-                placeholder={CRITICAL_CONFIRMATION_TEXT}
-                className="mb-3 w-full rounded-lg border border-red-500/30 bg-black/30 px-3 py-2 text-red-50 outline-none"
-              />
-              <input
-                type="password"
-                inputMode="numeric"
-                value={adminMfaCode}
-                onChange={(e) => setAdminMfaCode(e.target.value)}
-                placeholder={t("admin.mfaCode")}
-                className="mb-3 w-full rounded-lg border border-red-500/30 bg-black/30 px-3 py-2 text-red-50 outline-none"
-              />
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={logoutAllSessions}
-                  disabled={criticalConfirmationText.trim() !== CRITICAL_CONFIRMATION_TEXT || !adminMfaCode.trim()}
-                  className="rounded-lg bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  {t("admin.confirmLogoutAll")}
-                </button>
-                <button
-                  onClick={clearConfirmAction}
-                  className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
-                >
-                  {t("admin.cancel")}
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
+        <AdminConsoleNav
+          currentPath="/admin/settlement-console"
+          onRefresh={() => {
+            fetchPayouts({ page: 1 });
+            fetchSecurityEvents();
+            fetchAdminSessions();
+          }}
+          loading={loading || !adminAccessToken}
+        />
 
         {tokenState === "valid" && (
           <>

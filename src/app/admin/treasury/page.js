@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_BASE_URL } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
+import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
 
 const STATUS_OPTIONS = ["ALL", "PENDING", "BROADCASTED", "CONFIRMED", "FAILED", "CANCELLED"];
 
@@ -42,7 +43,6 @@ const shortId = (value) => {
 };
 
 export default function AdminTreasuryPage() {
-  const [adminToken, setAdminToken] = useState("");
   const [adminAccessToken, setAdminAccessToken] = useState("");
   const [tokenState, setTokenState] = useState("unknown");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -110,56 +110,27 @@ export default function AdminTreasuryPage() {
     [adminAccessToken, adminFetch, statusFilter]
   );
 
-  const login = async () => {
-    const trimmedToken = adminToken.trim();
-    if (!trimmedToken) {
-      setNotice({ type: "error", message: "Internal admin token girin." });
-      return;
-    }
+  useEffect(() => {
+    let active = true;
 
-    setLoading(true);
+    queueMicrotask(async () => {
+      const savedAccessToken = await verifyStoredAdminSession();
 
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ token: trimmedToken }),
-      });
-      const data = await readJsonResponse(response);
+      if (!active) return;
 
-      if (!response.ok || !data.accessToken) {
+      if (!savedAccessToken) {
         setTokenState("invalid");
-        setNotice({ type: "error", message: data.message || "Admin token gecersiz." });
         return;
       }
 
-      localStorage.setItem("adminAccessToken", data.accessToken);
-      localStorage.removeItem("adminToken");
-      setAdminAccessToken(data.accessToken);
+      setAdminAccessToken(savedAccessToken);
       setTokenState("valid");
-      await fetchTreasuryData(data.accessToken);
-    } catch (error) {
-      reportClientError("admin.treasury.login", error);
-      setNotice({ type: "error", message: "Admin login hatasi." });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      localStorage.removeItem("adminToken");
-      const savedAccessToken = localStorage.getItem("adminAccessToken") || "";
-
-      if (savedAccessToken) {
-        setAdminAccessToken(savedAccessToken);
-        setTokenState("valid");
-        fetchTreasuryData(savedAccessToken);
-      }
+      fetchTreasuryData(savedAccessToken);
     });
+
+    return () => {
+      active = false;
+    };
   }, [fetchTreasuryData]);
 
   const statusCards = useMemo(
@@ -170,6 +141,10 @@ export default function AdminTreasuryPage() {
       })),
     [stats]
   );
+
+  if (tokenState !== "valid") {
+    return <AdminAccessRequired title="Treasury access required" />;
+  }
 
   return (
     <main className="min-h-screen bg-black px-4 py-8 text-zinc-100">
@@ -187,29 +162,12 @@ export default function AdminTreasuryPage() {
           </a>
         </header>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto_auto]">
-            <input
-              type="password"
-              value={adminToken}
-              onChange={(event) => setAdminToken(event.target.value)}
-              placeholder="Internal admin token"
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none"
-            />
-            <button onClick={login} disabled={loading} className="rounded-xl bg-white px-5 py-3 font-semibold text-black disabled:opacity-40">
-              Token dogrula
-            </button>
-            <button onClick={() => fetchTreasuryData()} disabled={loading || !adminAccessToken} className="rounded-xl border border-zinc-700 bg-zinc-950 px-5 py-3 font-semibold disabled:opacity-40">
-              Yenile
-            </button>
+        <AdminConsoleNav currentPath="/admin/treasury" onRefresh={() => fetchTreasuryData()} loading={loading || !adminAccessToken} />
+        {notice && (
+          <div className={`rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
+            {notice.message}
           </div>
-          <p className="mt-3 text-xs text-zinc-500">Oturum: {tokenState}</p>
-          {notice && (
-            <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
-              {notice.message}
-            </div>
-          )}
-        </section>
+        )}
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
