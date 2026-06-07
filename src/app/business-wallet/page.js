@@ -65,6 +65,38 @@ const TRON_ADDRESS_PATTERN = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
 const isPayoutAddressActive = (address) =>
   (address.effectiveStatus || address.status) === "ACTIVE";
 
+const getPayoutAvailability = ({ amount, payoutAddresses, settlements }) => {
+  const available = parseMoneyAmount(settlements.summary.available);
+  const perTransactionLimit = parseMoneyAmount(
+    settlements.payoutLimits?.perTransactionLimit,
+    DEFAULT_MAX_PAYOUT_AMOUNT
+  );
+  const dailyRemaining = parseMoneyAmount(
+    settlements.payoutLimits?.dailyRemaining,
+    DEFAULT_MAX_PAYOUT_AMOUNT
+  );
+  const weeklyRemaining = parseMoneyAmount(
+    settlements.payoutLimits?.weeklyRemaining,
+    DEFAULT_MAX_PAYOUT_AMOUNT
+  );
+  const maxWithdrawable = Math.max(
+    Math.min(available, perTransactionLimit, dailyRemaining, weeklyRemaining),
+    0
+  );
+  const numericAmount = parseMoneyAmount(amount, NaN);
+  const hasActiveAddress = payoutAddresses.some(isPayoutAddressActive);
+
+  return {
+    available,
+    dailyRemaining,
+    hasActiveAddress,
+    maxWithdrawable,
+    numericAmount,
+    perTransactionLimit,
+    weeklyRemaining,
+  };
+};
+
 export default function BusinessWalletPage() {
   const [loading, setLoading] = useState(true);
   const [paymentStats, setPaymentStats] = useState({
@@ -78,6 +110,7 @@ export default function BusinessWalletPage() {
       network: "TRC20",
       currency: "USDT",
       available: 0,
+      pendingBalance: 0,
       grossPaid: 0,
       reservedForPayouts: 0,
     },
@@ -172,6 +205,7 @@ export default function BusinessWalletPage() {
             network: "TRC20",
             currency: "USDT",
             available: 0,
+            pendingBalance: 0,
             grossPaid: 0,
             reservedForPayouts: 0,
           },
@@ -235,22 +269,22 @@ export default function BusinessWalletPage() {
 
   const createPayoutRequest = async (e) => {
     e.preventDefault();
-    const numericAmount = parseMoneyAmount(amount, NaN);
-    const available = parseMoneyAmount(settlements.summary.available);
-    const maxPayoutAmount = parseMoneyAmount(
-      settlements.payoutLimits?.perTransactionLimit,
-      DEFAULT_MAX_PAYOUT_AMOUNT
-    );
+    const payoutAvailability = getPayoutAvailability({
+      amount,
+      payoutAddresses,
+      settlements,
+    });
+    const { maxWithdrawable, numericAmount } = payoutAvailability;
 
     if (!Number.isFinite(numericAmount)) {
       setNotice({ type: "error", message: t("businessWallet.validPayoutAmount") });
       return;
     }
 
-    if (numericAmount < MIN_PAYOUT_AMOUNT || numericAmount > maxPayoutAmount) {
+    if (numericAmount < MIN_PAYOUT_AMOUNT || numericAmount > maxWithdrawable) {
       setNotice({
         type: "error",
-        message: `${t("businessWallet.payoutRange")} ${MIN_PAYOUT_AMOUNT} - ${maxPayoutAmount} USDT.`,
+        message: `${t("businessWallet.payoutRange")} ${MIN_PAYOUT_AMOUNT} - ${maxWithdrawable.toFixed(2)} USDT.`,
       });
       return;
     }
@@ -260,7 +294,7 @@ export default function BusinessWalletPage() {
       return;
     }
 
-    if (numericAmount > available) {
+    if (numericAmount > payoutAvailability.available) {
       setNotice({ type: "error", message: t("businessWallet.exceedsBalance") });
       return;
     }
@@ -272,6 +306,15 @@ export default function BusinessWalletPage() {
 
     if (!TRON_ADDRESS_PATTERN.test(walletAddress.trim())) {
       setNotice({ type: "error", message: t("businessWallet.validTronWallet") });
+      return;
+    }
+
+    const selectedAddress = payoutAddresses.find(
+      (address) => address.walletAddress === walletAddress.trim()
+    );
+
+    if (!selectedAddress || !isPayoutAddressActive(selectedAddress)) {
+      setNotice({ type: "error", message: t("businessWallet.activeWhitelistRequired") });
       return;
     }
 
@@ -353,6 +396,26 @@ export default function BusinessWalletPage() {
     );
   }
 
+  const payoutAvailability = getPayoutAvailability({
+    amount,
+    payoutAddresses,
+    settlements,
+  });
+  const selectedPayoutAddress = payoutAddresses.find(
+    (address) => address.walletAddress === walletAddress.trim()
+  );
+  const activePayoutAddressSelected =
+    selectedPayoutAddress && isPayoutAddressActive(selectedPayoutAddress);
+  const amountIsValid =
+    Number.isFinite(payoutAvailability.numericAmount) &&
+    payoutAvailability.numericAmount >= MIN_PAYOUT_AMOUNT &&
+    payoutAvailability.numericAmount <= payoutAvailability.maxWithdrawable &&
+    !hasMoreThanDecimals(amount, 2);
+  const payoutSubmitDisabled =
+    payoutAvailability.maxWithdrawable < MIN_PAYOUT_AMOUNT ||
+    !amountIsValid ||
+    !activePayoutAddressSelected;
+
   return (
     <OverviewShell>
       <div className="space-y-5">
@@ -387,25 +450,31 @@ export default function BusinessWalletPage() {
             </div>
           </div>
 
-          <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-3">
+          <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-4">
             <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.available")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.available, settlements.summary.currency)}</p></div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.pending")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.pendingBalance, settlements.summary.currency)}</p></div>
             <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.grossPaid")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.grossPaid, settlements.summary.currency)}</p></div>
             <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.reserved")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.reservedForPayouts, settlements.summary.currency)}</p></div>
           </div>
-          <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-3">
+          <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-4">
             <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
-              <p className="text-xs text-zinc-500">Per transaction limit</p>
+              <p className="text-xs text-zinc-500">{t("businessWallet.maxWithdrawable")}</p>
+              <p className="break-words text-lg font-bold">{formatTokenAmount(payoutAvailability.maxWithdrawable, settlements.summary.currency)}</p>
+              <p className="text-[11px] text-zinc-500">{t("businessWallet.balanceBound")}</p>
+            </div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
+              <p className="text-xs text-zinc-500">{t("businessWallet.perTransactionLimit")}</p>
               <p className="break-words text-lg font-bold">{formatTokenAmount(settlements.payoutLimits?.perTransactionLimit, settlements.payoutLimits?.currency || "USDT")}</p>
             </div>
             <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
-              <p className="text-xs text-zinc-500">Daily remaining</p>
+              <p className="text-xs text-zinc-500">{t("businessWallet.dailyRemaining")}</p>
               <p className="break-words text-lg font-bold">{formatTokenAmount(settlements.payoutLimits?.dailyRemaining, settlements.payoutLimits?.currency || "USDT")}</p>
-              <p className="text-[11px] text-zinc-500">Used {formatTokenAmount(settlements.payoutLimits?.dailyUsed, settlements.payoutLimits?.currency || "USDT")}</p>
+              <p className="text-[11px] text-zinc-500">{t("businessWallet.used")} {formatTokenAmount(settlements.payoutLimits?.dailyUsed, settlements.payoutLimits?.currency || "USDT")}</p>
             </div>
             <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
-              <p className="text-xs text-zinc-500">Weekly remaining</p>
+              <p className="text-xs text-zinc-500">{t("businessWallet.weeklyRemaining")}</p>
               <p className="break-words text-lg font-bold">{formatTokenAmount(settlements.payoutLimits?.weeklyRemaining, settlements.payoutLimits?.currency || "USDT")}</p>
-              <p className="text-[11px] text-zinc-500">Used {formatTokenAmount(settlements.payoutLimits?.weeklyUsed, settlements.payoutLimits?.currency || "USDT")}</p>
+              <p className="text-[11px] text-zinc-500">{t("businessWallet.used")} {formatTokenAmount(settlements.payoutLimits?.weeklyUsed, settlements.payoutLimits?.currency || "USDT")}</p>
             </div>
           </div>
 
@@ -415,10 +484,7 @@ export default function BusinessWalletPage() {
               <input
                 type="number"
                 min={MIN_PAYOUT_AMOUNT}
-                max={Math.min(
-                  parseMoneyAmount(settlements.summary.available),
-                  parseMoneyAmount(settlements.payoutLimits?.perTransactionLimit, DEFAULT_MAX_PAYOUT_AMOUNT)
-                )}
+                max={payoutAvailability.maxWithdrawable}
                 step="0.01"
                 placeholder="0.00"
                 value={amount}
@@ -454,11 +520,21 @@ export default function BusinessWalletPage() {
                 className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none"
               />
             </label>
-            <button className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold">{t("businessWallet.requestPayout")}</button>
+            <button
+              disabled={payoutSubmitDisabled}
+              className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {t("businessWallet.requestPayout")}
+            </button>
           </form>
           <p className="mb-2.5 text-xs text-zinc-500">
-            {t("businessWallet.minimumPayout")} {MIN_PAYOUT_AMOUNT} USDT. {t("businessWallet.availableNow")}: {formatTokenAmount(settlements.summary.available, settlements.summary.currency)}. Payout adresi whitelist'te ACTIVE olmalidir.
+            {t("businessWallet.minimumPayout")} {MIN_PAYOUT_AMOUNT} USDT. {t("businessWallet.availableNow")}: {formatTokenAmount(settlements.summary.available, settlements.summary.currency)}. {t("businessWallet.maxWithdrawable")}: {formatTokenAmount(payoutAvailability.maxWithdrawable, settlements.summary.currency)}. {t("businessWallet.activeWhitelistHint")}
           </p>
+          {!payoutAvailability.hasActiveAddress && (
+            <p className="mb-2.5 rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-200">
+              {t("businessWallet.noActivePayoutAddress")}
+            </p>
+          )}
 
           <div className="mb-4 rounded-xl border border-zinc-200 bg-white/60 p-3">
             <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-end">

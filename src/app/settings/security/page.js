@@ -61,6 +61,9 @@ const validateWebhookUrlInput = (value, t) => {
   return "";
 };
 
+const getMerchantApiKeyMode = (merchant) =>
+  merchant?.apiKeyMode || (merchant?.apiKeyPrefix?.startsWith("cg_test") ? "TEST" : "LIVE");
+
 export default function SecuritySettingsPage() {
   const { t } = useDashboardLanguage();
   const [merchant, setMerchant] = useState(null);
@@ -72,6 +75,7 @@ export default function SecuritySettingsPage() {
   const [webhookTestResult, setWebhookTestResult] = useState(null);
   const [notice, setNotice] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [selectedApiKeyMode, setSelectedApiKeyMode] = useState("LIVE");
 
   const showNotice = (type, message) => {
     setNotice({ type, message });
@@ -93,7 +97,9 @@ export default function SecuritySettingsPage() {
         showNotice("error", data.message || t("security.merchantDataError"));
         return;
       }
-      setMerchant(data.merchant || null);
+      const nextMerchant = data.merchant || null;
+      setMerchant(nextMerchant);
+      setSelectedApiKeyMode(getMerchantApiKeyMode(nextMerchant));
       setWebhookUrl(data.merchant?.callbackUrl || data.merchant?.webhookUrl || "");
     } catch {
       showNotice("error", t("security.merchantDataError"));
@@ -228,14 +234,24 @@ export default function SecuritySettingsPage() {
     try {
       const response = await fetch(apiUrl("/api/merchant/api-key/regenerate"), {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ mode: selectedApiKeyMode }),
       });
       const data = await readJsonResponse(response);
       if (!response.ok) {
         showNotice("error", data.message || t("security.apiKeyRegenerateError"));
         return;
       }
-      setMerchant((prev) => ({ ...prev, apiKey: data.apiKey }));
+      setMerchant((prev) => ({
+        ...prev,
+        ...(data.merchant || {}),
+        apiKey: data.merchant?.apiKey || data.apiKey || prev?.apiKey || "",
+        apiKeyMode: data.merchant?.apiKeyMode || selectedApiKeyMode,
+        apiKeyPrefix: data.apiKeyRecord?.prefix || data.merchant?.apiKeyPrefix || prev?.apiKeyPrefix,
+      }));
       showNotice("success", t("security.apiKeyRegenerated"));
     } catch {
       showNotice("error", t("security.apiKeyRegenerateError"));
@@ -348,8 +364,36 @@ export default function SecuritySettingsPage() {
         </div>
 
         <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
-          <h2 className="text-2xl font-bold text-white mb-4">{t("security.apiAccess")}</h2>
-          <p className="text-zinc-400 mb-4">{t("security.apiAccessDescription")}</p>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-2xl font-bold text-white">{t("security.apiAccess")}</h2>
+              <p className="mt-2 text-zinc-400">{t("security.apiAccessDescription")}</p>
+            </div>
+            <div className="w-fit rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-200">
+              {t("security.currentMode")}: {getMerchantApiKeyMode(merchant)}
+            </div>
+          </div>
+          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+            {["LIVE", "TEST"].map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => setSelectedApiKeyMode(mode)}
+                className={`rounded-xl border p-4 text-left transition ${
+                  selectedApiKeyMode === mode
+                    ? "border-blue-400 bg-blue-400/10 text-blue-100"
+                    : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-600"
+                }`}
+              >
+                <span className="text-sm font-semibold">
+                  {mode === "LIVE" ? t("security.liveMode") : t("security.testMode")}
+                </span>
+                <span className="mt-1 block text-xs text-zinc-500">
+                  {mode === "LIVE" ? t("security.liveModeDescription") : t("security.testModeDescription")}
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="flex flex-col md:flex-row gap-3">
             <input
               type="text"
@@ -372,7 +416,9 @@ export default function SecuritySettingsPage() {
           </div>
           {confirmAction === "apiKey" && (
             <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
-              <p className="mb-3">{t("security.regenerateApiPrompt")}</p>
+              <p className="mb-3">
+                {t("security.regenerateApiPrompt")} ({selectedApiKeyMode})
+              </p>
               <div className="flex flex-wrap gap-3">
                 <button
                   onClick={regenerateApiKey}

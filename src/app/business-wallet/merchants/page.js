@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
@@ -662,12 +663,12 @@ export default function BusinessWalletMerchantsPage() {
                       )}
                       <button onClick={() => copyText(getCheckoutUrl(payment), t("merchantPayments.checkoutLink"))} className="operation-action-button operation-action-muted h-8 rounded-lg border px-3 text-xs font-semibold transition">{t("merchantPayments.copyLink")}</button>
                       <a href={getCheckoutUrl(payment)} target="_blank" className="operation-action-button operation-action-secondary flex h-8 items-center justify-center rounded-lg border px-3 text-center text-xs font-semibold transition">{t("merchantPayments.checkout")}</a>
-                    <button
-                      onClick={() => openPaymentDetails(payment)}
+                    <Link
+                      href={`/business-wallet/payments/${payment.id}`}
                       className={`operation-action-button operation-action-details flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${payment.status === "PENDING" ? "col-span-2" : ""}`}
                     >
                       {t("merchantPayments.details")}
-                    </button>
+                    </Link>
                     </div>
                     {payment.status === "PENDING" && (
                       <div className="payment-card-qr hidden items-center justify-between gap-3 rounded-xl border px-3 py-1.5 xl:flex xl:max-w-[360px]">
@@ -807,12 +808,12 @@ export default function BusinessWalletMerchantsPage() {
                       {formatDateTime(log.createdAt, timeZone)}
                     </p>
                     {isPaymentLog && (
-                  <button
-                    onClick={() => openPaymentDetails({ id: log.targetId })}
+                  <Link
+                    href={`/business-wallet/payments/${log.targetId}`}
                     className="operation-action-button operation-action-details w-fit rounded-lg border px-4 py-2 text-xs font-semibold transition"
                   >
                     {t("merchantPayments.details")}
-                  </button>
+                  </Link>
                     )}
                   </div>
                 </div>

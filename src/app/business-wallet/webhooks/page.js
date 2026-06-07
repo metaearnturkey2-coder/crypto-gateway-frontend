@@ -34,6 +34,8 @@ export default function BusinessWalletWebhooksPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [testResult, setTestResult] = useState(null);
   const { t } = useDashboardLanguage();
   const timeZone = useDashboardTimeZone();
 
@@ -99,6 +101,34 @@ export default function BusinessWalletWebhooksPage() {
     run();
   }, [queryString]);
 
+  const sendTestWebhook = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setTestingWebhook(true);
+    setNotice(null);
+    try {
+      const response = await fetch(apiUrl("/api/merchant/webhook-test"), {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const body = await response.json();
+      setTestResult(body);
+
+      if (!response.ok) {
+        setNotice({ type: "error", message: body.message || t("webhooks.testFailed") });
+        return;
+      }
+
+      setNotice({ type: "success", message: body.message || t("webhooks.testDelivered") });
+      await loadWebhooks();
+    } catch {
+      setNotice({ type: "error", message: t("webhooks.testFailed") });
+    } finally {
+      setTestingWebhook(false);
+    }
+  };
+
   return (
     <OverviewShell>
       <div className="space-y-5">
@@ -138,6 +168,79 @@ export default function BusinessWalletWebhooksPage() {
           <p className="mt-3 text-xs text-zinc-500">
             {t("webhooks.deadLetter")}: {data.stats.deadLetter || 0}
           </p>
+        </section>
+
+        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+          <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.testToolTitle")}</h2>
+              <p className="text-sm text-zinc-500">{t("webhooks.testToolDescription")}</p>
+            </div>
+            <button
+              type="button"
+              onClick={sendTestWebhook}
+              disabled={testingWebhook}
+              className="business-wallet-pill rounded-full border px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
+            >
+              {testingWebhook ? t("webhooks.testing") : t("webhooks.sendTest")}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <div className="rounded-xl border border-zinc-800 bg-black/30 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold">{t("webhooks.sampleHeaders")}</p>
+                <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-400">
+                  HTTP {testResult?.statusCode || "-"}
+                </span>
+              </div>
+              <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-950 p-3 text-xs text-zinc-300">
+                {JSON.stringify(
+                  testResult?.headers || {
+                    "content-type": "application/json",
+                    "user-agent": "crypto-gateway-webhook/1.0",
+                    "x-webhook-event": "webhook.test",
+                    "x-webhook-id": "event-id",
+                    "x-webhook-signature": "hmac-sha256-signature",
+                    "x-webhook-timestamp": "unix-timestamp",
+                  },
+                  null,
+                  2
+                )}
+              </pre>
+            </div>
+
+            <div className="rounded-xl border border-zinc-800 bg-black/30 p-4">
+              <p className="mb-3 text-sm font-semibold">{t("webhooks.samplePayload")}</p>
+              <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-950 p-3 text-xs text-zinc-300">
+                {JSON.stringify(
+                  testResult?.payload || {
+                    id: "event-id",
+                    apiVersion: "2026-01-01",
+                    event: "webhook.test",
+                    test: true,
+                    createdAt: "2026-06-07T12:00:00.000Z",
+                    merchant: {
+                      id: "merchant-id",
+                      email: "merchant@example.com",
+                    },
+                    payment: {
+                      id: "test-payment",
+                      amount: 1,
+                      currency: "USDT",
+                      network: "TRC20",
+                      orderId: "WEBHOOK-TEST",
+                      customerEmail: "merchant@example.com",
+                      status: "TEST",
+                      txHash: null,
+                    },
+                  },
+                  null,
+                  2
+                )}
+              </pre>
+            </div>
+          </div>
         </section>
 
         <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">

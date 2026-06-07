@@ -37,6 +37,7 @@ export default function OverviewPage() {
   });
   const [webhookTestCompleted, setWebhookTestCompleted] = useState(false);
   const [available, setAvailable] = useState(0);
+  const [pending, setPending] = useState(0);
   const [grossPaid, setGrossPaid] = useState(0);
   const [reserved, setReserved] = useState(0);
   const [network, setNetwork] = useState("TRC20");
@@ -220,6 +221,7 @@ export default function OverviewPage() {
         const summary = settlementsData?.summary;
         if (summary) {
           setAvailable(summary.available || "0");
+          setPending(summary.pendingBalance || "0");
           setGrossPaid(summary.grossPaid || "0");
           setReserved(summary.reservedForPayouts || "0");
           setNetwork(summary.network || "TRC20");
@@ -356,7 +358,7 @@ export default function OverviewPage() {
             </div>
           </div>
 
-          <div className="mt-2.5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="mt-2.5 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             <div className="overview-summary-metric rounded-xl border px-4 py-2">
               <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.available")}</p>
               <p className="text-[22px] font-bold leading-none text-white">
@@ -364,6 +366,16 @@ export default function OverviewPage() {
               </p>
               <p className="mt-2.5 text-xs font-semibold text-zinc-500">
                 {formatMoneyAmount(available, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} · {network}
+              </p>
+            </div>
+
+            <div className="overview-summary-metric rounded-xl border px-4 py-2">
+              <p className="mb-1.5 text-sm font-semibold text-zinc-300">{t("overview.pending")}</p>
+              <p className="text-[22px] font-bold leading-none text-white">
+                {loading ? "..." : formatDisplayAmount(pending)}
+              </p>
+              <p className="mt-2.5 text-xs font-semibold text-zinc-500">
+                {formatMoneyAmount(pending, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency} {t("overview.awaitingSettlement")}
               </p>
             </div>
 

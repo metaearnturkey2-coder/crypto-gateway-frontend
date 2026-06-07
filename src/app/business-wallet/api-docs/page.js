@@ -118,10 +118,25 @@ export default function BusinessWalletApiDocsPage() {
 
       <div className="api-docs-panel rounded-2xl border p-5">
         <div className="mb-4">
-          <div>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div>
             <h2 className="text-2xl font-bold">{t("apiDocs.integration")}</h2>
             <p className="api-docs-muted text-sm mt-1">{t("apiDocs.integrationDescription")}</p>
+            </div>
+            <a
+              href={apiUrl("/api/v1/openapi.json")}
+              target="_blank"
+              className="api-docs-pill flex w-full justify-center rounded-full border px-4 py-2 text-sm font-semibold sm:w-fit"
+            >
+              {t("apiDocs.openApiSpec")}
+            </a>
           </div>
+        </div>
+
+        <div className="api-docs-rules-note mb-4 rounded-xl border px-4 py-3 text-xs">
+          <span>{t("apiDocs.openApiDescription")}</span>
+          <span className="api-docs-rule-separator">/</span>
+          <span>{API_BASE_URL}/api/v1/openapi.json</span>
         </div>
 
         <p className="api-docs-rules-note mb-4 text-xs">
