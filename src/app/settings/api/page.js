@@ -7,6 +7,7 @@ import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } f
 
 const statusClassName = {
   ACTIVE: "border-emerald-400/40 bg-emerald-400/10 text-emerald-200",
+  EXPIRED: "border-zinc-500/40 bg-zinc-700/40 text-zinc-300",
   REVOKED: "border-red-400/40 bg-red-400/10 text-red-200",
 };
 
@@ -121,11 +122,14 @@ export default function ApiSettingsPage() {
           )}
 
           {!loading &&
-            apiKeys.map((apiKey) => (
-              <div
-                key={apiKey.id}
-                className="grid grid-cols-1 gap-3 border-b border-zinc-800 px-5 py-4 text-sm last:border-b-0 light-dashboard:border-zinc-200 lg:grid-cols-[1.2fr_90px_100px_1.2fr_1fr_1fr_110px] lg:items-center"
-              >
+            apiKeys.map((apiKey) => {
+              const effectiveStatus = apiKey.effectiveStatus || apiKey.status;
+
+              return (
+                <div
+                  key={apiKey.id}
+                  className="grid grid-cols-1 gap-3 border-b border-zinc-800 px-5 py-4 text-sm last:border-b-0 light-dashboard:border-zinc-200 lg:grid-cols-[1.2fr_90px_100px_1.2fr_1fr_1fr_110px] lg:items-center"
+                >
                 <div>
                   <p className="break-all font-mono text-zinc-100 light-dashboard:text-zinc-950">{apiKey.prefix}</p>
                   <p className="mt-1 text-xs text-zinc-500">{formatDashboardDateTime(apiKey.createdAt, timeZone)}</p>
@@ -133,8 +137,8 @@ export default function ApiSettingsPage() {
                 <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${modeClassName[apiKey.mode] || modeClassName.LIVE}`}>
                   {apiKey.mode || "LIVE"}
                 </span>
-                <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${statusClassName[apiKey.status] || "border-zinc-600 bg-zinc-800 text-zinc-200"}`}>
-                  {apiKey.status}
+                <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${statusClassName[effectiveStatus] || "border-zinc-600 bg-zinc-800 text-zinc-200"}`}>
+                  {effectiveStatus}
                 </span>
                 <p className="break-words text-zinc-300 light-dashboard:text-zinc-700">
                   {(apiKey.scopes || []).join(", ")}
@@ -148,14 +152,15 @@ export default function ApiSettingsPage() {
                 <div className="flex justify-start lg:justify-end">
                   <button
                     onClick={() => revokeApiKey(apiKey.prefix)}
-                    disabled={apiKey.status !== "ACTIVE" || revokingPrefix === apiKey.prefix}
+                    disabled={effectiveStatus !== "ACTIVE" || revokingPrefix === apiKey.prefix}
                     className="rounded-lg border border-red-500/40 px-3 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {revokingPrefix === apiKey.prefix ? t("apiKeys.revoking") : t("apiKeys.revoke")}
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
         </div>
       </div>
     </SettingsShell>
