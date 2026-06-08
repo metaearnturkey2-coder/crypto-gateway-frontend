@@ -171,6 +171,10 @@ export default function AdminPayoutsPage() {
     totalCount: 0,
     totalPages: 1,
   });
+  const [payoutSummary, setPayoutSummary] = useState({
+    totalAmount: "0",
+    byStatus: {},
+  });
   const [loading, setLoading] = useState(false);
   const [selectedPayout, setSelectedPayout] = useState(null);
   const [selectedAuditLogs, setSelectedAuditLogs] = useState([]);
@@ -226,6 +230,10 @@ export default function AdminPayoutsPage() {
       limit: 10,
       totalCount: 0,
       totalPages: 1,
+    });
+    setPayoutSummary({
+      totalAmount: "0",
+      byStatus: {},
     });
     setConfirmAction(null);
     setCriticalConfirmationText("");
@@ -354,6 +362,12 @@ export default function AdminPayoutsPage() {
         totalCount: data.totalCount || 0,
         totalPages: data.totalPages || 1,
       });
+      setPayoutSummary(
+        data.summary || {
+          totalAmount: "0",
+          byStatus: {},
+        }
+      );
     } catch (error) {
       reportClientError("admin.settlement.fetchPayouts", error);
       showNotice("error", "Admin payouts error.");
@@ -614,10 +628,6 @@ export default function AdminPayoutsPage() {
     }
   };
 
-  const totalAmount = useMemo(() => {
-    return payoutRequests.reduce((sum, request) => sum + parseMoneyAmount(request.amount), 0);
-  }, [payoutRequests]);
-
   const visiblePayoutRequests = useMemo(() => {
     if (auditSummaryFilter === "SETTLED_TX") {
       return payoutRequests.filter((request) => Boolean(request.latestAuditLog?.metadata?.txHash));
@@ -747,9 +757,9 @@ export default function AdminPayoutsPage() {
           </div>
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
-            <p className="text-zinc-500 text-sm mb-2">{t("admin.pageAmount")}</p>
+            <p className="text-zinc-500 text-sm mb-2">{t("admin.matchingAmount")}</p>
             <p className="text-2xl font-bold">
-              {formatTokenAmount(totalAmount, "USDT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatTokenAmount(payoutSummary.totalAmount, "USDT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
           </div>
 

@@ -53,7 +53,7 @@ function payoutStatusClass(status) {
   if (status === "PAID" || status === "APPROVED") {
     return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
   }
-  if (status === "REJECTED") {
+  if (status === "REJECTED" || status === "FAILED") {
     return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
   }
   return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
