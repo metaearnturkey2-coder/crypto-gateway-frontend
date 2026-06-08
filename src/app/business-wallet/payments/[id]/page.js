@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount } from "@/lib/money";
 
@@ -65,20 +65,10 @@ export default function MerchantPaymentDetailPage() {
   const [webhookAction, setWebhookAction] = useState(null);
 
   const fetchPayment = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     try {
-      const response = await fetch(apiUrl(`/api/payments/${paymentId}`), {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      const data = await response.json();
+      const { body: data, ok } = await merchantFetch(`/api/payments/${paymentId}`);
 
-      if (!response.ok) {
+      if (!ok) {
         setNotice({ type: "error", message: data.message || "Payment detail could not be loaded." });
         setPayment(null);
         return;
@@ -106,18 +96,13 @@ export default function MerchantPaymentDetailPage() {
   };
 
   const retryWebhook = async (webhookId) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     setWebhookAction(webhookId);
     try {
-      const response = await fetch(apiUrl(`/api/payments/${paymentId}/webhooks/${webhookId}/retry`), {
+      const { body: data, ok } = await merchantFetch(`/api/payments/${paymentId}/webhooks/${webhookId}/retry`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
 
-      if (!response.ok) {
+      if (!ok) {
         setNotice({ type: "error", message: data.message || "Webhook retry failed." });
         return;
       }

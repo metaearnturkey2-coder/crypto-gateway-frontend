@@ -3,7 +3,7 @@
 import { Bell, Clock, DollarSign, Globe2, MapPinned, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { useDashboardLanguage } from "@/lib/i18n";
 
 const preferenceDefaults = {
@@ -58,20 +58,10 @@ export default function BasicPreferencesPage() {
 
   useEffect(() => {
     const loadPreferences = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
       try {
-        const response = await fetch(apiUrl("/api/merchant/preferences"), {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const data = await response.json();
+        const { body: data, ok } = await merchantFetch("/api/merchant/preferences");
 
-        if (!response.ok) {
+        if (!ok) {
           setNotice({ type: "error", message: data.message || data.errors?.join(" ") || t("preferences.loadError") });
           return;
         }
@@ -125,26 +115,21 @@ export default function BasicPreferencesPage() {
   };
 
   const updatePreference = async (key, value) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     setPreferences((current) => ({ ...current, [key]: value }));
     applyPreferenceSideEffects(key, value);
     setSavingKey(key);
     setNotice(null);
 
     try {
-      const response = await fetch(apiUrl("/api/merchant/preferences"), {
+      const { body: data, ok } = await merchantFetch("/api/merchant/preferences", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ [key]: value }),
       });
-      const data = await response.json();
 
-      if (!response.ok) {
+      if (!ok) {
         throw new Error(data.errors?.join(" ") || data.message || t("preferences.saveError"));
       }
 

@@ -3,7 +3,7 @@
 import { CheckCircle2, Copy, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 export default function PreferenceAccountPage() {
@@ -16,20 +16,10 @@ export default function PreferenceAccountPage() {
 
   useEffect(() => {
     const loadAccount = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
       try {
-        const response = await fetch(apiUrl("/api/merchant/dashboard"), {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        });
-        const data = await response.json();
+        const { body: data, ok } = await merchantFetch("/api/merchant/dashboard");
 
-        if (!response.ok) {
+        if (!ok) {
           setNotice({ type: "error", message: data.message || t("account.loadError") });
           return;
         }

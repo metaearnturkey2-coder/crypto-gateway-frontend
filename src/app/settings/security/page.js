@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { apiUrl, fetchApi } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { useDashboardLanguage } from "@/lib/i18n";
 
@@ -20,19 +20,6 @@ function Notice({ notice }) {
     </div>
   );
 }
-
-const readJsonResponse = async (response) => {
-  const text = await response.text();
-  if (!text) return {};
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    return {
-      message: text.slice(0, 240),
-    };
-  }
-};
 
 const BLOCKED_WEBHOOK_HOSTS = ["localhost", "localhost.localdomain", "0.0.0.0", "127.", "10.", "192.168."];
 
@@ -90,18 +77,10 @@ export default function SecuritySettingsPage() {
   };
 
   const loadDashboard = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
     setLoading(true);
     try {
-      const response = await fetchApi("/api/merchant/dashboard", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await readJsonResponse(response);
-      if (!response.ok) {
+      const { body: data, ok } = await merchantFetch("/api/merchant/dashboard");
+      if (!ok) {
         showNotice("error", data.message || t("security.merchantDataError"));
         return;
       }
@@ -122,8 +101,6 @@ export default function SecuritySettingsPage() {
   }, [loadDashboard]);
 
   const saveWebhookUrl = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
     const validationError = validateWebhookUrlInput(webhookUrl, t);
     if (validationError) {
       showNotice("error", validationError);
@@ -133,28 +110,26 @@ export default function SecuritySettingsPage() {
     setSaving(true);
     setNotice(null);
     try {
-      let response = await fetch(apiUrl("/api/merchant/webhook-url"), {
+      let result = await merchantFetch("/api/merchant/webhook-url", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ webhookUrl }),
       });
 
-      if (response.status === 404) {
-        response = await fetch(apiUrl("/api/merchant/callback-url"), {
+      if (result.status === 404) {
+        result = await merchantFetch("/api/merchant/callback-url", {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ callbackUrl: webhookUrl }),
         });
       }
 
-      const data = await readJsonResponse(response);
-      if (!response.ok) {
+      const { body: data, ok } = result;
+      if (!ok) {
         showNotice("error", data.errors?.join(" ") || data.message || t("security.webhookSaveError"));
         return;
       }
@@ -173,21 +148,17 @@ export default function SecuritySettingsPage() {
   };
 
   const testWebhook = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
     setTestingWebhook(true);
     setNotice(null);
     setWebhookTestResult(null);
 
     try {
-      const response = await fetch(apiUrl("/api/merchant/webhook-test"), {
+      const { body: data, ok } = await merchantFetch("/api/merchant/webhook-test", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await readJsonResponse(response);
       setWebhookTestResult(data);
 
-      if (!response.ok) {
+      if (!ok) {
         showNotice("error", data.message || t("security.webhookTestFailed"));
         return;
       }
@@ -201,18 +172,14 @@ export default function SecuritySettingsPage() {
   };
 
   const regenerateWebhookSecret = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
     setRegenerating(true);
     setNotice(null);
     setConfirmAction(null);
     try {
-      const response = await fetch(apiUrl("/api/merchant/webhook-secret/regenerate"), {
+      const { body: data, ok } = await merchantFetch("/api/merchant/webhook-secret/regenerate", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await readJsonResponse(response);
-      if (!response.ok) {
+      if (!ok) {
         showNotice("error", data.message || t("security.webhookSecretRegenerateError"));
         return;
       }
@@ -243,21 +210,17 @@ export default function SecuritySettingsPage() {
   const hasFullApiKey = Boolean(merchant?.apiKey);
 
   const regenerateApiKey = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
     setNotice(null);
     setConfirmAction(null);
     try {
-      const response = await fetch(apiUrl("/api/merchant/api-key/regenerate"), {
+      const { body: data, ok } = await merchantFetch("/api/merchant/api-key/regenerate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ mode: selectedApiKeyMode }),
       });
-      const data = await readJsonResponse(response);
-      if (!response.ok) {
+      if (!ok) {
         showNotice("error", data.message || t("security.apiKeyRegenerateError"));
         return;
       }

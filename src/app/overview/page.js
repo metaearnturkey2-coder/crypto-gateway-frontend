@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import OverviewShell from "@/components/overview-shell";
-import { apiUrl } from "@/lib/api";
+import { apiUrl, merchantFetch } from "@/lib/api";
 import { formatDashboardTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatMoneyAmount, parseMoneyAmount } from "@/lib/money";
 
@@ -172,47 +172,25 @@ export default function OverviewPage() {
 
   useEffect(() => {
     const load = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
       try {
-        const [dashboardRes, settlementsRes, paymentsRes, apiUsageRes, webhookTestRes] = await Promise.all([
-          fetch(apiUrl("/api/merchant/dashboard"), {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-          fetch(apiUrl("/api/merchant/settlements"), {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-          fetch(apiUrl("/api/payments?limit=1"), {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-          fetch(apiUrl("/api/merchant/api-usage"), {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
-          fetch(apiUrl("/api/merchant/audit-logs?action=webhook.test&limit=1"), {
-            headers: { Authorization: `Bearer ${token}` },
-            cache: "no-store",
-          }),
+        const [
+          dashboardResult,
+          settlementsResult,
+          paymentsResult,
+          apiUsageResult,
+          webhookTestResult,
+        ] = await Promise.all([
+          merchantFetch("/api/merchant/dashboard"),
+          merchantFetch("/api/merchant/settlements"),
+          merchantFetch("/api/payments?limit=1"),
+          merchantFetch("/api/merchant/api-usage"),
+          merchantFetch("/api/merchant/audit-logs?action=webhook.test&limit=1"),
         ]);
-
-        if ([dashboardRes, settlementsRes, paymentsRes, apiUsageRes, webhookTestRes].some((response) => response.status === 401)) {
-          localStorage.removeItem("token");
-          window.location.href = "/login";
-          return;
-        }
-
-        const dashboardData = dashboardRes.ok ? await dashboardRes.json() : {};
-        const settlementsData = settlementsRes.ok ? await settlementsRes.json() : {};
-        const paymentsData = paymentsRes.ok ? await paymentsRes.json() : {};
-        const apiUsageData = apiUsageRes.ok ? await apiUsageRes.json() : {};
-        const webhookTestData = webhookTestRes.ok ? await webhookTestRes.json() : {};
+        const dashboardData = dashboardResult.ok ? dashboardResult.body : {};
+        const settlementsData = settlementsResult.ok ? settlementsResult.body : {};
+        const paymentsData = paymentsResult.ok ? paymentsResult.body : {};
+        const apiUsageData = apiUsageResult.ok ? apiUsageResult.body : {};
+        const webhookTestData = webhookTestResult.ok ? webhookTestResult.body : {};
 
         setMerchant(dashboardData?.merchant || null);
         setPaymentStats(paymentsData?.stats || { total: 0, paid: 0, pending: 0, expired: 0 });

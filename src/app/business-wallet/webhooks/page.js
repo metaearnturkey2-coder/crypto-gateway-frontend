@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const STATUS_OPTIONS = ["ALL", "SUCCESS", "PENDING", "FAILED"];
@@ -53,26 +53,9 @@ export default function BusinessWalletWebhooksPage() {
   }, [eventFilter, page, search, statusFilter]);
 
   const loadWebhooks = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
+    const { body, ok } = await merchantFetch(`/api/merchant/webhooks?${queryString}`);
 
-    const response = await fetch(apiUrl(`/api/merchant/webhooks?${queryString}`), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-
-    if (response.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-      return;
-    }
-
-    const body = await response.json();
-
-    if (!response.ok) {
+    if (!ok) {
       setNotice({ type: "error", message: body.message || t("webhooks.loadError") });
       return;
     }
@@ -99,20 +82,15 @@ export default function BusinessWalletWebhooksPage() {
   }, [loadWebhooks]);
 
   const sendTestWebhook = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     setTestingWebhook(true);
     setNotice(null);
     try {
-      const response = await fetch(apiUrl("/api/merchant/webhook-test"), {
+      const { body, ok } = await merchantFetch("/api/merchant/webhook-test", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const body = await response.json();
       setTestResult(body);
 
-      if (!response.ok) {
+      if (!ok) {
         setNotice({ type: "error", message: body.message || t("webhooks.testFailed") });
         return;
       }

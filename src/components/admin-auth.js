@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { API_BASE_URL } from "@/lib/api";
+import { adminFetch, clearAdminSession, getAdminAccessToken } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 
 export const ADMIN_NAV_ITEMS = [
@@ -38,12 +38,11 @@ export const ADMIN_NAV_ITEMS = [
 ];
 
 export const clearStoredAdminSession = () => {
-  localStorage.removeItem("adminAccessToken");
-  localStorage.removeItem("adminToken");
+  clearAdminSession();
 };
 
 export const verifyStoredAdminSession = async () => {
-  const token = localStorage.getItem("adminAccessToken") || "";
+  const token = getAdminAccessToken();
 
   if (!token) {
     clearStoredAdminSession();
@@ -51,15 +50,9 @@ export const verifyStoredAdminSession = async () => {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/admin/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: "include",
-      cache: "no-store",
-    });
+    const { ok } = await adminFetch("/api/admin/me", { accessToken: token });
 
-    if (!response.ok) {
+    if (!ok) {
       clearStoredAdminSession();
       return "";
     }

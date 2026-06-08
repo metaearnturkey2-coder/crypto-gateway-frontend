@@ -2,19 +2,9 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { apiResponseResult, fetchApi } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { ADMIN_NAV_ITEMS, clearStoredAdminSession, verifyStoredAdminSession } from "@/components/admin-auth";
-
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return response.json();
-  const body = await response.text();
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 140),
-  };
-};
 
 export default function AdminHomePage() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -56,15 +46,15 @@ export default function AdminHomePage() {
     setNotice(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin/login`, {
+      const response = await fetchApi("/api/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email, password }),
       });
-      const data = await readJsonResponse(response);
+      const { body: data, ok } = await apiResponseResult(response);
 
-      if (!response.ok || !data.accessToken) {
+      if (!ok || !data.accessToken) {
         clearStoredAdminSession();
         setSessionState("signed-out");
         setNotice({ type: "error", message: data.message || "Admin bilgileri gecersiz." });
@@ -87,7 +77,7 @@ export default function AdminHomePage() {
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/admin/logout`, {
+      await fetchApi("/api/admin/logout", {
         method: "POST",
         credentials: "include",
       });

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount } from "@/lib/money";
 
@@ -44,12 +44,6 @@ export default function BusinessWalletLedgerPage() {
   const [notice, setNotice] = useState("");
 
   const loadLedger = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     setLoading(true);
     setNotice("");
 
@@ -63,13 +57,9 @@ export default function BusinessWalletLedgerPage() {
     if (search.trim()) params.set("search", search.trim());
 
     try {
-      const response = await fetch(apiUrl(`/api/merchant/ledger?${params.toString()}`), {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      const data = await response.json();
+      const { body: data, ok } = await merchantFetch(`/api/merchant/ledger?${params.toString()}`);
 
-      if (!response.ok) {
+      if (!ok) {
         setEntries([]);
         setNotice(data.message || "Ledger entries could not be loaded.");
         return;

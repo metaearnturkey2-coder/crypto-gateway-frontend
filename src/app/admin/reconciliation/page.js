@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
 
@@ -13,16 +13,6 @@ const CHECK_FIELDS = [
   "totalPaidOut",
   "availableBalance",
 ];
-
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return response.json();
-  const body = await response.text();
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 180),
-  };
-};
 
 const getStatusClassName = (status) => {
   if (status === "MATCH") return "border-emerald-400/40 bg-emerald-500/10 text-emerald-200";
@@ -69,21 +59,6 @@ export default function AdminReconciliationPage() {
   });
   const [checkedAt, setCheckedAt] = useState(null);
 
-  const adminFetch = useCallback(
-    async (path, options = {}) => {
-      const token = options.accessToken || adminAccessToken;
-      return fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-          ...(options.headers || {}),
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      });
-    },
-    [adminAccessToken]
-  );
-
   const loadReconciliation = useCallback(
     async (accessTokenOverride) => {
       const token = accessTokenOverride || adminAccessToken;
@@ -103,7 +78,7 @@ export default function AdminReconciliationPage() {
         const response = await adminFetch(`/api/admin/reconciliation/balances?${params.toString()}`, {
           accessToken: token,
         });
-        const data = await readJsonResponse(response);
+        const data = response.body;
 
         if (!response.ok) {
           setNotice({ type: "error", message: data.message || "Reconciliation data could not be loaded." });
@@ -136,7 +111,7 @@ export default function AdminReconciliationPage() {
         setLoading(false);
       }
     },
-    [adminAccessToken, adminFetch, limit, merchantId, onlyMismatches]
+    [adminAccessToken, limit, merchantId, onlyMismatches]
   );
 
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 const statusClassName = {
@@ -25,21 +25,11 @@ export default function ApiSettingsPage() {
   const [revokingPrefix, setRevokingPrefix] = useState("");
 
   const loadApiKeys = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     setLoading(true);
     try {
-      const response = await fetch(apiUrl("/api/merchant/api-keys"), {
-        headers: { Authorization: `Bearer ${token}` },
-        cache: "no-store",
-      });
-      const data = await response.json();
+      const { body: data, ok } = await merchantFetch("/api/merchant/api-keys");
 
-      if (!response.ok) {
+      if (!ok) {
         setNotice({ type: "error", message: data.message || t("apiKeys.loadError") });
         return;
       }
@@ -58,19 +48,14 @@ export default function ApiSettingsPage() {
   }, [loadApiKeys]);
 
   const revokeApiKey = async (prefix) => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     setRevokingPrefix(prefix);
     setNotice(null);
     try {
-      const response = await fetch(apiUrl(`/api/merchant/api-keys/${prefix}/revoke`), {
+      const { body: data, ok } = await merchantFetch(`/api/merchant/api-keys/${prefix}/revoke`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await response.json();
 
-      if (!response.ok) {
+      if (!ok) {
         setNotice({ type: "error", message: data.message || t("apiKeys.revokeError") });
         return;
       }

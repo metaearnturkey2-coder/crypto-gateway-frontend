@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
-import { API_BASE_URL, apiUrl } from "@/lib/api";
+import { API_BASE_URL, apiUrl, merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 function getApiCallClassName(success) {
@@ -28,16 +28,15 @@ export default function BusinessWalletApiDocsPage() {
   const timeZone = useDashboardTimeZone();
 
   const loadApiUsage = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
+    const [{ body: data, ok }, { body: dashboardData, ok: dashboardOk }] = await Promise.all([
+      merchantFetch("/api/merchant/api-usage"),
+      merchantFetch("/api/merchant/dashboard"),
+    ]);
+
+    if (!ok) {
       return;
     }
-    const res = await fetch(apiUrl("/api/merchant/api-usage"), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const data = await res.json();
+
     setApiUsage({
       summary: data.summary || {
         total: 0,
@@ -49,12 +48,9 @@ export default function BusinessWalletApiDocsPage() {
       recentCalls: data.recentCalls || [],
     });
 
-    const dashboardRes = await fetch(apiUrl("/api/merchant/dashboard"), {
-      headers: { Authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-    const dashboardData = await dashboardRes.json();
-    setApiKey(dashboardData?.merchant?.apiKey || "");
+    if (dashboardOk) {
+      setApiKey(dashboardData?.merchant?.apiKey || "");
+    }
   };
 
   useEffect(() => {

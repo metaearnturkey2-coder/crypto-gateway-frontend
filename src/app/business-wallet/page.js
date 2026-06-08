@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
-import { apiUrl, fetchApi } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, hasMoreThanDecimals, parseMoneyAmount } from "@/lib/money";
 
@@ -140,49 +140,25 @@ export default function BusinessWalletPage() {
   const timeZone = useDashboardTimeZone();
 
   const loadDashboard = useCallback(async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     try {
-      const [paymentsRes, settlementsRes, activityRes, payoutAddressesRes] = await Promise.all([
-        fetch(apiUrl(`/api/payments?limit=50&t=${Date.now()}`), {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        }),
-        fetch(apiUrl(`/api/merchant/settlements?t=${Date.now()}`), {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        }),
-        fetch(apiUrl(`/api/merchant/audit-logs?limit=5&t=${Date.now()}`), {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        }),
-        fetch(apiUrl(`/api/merchant/payout-addresses?t=${Date.now()}`), {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: "no-store",
-        }),
+      const timestamp = Date.now();
+      const [
+        paymentsResult,
+        settlementsResult,
+        activityResult,
+        payoutAddressesResult,
+      ] = await Promise.all([
+        merchantFetch(`/api/payments?limit=50&t=${timestamp}`),
+        merchantFetch(`/api/merchant/settlements?t=${timestamp}`),
+        merchantFetch(`/api/merchant/audit-logs?limit=5&t=${timestamp}`),
+        merchantFetch(`/api/merchant/payout-addresses?t=${timestamp}`),
       ]);
+      const { body: paymentsData, ok: paymentsOk } = paymentsResult;
+      const { body: settlementsData, ok: settlementsOk } = settlementsResult;
+      const { body: activityData, ok: activityOk } = activityResult;
+      const { body: payoutAddressesData, ok: payoutAddressesOk } = payoutAddressesResult;
 
-      if (
-        paymentsRes.status === 401 ||
-        settlementsRes.status === 401 ||
-        activityRes.status === 401 ||
-        payoutAddressesRes.status === 401
-      ) {
-        localStorage.removeItem("token");
-        window.location.href = "/login";
-        return;
-      }
-
-      const paymentsData = await paymentsRes.json();
-      const settlementsData = await settlementsRes.json();
-      const activityData = await activityRes.json();
-      const payoutAddressesData = await payoutAddressesRes.json();
-
-      if (!paymentsRes.ok && !settlementsRes.ok && !activityRes.ok && !payoutAddressesRes.ok) {
+      if (!paymentsOk && !settlementsOk && !activityOk && !payoutAddressesOk) {
         setNotice({
           type: "error",
           message:
@@ -195,13 +171,13 @@ export default function BusinessWalletPage() {
         return;
       }
 
-      if (paymentsRes.ok) {
+      if (paymentsOk) {
         setPaymentStats(
           paymentsData.stats || { total: 0, paid: 0, pending: 0, expired: 0 }
         );
       }
 
-      if (settlementsRes.ok) {
+      if (settlementsOk) {
         setSettlements({
           summary: settlementsData.summary || {
             network: "TRC20",
@@ -225,15 +201,15 @@ export default function BusinessWalletPage() {
         });
       }
 
-      if (activityRes.ok) {
+      if (activityOk) {
         setRecentActivity(activityData.auditLogs || []);
       }
 
-      if (payoutAddressesRes.ok) {
+      if (payoutAddressesOk) {
         setPayoutAddresses(payoutAddressesData.addresses || []);
       }
 
-      if (!paymentsRes.ok || !settlementsRes.ok || !activityRes.ok || !payoutAddressesRes.ok) {
+      if (!paymentsOk || !settlementsOk || !activityOk || !payoutAddressesOk) {
         setNotice({
           type: "error",
           message:
@@ -320,13 +296,11 @@ export default function BusinessWalletPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
     setNotice(null);
-    const response = await fetch(apiUrl("/api/merchant/payout-requests"), {
+    const { body: data, ok } = await merchantFetch("/api/merchant/payout-requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           amount: amount.trim(),
@@ -334,8 +308,7 @@ export default function BusinessWalletPage() {
           note: note || undefined,
         }),
       });
-    const data = await response.json();
-    if (!response.ok) {
+    if (!ok) {
       setNotice({
         type: "error",
         message: data.errors?.join(" ") || data.message || t("businessWallet.payoutFailed"),
@@ -363,30 +336,22 @@ export default function BusinessWalletPage() {
       return;
     }
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      window.location.href = "/login";
-      return;
-    }
-
     setWhitelisting(true);
     setNotice(null);
 
     try {
-      const response = await fetchApi("/api/merchant/payout-addresses", {
+      const { body: data, ok } = await merchantFetch("/api/merchant/payout-addresses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           label: payoutAddressLabel || undefined,
           walletAddress: trimmedAddress,
         }),
       });
-      const data = await response.json();
 
-      if (!response.ok) {
+      if (!ok) {
         setNotice({
           type: "error",
           message: data.errors?.join(" ") || data.message || "Payout address could not be whitelisted.",

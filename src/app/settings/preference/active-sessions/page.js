@@ -3,7 +3,7 @@
 import { Clock, LogOut, MonitorCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import SettingsShell from "@/components/settings-shell";
-import { apiUrl } from "@/lib/api";
+import { clearMerchantSession, merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 export default function PreferenceActiveSessionsPage() {
@@ -13,29 +13,15 @@ export default function PreferenceActiveSessionsPage() {
   const [loading, setLoading] = useState(true);
 
   const loadSessions = useCallback(async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setSessions([]);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
-      const response = await fetch(apiUrl("/api/merchant/sessions"), {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        cache: "no-store",
-      });
+      const { body: data, ok } = await merchantFetch("/api/merchant/sessions");
 
-      if (!response.ok) {
+      if (!ok) {
         setSessions([]);
         return;
       }
 
-      const data = await response.json();
       setSessions(Array.isArray(data.sessions) ? data.sessions : []);
     } finally {
       setLoading(false);
@@ -47,21 +33,14 @@ export default function PreferenceActiveSessionsPage() {
   }, [loadSessions]);
 
   const terminateSession = async (sessionId, isCurrent) => {
-    const token = localStorage.getItem("token");
-
-    if (!token) return;
-
-    const response = await fetch(apiUrl(`/api/merchant/sessions/${sessionId}/revoke`), {
+    const { ok } = await merchantFetch(`/api/merchant/sessions/${sessionId}/revoke`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
     });
 
-    if (!response.ok) return;
+    if (!ok) return;
 
     if (isCurrent) {
-      localStorage.removeItem("token");
+      clearMerchantSession();
       window.location.assign("/login");
       return;
     }

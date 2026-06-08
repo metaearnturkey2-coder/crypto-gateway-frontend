@@ -1,26 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
 
 const STATUS_OPTIONS = ["ALL", "PENDING", "BROADCASTED", "CONFIRMED", "FAILED", "CANCELLED"];
-
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  const body = await response.text();
-
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 140),
-  };
-};
 
 const getStatusClassName = (status) => {
   if (status === "CONFIRMED") return "border-emerald-500/30 bg-emerald-500/10 text-emerald-200";
@@ -52,21 +37,6 @@ export default function AdminTreasuryPage() {
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState(null);
 
-  const adminFetch = useCallback(
-    async (path, options = {}) => {
-      const token = options.accessToken || adminAccessToken;
-      return fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-          ...(options.headers || {}),
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      });
-    },
-    [adminAccessToken]
-  );
-
   const fetchTreasuryData = useCallback(
     async (accessTokenOverride, nextStatus = statusFilter) => {
       const token = accessTokenOverride || adminAccessToken;
@@ -84,8 +54,8 @@ export default function AdminTreasuryPage() {
           adminFetch(`/api/admin/sweeps?${params.toString()}`, { accessToken: token }),
           adminFetch("/api/admin/sweeps/treasury-policy", { accessToken: token }),
         ]);
-        const sweepsData = await readJsonResponse(sweepsResponse);
-        const policyData = await readJsonResponse(policyResponse);
+        const sweepsData = sweepsResponse.body;
+        const policyData = policyResponse.body;
 
         if (!sweepsResponse.ok) {
           setNotice({ type: "error", message: sweepsData.message || "Sweep listesi yuklenemedi." });
@@ -107,7 +77,7 @@ export default function AdminTreasuryPage() {
         setLoading(false);
       }
     },
-    [adminAccessToken, adminFetch, statusFilter]
+    [adminAccessToken, statusFilter]
   );
 
   useEffect(() => {

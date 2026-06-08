@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiUrl } from "@/lib/api";
+import { merchantFetch } from "@/lib/api";
 import { useDashboardLanguage } from "@/lib/i18n";
 
 export default function MerchantTopbar() {
@@ -13,34 +13,35 @@ export default function MerchantTopbar() {
   const { t } = useDashboardLanguage();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-    fetch(apiUrl("/api/merchant/dashboard"), {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        setMerchant(data.merchant || null);
-        const preference = data.merchant?.preference;
-        if (preference) {
-          Object.entries(preference).forEach(([key, value]) => {
-            if (value !== null && value !== undefined) localStorage.setItem(key, value);
-          });
+    const loadMerchant = async () => {
+      const { body: data, ok } = await merchantFetch("/api/merchant/dashboard");
 
-          if (preference.dashboardLanguage) {
-            window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: preference.dashboardLanguage }));
-          }
+      if (!ok) {
+        return;
+      }
 
-          if (preference.timeZone) {
-            window.dispatchEvent(new CustomEvent("dashboardTimeZoneChange", { detail: preference.timeZone }));
-          }
+      setMerchant(data.merchant || null);
+      const preference = data.merchant?.preference;
+      if (preference) {
+        Object.entries(preference).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) localStorage.setItem(key, value);
+        });
 
-          if (preference.dashboardTheme) {
-            window.dispatchEvent(new CustomEvent("dashboardThemeChange", { detail: preference.dashboardTheme }));
-          }
+        if (preference.dashboardLanguage) {
+          window.dispatchEvent(new CustomEvent("dashboardLanguageChange", { detail: preference.dashboardLanguage }));
         }
-      })
-      .catch(() => {});
+
+        if (preference.timeZone) {
+          window.dispatchEvent(new CustomEvent("dashboardTimeZoneChange", { detail: preference.timeZone }));
+        }
+
+        if (preference.dashboardTheme) {
+          window.dispatchEvent(new CustomEvent("dashboardThemeChange", { detail: preference.dashboardTheme }));
+        }
+      }
+    };
+
+    loadMerchant();
   }, []);
 
   useEffect(() => {

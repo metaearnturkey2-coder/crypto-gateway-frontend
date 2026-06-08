@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { apiResponseResult, fetchApi } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, parseMoneyAmount } from "@/lib/money";
@@ -152,21 +152,6 @@ const getPayoutAuditSummary = (request) => {
   return null;
 };
 
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  const body = await response.text();
-
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"} from ${response.url || "API"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 140),
-  };
-};
-
 export default function AdminPayoutsPage() {
   const { t } = useDashboardLanguage();
   const timeZone = useDashboardTimeZone();
@@ -210,7 +195,6 @@ export default function AdminPayoutsPage() {
   const [criticalConfirmationText, setCriticalConfirmationText] = useState("");
   const [adminMfaCode, setAdminMfaCode] = useState("");
   const sessionRestoreStartedRef = useRef(false);
-  const baseUrl = API_BASE_URL;
 
   const showNotice = (type, message) => {
     setNotice({ type, message });
@@ -250,11 +234,11 @@ export default function AdminPayoutsPage() {
 
   const refreshAccessToken = useCallback(async () => {
     try {
-      const response = await fetch(`${baseUrl}/api/admin/refresh`, {
+      const response = await fetchApi("/api/admin/refresh", {
         method: "POST",
         credentials: "include",
       });
-      const data = await readJsonResponse(response);
+      const data = await response.json();
       if (!response.ok || !data.accessToken) {
         resetAdminSession("invalid");
         return null;
@@ -268,13 +252,13 @@ export default function AdminPayoutsPage() {
       resetAdminSession("invalid");
       return null;
     }
-  }, [baseUrl, resetAdminSession]);
+  }, [resetAdminSession]);
 
   const adminFetch = useCallback(
     async (path, options = {}) => {
       const { accessToken, ...fetchOptions } = options;
       const makeRequest = async (token) =>
-        fetch(`${baseUrl}${path}`, {
+        fetchApi(path, {
           ...fetchOptions,
           headers: {
             ...(fetchOptions.headers || {}),
@@ -285,18 +269,18 @@ export default function AdminPayoutsPage() {
 
       let response = await makeRequest(accessToken || adminAccessToken);
       if (response.status !== 401) {
-        return response;
+        return apiResponseResult(response);
       }
 
       const nextAccessToken = await refreshAccessToken();
       if (!nextAccessToken) {
-        return response;
+        return apiResponseResult(response);
       }
 
       response = await makeRequest(nextAccessToken);
-      return response;
+      return apiResponseResult(response);
     },
-    [adminAccessToken, baseUrl, refreshAccessToken]
+    [adminAccessToken, refreshAccessToken]
   );
 
   const verifyAdminToken = useCallback(async (token) => {
@@ -306,7 +290,7 @@ export default function AdminPayoutsPage() {
     }
 
     try {
-      const response = await fetch(`${baseUrl}/api/admin/me`, {
+      const response = await fetchApi("/api/admin/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -326,7 +310,7 @@ export default function AdminPayoutsPage() {
       resetAdminSession("invalid");
       return false;
     }
-  }, [baseUrl, resetAdminSession]);
+  }, [resetAdminSession]);
 
   const fetchPayouts = useCallback(async (options = {}) => {
     const nextPage = options.page || page;
@@ -352,7 +336,7 @@ export default function AdminPayoutsPage() {
         { accessToken }
       );
 
-      const data = await readJsonResponse(response);
+      const data = response.body;
 
       if (response.status === 401) {
         resetAdminSession("invalid");
@@ -388,7 +372,7 @@ export default function AdminPayoutsPage() {
         mfaCode,
       }),
     });
-    const data = await readJsonResponse(response);
+    const data = response.body;
 
     if (!response.ok || !data.stepUpToken) {
       showNotice("error", data.message || "Admin step-up verification error.");
@@ -406,7 +390,7 @@ export default function AdminPayoutsPage() {
         `/api/admin/payout-requests/${payoutId}/audit-logs`
       );
 
-      const data = await readJsonResponse(response);
+      const data = response.body;
 
       if (!response.ok) {
         showNotice("error", data.message || "Payout audit logs error.");
@@ -432,7 +416,7 @@ export default function AdminPayoutsPage() {
       const response = await adminFetch("/api/admin/security-events", {
         accessToken,
       });
-      const data = await readJsonResponse(response);
+      const data = response.body;
       if (response.ok) {
         setSecurityEvents(data.events || []);
       }
@@ -451,7 +435,7 @@ export default function AdminPayoutsPage() {
       const response = await adminFetch("/api/admin/sessions", {
         accessToken,
       });
-      const data = await readJsonResponse(response);
+      const data = response.body;
       if (response.ok) {
         setAdminSessions(data.sessions || []);
         setAdminSessionSummary(
@@ -602,7 +586,7 @@ export default function AdminPayoutsPage() {
         }
       );
 
-      const data = await readJsonResponse(response);
+      const data = response.body;
 
       if (!response.ok) {
         showNotice("error", data.message || "Update payout status error.");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
 
@@ -9,16 +9,6 @@ const STATUS_OPTIONS = ["ALL", "OPEN", "REVIEWING", "RESOLVED", "DISMISSED"];
 const SEVERITY_OPTIONS = ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"];
 const SOURCE_OPTIONS = ["ALL", "payment", "payout", "merchant", "wallet"];
 const REVIEW_ACTIONS = ["REVIEWING", "RESOLVED", "DISMISSED"];
-
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return response.json();
-  const body = await response.text();
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 180),
-  };
-};
 
 const getSeverityClassName = (severity) => {
   if (severity === "CRITICAL") return "border-red-400/50 bg-red-500/15 text-red-200";
@@ -62,21 +52,6 @@ export default function AdminRiskReviewPage() {
   const [notice, setNotice] = useState(null);
   const [updatingId, setUpdatingId] = useState("");
 
-  const adminFetch = useCallback(
-    async (path, options = {}) => {
-      const token = options.accessToken || adminAccessToken;
-      return fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-          ...(options.headers || {}),
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      });
-    },
-    [adminAccessToken]
-  );
-
   const fetchRiskEvents = useCallback(
     async (accessTokenOverride, nextPage = page) => {
       const token = accessTokenOverride || adminAccessToken;
@@ -97,7 +72,7 @@ export default function AdminRiskReviewPage() {
         const response = await adminFetch(`/api/admin/risk-events?${params.toString()}`, {
           accessToken: token,
         });
-        const data = await readJsonResponse(response);
+        const data = response.body;
 
         if (!response.ok) {
           setNotice({ type: "error", message: data.message || "Risk events could not be loaded." });
@@ -118,7 +93,7 @@ export default function AdminRiskReviewPage() {
         setLoading(false);
       }
     },
-    [adminAccessToken, adminFetch, page, search, severityFilter, sourceFilter, statusFilter]
+    [adminAccessToken, page, search, severityFilter, sourceFilter, statusFilter]
   );
 
   const updateRiskStatus = async (eventId, status) => {
@@ -130,7 +105,7 @@ export default function AdminRiskReviewPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      const data = await readJsonResponse(response);
+      const data = response.body;
 
       if (!response.ok) {
         setNotice({ type: "error", message: data.message || "Risk event could not be updated." });

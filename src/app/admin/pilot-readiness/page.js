@@ -1,19 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
-
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return response.json();
-  const body = await response.text();
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 180),
-  };
-};
 
 const formatDate = (value) => {
   if (!value) return "-";
@@ -68,21 +58,6 @@ export default function AdminPilotReadinessPage() {
   const [notice, setNotice] = useState(null);
   const [readiness, setReadiness] = useState(null);
 
-  const adminFetch = useCallback(
-    async (path, options = {}) => {
-      const token = options.accessToken || adminAccessToken;
-      return fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-          ...(options.headers || {}),
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      });
-    },
-    [adminAccessToken]
-  );
-
   const loadReadiness = useCallback(
     async (accessTokenOverride) => {
       const token = accessTokenOverride || adminAccessToken;
@@ -94,7 +69,7 @@ export default function AdminPilotReadinessPage() {
         const response = await adminFetch("/api/admin/pilot/readiness", {
           accessToken: token,
         });
-        const data = await readJsonResponse(response);
+        const data = response.body;
 
         if (!response.ok) {
           setNotice({ type: "error", message: data.message || "Pilot readiness could not be loaded." });
@@ -109,7 +84,7 @@ export default function AdminPilotReadinessPage() {
         setLoading(false);
       }
     },
-    [adminAccessToken, adminFetch]
+    [adminAccessToken]
   );
 
   useEffect(() => {

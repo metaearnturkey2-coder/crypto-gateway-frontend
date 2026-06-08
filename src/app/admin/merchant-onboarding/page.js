@@ -1,19 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { API_BASE_URL } from "@/lib/api";
+import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
-
-const readJsonResponse = async (response) => {
-  const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) return response.json();
-  const body = await response.text();
-  return {
-    message: `Expected JSON but received ${contentType || "unknown content"}.`,
-    responsePreview: body.replace(/\s+/g, " ").slice(0, 180),
-  };
-};
 
 const getStatusClassName = (status) => {
   if (status === "READY" || status === "PASS") return "border-emerald-400/40 bg-emerald-500/10 text-emerald-200";
@@ -51,21 +41,6 @@ export default function AdminMerchantOnboardingPage() {
   const [checklists, setChecklists] = useState([]);
   const [summary, setSummary] = useState({ blocked: 0, ready: 0, review_required: 0, total: 0 });
 
-  const adminFetch = useCallback(
-    async (path, options = {}) => {
-      const token = options.accessToken || adminAccessToken;
-      return fetch(`${API_BASE_URL}${path}`, {
-        ...options,
-        headers: {
-          ...(options.headers || {}),
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      });
-    },
-    [adminAccessToken]
-  );
-
   const loadChecklists = useCallback(
     async (accessTokenOverride) => {
       const token = accessTokenOverride || adminAccessToken;
@@ -84,7 +59,7 @@ export default function AdminMerchantOnboardingPage() {
         const response = await adminFetch(`/api/admin/pilot/merchant-onboarding?${params.toString()}`, {
           accessToken: token,
         });
-        const data = await readJsonResponse(response);
+        const data = response.body;
 
         if (!response.ok) {
           setNotice({ type: "error", message: data.message || "Merchant onboarding checklist could not be loaded." });
@@ -106,7 +81,7 @@ export default function AdminMerchantOnboardingPage() {
         setLoading(false);
       }
     },
-    [adminAccessToken, adminFetch, limit, merchantId, onlyBlocked]
+    [adminAccessToken, limit, merchantId, onlyBlocked]
   );
 
   useEffect(() => {
