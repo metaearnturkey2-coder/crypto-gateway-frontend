@@ -5,6 +5,7 @@ import {
   formatDateTime,
   formatTimeLeft,
   getCheckoutUrl,
+  getEffectivePaymentStatus,
   getPaymentStatusClassName,
   getWebhookStatusClassName,
   getWebhookStatusMessage,
@@ -32,6 +33,7 @@ export function PaymentDetailsModal({
   }
 
   const webhookSummary = getWebhookSummary(selectedPayment.webhookEvents || []);
+  const effectiveStatus = getEffectivePaymentStatus(selectedPayment, now);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-4 py-8">
@@ -40,8 +42,8 @@ export function PaymentDetailsModal({
           <div>
             <div className="mb-2 flex flex-wrap items-center gap-3">
               <h2 className="text-4xl font-bold">{t("merchantPayments.paymentDetails")}</h2>
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(selectedPayment.status)}`}>
-                {selectedPayment.status}
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
+                {effectiveStatus}
               </span>
             </div>
             <p className="text-sm text-zinc-400">
@@ -53,14 +55,14 @@ export function PaymentDetailsModal({
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => runPaymentAction(selectedPayment.id, "verify")}
-              disabled={selectedPayment.status !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
+              disabled={effectiveStatus !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
               className="rounded-lg bg-blue-500 px-4 py-2 font-semibold text-black disabled:opacity-40"
             >
               {paymentAction?.paymentId === selectedPayment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verifyNow")}
             </button>
             <button
               onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: selectedPayment.id })}
-              disabled={selectedPayment.status !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
+              disabled={effectiveStatus !== "PENDING" || paymentAction?.paymentId === selectedPayment.id}
               className="rounded-lg bg-red-500 px-4 py-2 font-semibold text-black disabled:opacity-40"
             >
               {t("merchantPayments.cancel")}
@@ -71,7 +73,8 @@ export function PaymentDetailsModal({
           </div>
         </div>
 
-        {confirmAction?.type === "cancelPayment" &&
+        {effectiveStatus === "PENDING" &&
+          confirmAction?.type === "cancelPayment" &&
           confirmAction.paymentId === selectedPayment.id && (
             <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
               <p className="mb-3">{t("merchantPayments.cancelPrompt")}</p>
@@ -279,4 +282,3 @@ function WebhookDetail({ label, value }) {
     </div>
   );
 }
-

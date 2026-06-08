@@ -38,6 +38,12 @@ const getTimeLeft = (expiresAt, now) => {
   return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 };
 
+const getEffectivePaymentStatus = (payment, now = Date.now()) => {
+  if (!payment || payment.status !== "PENDING" || !payment.expiresAt) return payment?.status;
+  const expiresAt = new Date(payment.expiresAt).getTime();
+  return Number.isFinite(expiresAt) && expiresAt <= now ? "EXPIRED" : payment.status;
+};
+
 const getWebhookSummary = (events = []) => ({
   total: events.length,
   successful: events.filter((event) => event.status === "SUCCESS").length,
@@ -129,6 +135,7 @@ export default function MerchantPaymentDetailPage() {
     () => getWebhookSummary(payment?.webhookEvents || []),
     [payment?.webhookEvents]
   );
+  const effectiveStatus = getEffectivePaymentStatus(payment, now);
 
   return (
     <OverviewShell>
@@ -141,8 +148,8 @@ export default function MerchantPaymentDetailPage() {
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold md:text-4xl">{t("merchantPayments.paymentDetails")}</h1>
               {payment && (
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>
-                  {payment.status}
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
+                  {effectiveStatus}
                 </span>
               )}
               {payment?.mode && (

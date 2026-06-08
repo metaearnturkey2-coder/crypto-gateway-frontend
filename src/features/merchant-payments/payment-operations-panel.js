@@ -5,6 +5,7 @@ import {
   formatDateTime,
   formatTimeLeft,
   getCheckoutUrl,
+  getEffectivePaymentStatus,
   getPaymentStatusClassName,
   getWebhookStatusClassName,
 } from "@/features/merchant-payments/formatters";
@@ -143,7 +144,8 @@ function PaymentOperationCard({
   t,
 }) {
   const latestWebhook = payment.webhookEvents?.[0];
-  const canManagePayment = payment.status === "PENDING" && paymentAction?.paymentId !== payment.id;
+  const effectiveStatus = getEffectivePaymentStatus(payment, now);
+  const canManagePayment = effectiveStatus === "PENDING" && paymentAction?.paymentId !== payment.id;
 
   return (
     <div className="merchant-payment-card rounded-xl border p-3 sm:p-4">
@@ -194,12 +196,12 @@ function PaymentOperationCard({
           )}
         </div>
         <div className="xl:justify-self-center">
-          <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(payment.status)}`}>{payment.status}</span>
+          <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>{effectiveStatus}</span>
         </div>
         <div className="flex flex-col gap-2 xl:items-end">
           <div className="grid w-full grid-cols-2 gap-2 xl:max-w-[320px]">
             <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="operation-action-button operation-action-muted h-8 rounded-lg border px-3 text-xs font-semibold transition">Copy Wallet</button>
-            {payment.status === "PENDING" && (
+            {effectiveStatus === "PENDING" && (
               <button
                 onClick={() => runPaymentAction(payment.id, "verify")}
                 className="operation-action-button operation-action-success h-8 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
@@ -208,7 +210,7 @@ function PaymentOperationCard({
                 {paymentAction?.paymentId === payment.id && paymentAction?.action === "verify" ? t("merchantPayments.verifying") : t("merchantPayments.verify")}
               </button>
             )}
-            {payment.status === "PENDING" && (
+            {effectiveStatus === "PENDING" && (
               <button
                 onClick={() => setConfirmAction({ type: "cancelPayment", paymentId: payment.id })}
                 className="operation-action-button operation-action-danger h-8 rounded-lg border px-3 text-xs font-semibold transition disabled:opacity-40"
@@ -221,12 +223,12 @@ function PaymentOperationCard({
             <a href={getCheckoutUrl(payment)} target="_blank" className="operation-action-button operation-action-secondary flex h-8 items-center justify-center rounded-lg border px-3 text-center text-xs font-semibold transition">{t("merchantPayments.checkout")}</a>
             <Link
               href={`/business-wallet/payments/${payment.id}`}
-              className={`operation-action-button operation-action-details flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${payment.status === "PENDING" ? "col-span-2" : ""}`}
+              className={`operation-action-button operation-action-details flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${effectiveStatus === "PENDING" ? "col-span-2" : ""}`}
             >
               {t("merchantPayments.details")}
             </Link>
           </div>
-          {payment.status === "PENDING" && (
+          {effectiveStatus === "PENDING" && (
             <div className="payment-card-qr hidden items-center justify-between gap-3 rounded-xl border px-3 py-1.5 xl:flex xl:max-w-[360px]">
               <div>
                 <p className="text-xs font-bold uppercase">QR preview</p>
@@ -239,7 +241,8 @@ function PaymentOperationCard({
           )}
         </div>
       </div>
-      {confirmAction?.type === "cancelPayment" &&
+      {effectiveStatus === "PENDING" &&
+        confirmAction?.type === "cancelPayment" &&
         confirmAction.paymentId === payment.id && (
           <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
             <p className="mb-3">{t("merchantPayments.cancelPrompt")}</p>
@@ -262,4 +265,3 @@ function PaymentOperationCard({
     </div>
   );
 }
-

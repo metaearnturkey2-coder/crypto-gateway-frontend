@@ -12,6 +12,15 @@ export const getPaymentStatusClassName = (status) => {
   return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
 };
 
+export const isExpiredPendingPayment = (payment, now = Date.now()) => {
+  if (!payment || payment.status !== "PENDING" || !payment.expiresAt) return false;
+  const expiresAt = new Date(payment.expiresAt).getTime();
+  return Number.isFinite(expiresAt) && expiresAt <= now;
+};
+
+export const getEffectivePaymentStatus = (payment, now = Date.now()) =>
+  isExpiredPendingPayment(payment, now) ? "EXPIRED" : payment?.status;
+
 export const formatTimeLeft = (expiresAt, now) => {
   if (!expiresAt) return "No expiration";
   const diff = new Date(expiresAt).getTime() - now;

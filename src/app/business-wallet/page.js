@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
+import { getEffectivePaymentStatus } from "@/features/merchant-payments/formatters";
 import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount, hasMoreThanDecimals, parseMoneyAmount } from "@/lib/money";
@@ -61,6 +62,41 @@ function payoutStatusClass(status) {
 const MIN_PAYOUT_AMOUNT = 1;
 const DEFAULT_MAX_PAYOUT_AMOUNT = 1000000;
 const TRON_ADDRESS_PATTERN = /^T[1-9A-HJ-NP-Za-km-z]{33}$/;
+const DEFAULT_PAYMENT_STATS = {
+  total: 0,
+  paid: 0,
+  pending: 0,
+  expired: 0,
+};
+
+const getDashboardPaymentStats = (paymentsData) => {
+  const payments = Array.isArray(paymentsData?.payments) ? paymentsData.payments : [];
+
+  if (payments.length === 0) {
+    return paymentsData?.stats || DEFAULT_PAYMENT_STATS;
+  }
+
+  const stats = payments.reduce(
+    (counts, payment) => {
+      const status = getEffectivePaymentStatus(payment);
+
+      return {
+        total: counts.total,
+        paid: counts.paid + (status === "PAID" ? 1 : 0),
+        pending: counts.pending + (status === "PENDING" ? 1 : 0),
+        expired: counts.expired + (status === "EXPIRED" || status === "CANCELLED" ? 1 : 0),
+      };
+    },
+    {
+      total: paymentsData?.stats?.total ?? payments.length,
+      paid: 0,
+      pending: 0,
+      expired: 0,
+    }
+  );
+
+  return stats;
+};
 
 const isPayoutAddressActive = (address) =>
   (address.effectiveStatus || address.status) === "ACTIVE";
@@ -99,12 +135,7 @@ const getPayoutAvailability = ({ amount, payoutAddresses, settlements }) => {
 
 export default function BusinessWalletPage() {
   const [loading, setLoading] = useState(true);
-  const [paymentStats, setPaymentStats] = useState({
-    total: 0,
-    paid: 0,
-    pending: 0,
-    expired: 0,
-  });
+  const [paymentStats, setPaymentStats] = useState(DEFAULT_PAYMENT_STATS);
   const [settlements, setSettlements] = useState({
     summary: {
       network: "TRC20",
@@ -172,9 +203,7 @@ export default function BusinessWalletPage() {
       }
 
       if (paymentsOk) {
-        setPaymentStats(
-          paymentsData.stats || { total: 0, paid: 0, pending: 0, expired: 0 }
-        );
+        setPaymentStats(getDashboardPaymentStats(paymentsData));
       }
 
       if (settlementsOk) {
