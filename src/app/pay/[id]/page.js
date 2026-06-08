@@ -53,6 +53,15 @@ const getPaymentWindow = (payment, now) => {
   };
 };
 
+const getEffectivePaymentStatus = (payment, now = Date.now()) => {
+  if (!payment || payment.status !== "PENDING" || !payment.expiresAt) {
+    return payment?.status;
+  }
+
+  const expiresAt = new Date(payment.expiresAt).getTime();
+  return Number.isFinite(expiresAt) && expiresAt <= now ? "EXPIRED" : payment.status;
+};
+
 const getCheckoutState = (status, t) => {
   const states = {
     PAID: {
@@ -304,11 +313,12 @@ export default function PaymentCheckoutPage() {
     );
   }
 
-  const checkoutState = getCheckoutState(payment.status, t);
+  const effectiveStatus = getEffectivePaymentStatus(payment, now);
+  const checkoutState = getCheckoutState(effectiveStatus, t);
   const paymentWindow = getPaymentWindow(payment, now);
   const isPayable =
     checkoutState.canPay &&
-    !CLOSED_STATUSES.has(payment.status) &&
+    !CLOSED_STATUSES.has(effectiveStatus) &&
     (!payment.expiresAt || !paymentWindow.expired);
   const amountLabel = formatTokenAmount(payment.amount, payment.currency);
   const createdAtLabel = payment.createdAt
@@ -430,10 +440,10 @@ export default function PaymentCheckoutPage() {
                 <p className="text-sm text-zinc-500">{t("checkout.status")}</p>
                 <span
                   className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${getStatusPillClassName(
-                    payment.status
+                    effectiveStatus
                   )}`}
                 >
-                  {payment.status}
+                  {effectiveStatus}
                 </span>
               </div>
               <button
