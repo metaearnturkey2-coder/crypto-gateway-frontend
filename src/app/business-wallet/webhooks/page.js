@@ -19,6 +19,17 @@ const formatEventLabel = (event) =>
     .map((part) => part.replace(/_/g, " "))
     .join(" / ");
 
+const formatHeaderSummary = (headers) => {
+  if (!headers || typeof headers !== "object") {
+    return "-";
+  }
+
+  return Object.entries(headers)
+    .slice(0, 4)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join(" / ");
+};
+
 export default function BusinessWalletWebhooksPage() {
   const [data, setData] = useState({
     filters: { events: [], statuses: STATUS_OPTIONS.slice(1) },
@@ -31,6 +42,7 @@ export default function BusinessWalletWebhooksPage() {
   const [eventFilter, setEventFilter] = useState("ALL");
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
+  const [opsSummary, setOpsSummary] = useState(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -71,15 +83,27 @@ export default function BusinessWalletWebhooksPage() {
     setNotice(null);
   }, [queryString, t]);
 
+  const loadOpsSummary = useCallback(async () => {
+    const { body, ok } = await merchantFetch("/api/merchant/ops-summary");
+
+    if (ok) {
+      setOpsSummary(body.summary || null);
+    }
+  }, []);
+
+  const refreshPage = useCallback(async () => {
+    await Promise.all([loadWebhooks(), loadOpsSummary()]);
+  }, [loadOpsSummary, loadWebhooks]);
+
   useEffect(() => {
     queueMicrotask(async () => {
       try {
-        await loadWebhooks();
+        await refreshPage();
       } finally {
         setLoading(false);
       }
     });
-  }, [loadWebhooks]);
+  }, [refreshPage]);
 
   const sendTestWebhook = async () => {
     setTestingWebhook(true);
@@ -96,7 +120,7 @@ export default function BusinessWalletWebhooksPage() {
       }
 
       setNotice({ type: "success", message: body.message || t("webhooks.testDelivered") });
-      await loadWebhooks();
+      await refreshPage();
     } catch {
       setNotice({ type: "error", message: t("webhooks.testFailed") });
     } finally {
@@ -115,7 +139,7 @@ export default function BusinessWalletWebhooksPage() {
             </div>
             <button
               type="button"
-              onClick={loadWebhooks}
+              onClick={refreshPage}
               className="business-wallet-pill rounded-full border px-4 py-2 text-sm font-semibold"
             >
               {t("common.refresh")}
@@ -143,6 +167,38 @@ export default function BusinessWalletWebhooksPage() {
           <p className="mt-3 text-xs text-zinc-500">
             {t("webhooks.deadLetter")}: {data.stats.deadLetter || 0}
           </p>
+        </section>
+
+        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.operationsTitle")}</h2>
+            <p className="text-sm text-zinc-500">{t("webhooks.operationsDescription")}</p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-4">
+            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+              <p className="text-xs text-zinc-500">{t("webhooks.paymentWatcherQueue")}</p>
+              <p className="font-mono text-2xl font-bold">{opsSummary?.queues?.paymentWatcher?.pendingJobs ?? "-"}</p>
+              <p className="mt-1 text-xs text-zinc-500">{opsSummary?.queues?.paymentWatcher?.backend || "-"}</p>
+            </div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+              <p className="text-xs text-zinc-500">{t("webhooks.webhookRetryQueue")}</p>
+              <p className="font-mono text-2xl font-bold">{opsSummary?.queues?.webhookRetry?.pendingJobs ?? "-"}</p>
+              <p className="mt-1 text-xs text-zinc-500">{opsSummary?.queues?.webhookRetry?.backend || "-"}</p>
+            </div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+              <p className="text-xs text-zinc-500">{t("webhooks.dueRetries")}</p>
+              <p className="font-mono text-2xl font-bold">{opsSummary?.webhooks?.dueRetries ?? "-"}</p>
+              <p className="mt-1 text-xs text-zinc-500">FAILED/PENDING</p>
+            </div>
+            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+              <p className="text-xs text-zinc-500">{t("webhooks.deadLetter")}</p>
+              <p className="font-mono text-2xl font-bold">{opsSummary?.webhooks?.deadLetter ?? "-"}</p>
+              <p className="mt-1 text-xs text-zinc-500">
+                {opsSummary?.generatedAt ? formatDashboardDateTime(opsSummary.generatedAt, timeZone) : "-"}
+              </p>
+            </div>
+          </div>
         </section>
 
         <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
@@ -274,13 +330,30 @@ export default function BusinessWalletWebhooksPage() {
                     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(webhook.status)}`}>
                       {webhook.status}
                     </span>
-                    <p className="break-all font-mono text-[11px] text-zinc-500">{webhook.requestId || webhook.id}</p>
+                    <p className="break-all font-mono text-[11px] text-zinc-500">{webhook.delivery?.requestId || webhook.requestId || "-"}</p>
+                    <p className="break-all font-mono text-[11px] text-zinc-600">{webhook.delivery?.eventId || webhook.id}</p>
                   </div>
 
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold">{formatEventLabel(webhook.event)}</p>
                     <p className="mt-1 truncate text-xs text-zinc-500">
                       {webhook.payment?.orderId || webhook.payment?.id || "-"} · {webhook.payment?.customerEmail || "-"}
+                    </p>
+                    <p className="mt-1 break-all text-xs text-zinc-500">
+                      {t("webhooks.receiver")}: {webhook.url || "-"}
+                    </p>
+                    {webhook.retry?.reason && (
+                      <p className="mt-1 text-xs text-amber-200">
+                        {t("webhooks.retryDecision")}: {webhook.retry.reason}
+                      </p>
+                    )}
+                    {webhook.delivery?.responseBodyPreview && (
+                      <p className="mt-1 break-words text-xs text-zinc-400">
+                        {t("webhooks.responseBody")}: {webhook.delivery.responseBodyPreview}
+                      </p>
+                    )}
+                    <p className="mt-1 break-words text-xs text-zinc-600">
+                      {t("webhooks.responseHeaders")}: {formatHeaderSummary(webhook.delivery?.responseHeaders)}
                     </p>
                     {webhook.lastError && (
                       <p className="mt-1 break-words text-xs text-rose-300">{webhook.lastError}</p>
