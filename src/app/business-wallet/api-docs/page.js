@@ -150,23 +150,75 @@ export default function BusinessWalletApiDocsPage() {
               title: t("apiDocs.createPaymentTitle"),
               method: "POST",
               description: t("apiDocs.createPaymentDescription"),
-              path: "/api/public/payments/create",
-              value: `curl -X POST ${API_BASE_URL}/api/public/payments/create \\
+              path: "/api/v1/public/payments/create",
+              value: `curl -X POST ${API_BASE_URL}/api/v1/public/payments/create \\
 -H "Content-Type: application/json" \\
+-H "Idempotency-Key: ORDER-1001" \\
 -H "x-api-key: ${apiKey || "your_api_key"}" \\
 -d '{
   "amount": 25,
   "orderId": "ORDER-1001",
   "customerEmail": "customer@example.com"
-}'`,
+}'
+
+HTTP/1.1 201 Created
+Content-Type: application/json
+
+{
+  "message": "Payment created successfully",
+  "checkout": {
+    "paymentId": "payment_id",
+    "url": "https://pay.example.com/pay/payment_id",
+    "expiresAt": "2026-06-09T14:30:00.000Z"
+  },
+  "checkoutUrl": "https://pay.example.com/pay/payment_id",
+  "payment": {
+    "id": "payment_id",
+    "amount": "25",
+    "currency": "USDT",
+    "network": "TRC20",
+    "status": "PENDING"
+  }
+}`,
+            },
+            {
+              key: "checkout-detail",
+              title: t("apiDocs.checkoutDetailTitle"),
+              method: "GET",
+              description: t("apiDocs.checkoutDetailDescription"),
+              path: "/api/v1/public/payments/{paymentId}",
+              value: `curl -X GET "${API_BASE_URL}/api/v1/public/payments/{paymentId}"
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "message": "Payment details",
+  "checkout": {
+    "paymentId": "payment_id",
+    "url": "https://pay.example.com/pay/payment_id",
+    "expiresAt": "2026-06-09T14:30:00.000Z"
+  },
+  "checkoutUrl": "https://pay.example.com/pay/payment_id",
+  "payment": {
+    "id": "payment_id",
+    "amount": "25",
+    "currency": "USDT",
+    "network": "TRC20",
+    "walletAddress": "TRC20_wallet_address",
+    "status": "PENDING",
+    "createdAt": "2026-06-09T14:00:00.000Z",
+    "expiresAt": "2026-06-09T14:30:00.000Z"
+  }
+}`,
             },
             {
               key: "status-payment-id",
               title: t("apiDocs.statusPaymentIdTitle"),
               method: "GET",
               description: t("apiDocs.statusPaymentIdDescription"),
-              path: "/api/public/payments/status/{paymentId}",
-              value: `curl -X GET "${API_BASE_URL}/api/public/payments/status/{paymentId}" \\
+              path: "/api/v1/public/payments/status/{paymentId}",
+              value: `curl -X GET "${API_BASE_URL}/api/v1/public/payments/status/{paymentId}" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {
@@ -174,8 +226,8 @@ export default function BusinessWalletApiDocsPage() {
               title: t("apiDocs.statusOrderIdTitle"),
               method: "GET",
               description: t("apiDocs.statusOrderIdDescription"),
-              path: "/api/public/payments/status?orderId=ORDER-1001",
-              value: `curl -X GET "${API_BASE_URL}/api/public/payments/status?orderId=ORDER-1001" \\
+              path: "/api/v1/public/payments/status?orderId=ORDER-1001",
+              value: `curl -X GET "${API_BASE_URL}/api/v1/public/payments/status?orderId=ORDER-1001" \\
 -H "x-api-key: ${apiKey || "your_api_key"}"`,
             },
             {
@@ -183,7 +235,7 @@ export default function BusinessWalletApiDocsPage() {
               title: t("apiDocs.invalidRequestTitle"),
               method: "400",
               description: t("apiDocs.invalidRequestDescription"),
-              path: "POST /api/public/payments/create",
+              path: "POST /api/v1/public/payments/create",
               value: `HTTP/1.1 400 Bad Request
 Content-Type: application/json
 
@@ -417,7 +469,9 @@ http_response_code(200);`,
               <p className="api-docs-rules-note mt-3 text-xs">
                 <span>{t("apiDocs.apiHeader")}: <code>x-api-key</code></span>
                 <span className="api-docs-rule-separator">/</span>
-                <span>{t("apiDocs.webhookHeader")}: <code>x-webhook-signature</code>, <code>x-webhook-timestamp</code></span>
+                <span>{t("apiDocs.webhookHeader")}: <code>x-webhook-signature</code>, <code>x-webhook-timestamp</code>, <code>x-webhook-id</code></span>
+                <span className="api-docs-rule-separator">/</span>
+                <span>{t("apiDocs.webhookIdempotency")}</span>
                 <span className="api-docs-rule-separator">/</span>
                 <span>{t("apiDocs.signatureFormat")}: <code>HMAC_SHA256(timestamp.rawBody)</code></span>
               </p>
