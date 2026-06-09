@@ -7,8 +7,10 @@ import { apiUrl } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, getTranslation, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount } from "@/lib/money";
-
-const CLOSED_STATUSES = new Set(["PAID", "EXPIRED", "CANCELLED", "UNDERPAID", "EXPIRED_PAID_REVIEW"]);
+import {
+  CLOSED_PAYMENT_STATUSES,
+  getEffectivePaymentStatus,
+} from "@/lib/payment-status";
 
 const formatTimeLeft = (expiresAt, now, t) => {
   if (!expiresAt) {
@@ -51,15 +53,6 @@ const getPaymentWindow = (payment, now) => {
     percentRemaining: Math.max(Math.min((remaining / totalWindow) * 100, 100), 0),
     urgent: remaining > 0 && remaining <= 5 * 60 * 1000,
   };
-};
-
-const getEffectivePaymentStatus = (payment, now = Date.now()) => {
-  if (!payment || payment.status !== "PENDING" || !payment.expiresAt) {
-    return payment?.status;
-  }
-
-  const expiresAt = new Date(payment.expiresAt).getTime();
-  return Number.isFinite(expiresAt) && expiresAt <= now ? "EXPIRED" : payment.status;
 };
 
 const getCheckoutState = (status, t) => {
@@ -318,7 +311,7 @@ export default function PaymentCheckoutPage() {
   const paymentWindow = getPaymentWindow(payment, now);
   const isPayable =
     checkoutState.canPay &&
-    !CLOSED_STATUSES.has(effectiveStatus) &&
+    !CLOSED_PAYMENT_STATUSES.has(effectiveStatus) &&
     (!payment.expiresAt || !paymentWindow.expired);
   const amountLabel = formatTokenAmount(payment.amount, payment.currency);
   const createdAtLabel = payment.createdAt

@@ -2,16 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
+import {
+  getWebhookStatusClassName,
+  getWebhookStatusLabel,
+  WEBHOOK_STATUS_OPTIONS,
+} from "@/features/merchant-payments/formatters";
 import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
-const STATUS_OPTIONS = ["ALL", "SUCCESS", "PENDING", "FAILED"];
-
-const getStatusClassName = (status) => {
-  if (status === "SUCCESS") return "border-emerald-400/40 bg-emerald-500/15 text-emerald-300";
-  if (status === "FAILED") return "border-rose-400/40 bg-rose-500/15 text-rose-300";
-  return "border-amber-300/40 bg-amber-400/15 text-amber-200";
-};
+const STATUS_OPTIONS = WEBHOOK_STATUS_OPTIONS.filter((status) => status.value !== "NONE");
 
 const formatEventLabel = (event) =>
   String(event || "webhook")
@@ -32,7 +31,7 @@ const formatHeaderSummary = (headers) => {
 
 export default function BusinessWalletWebhooksPage() {
   const [data, setData] = useState({
-    filters: { events: [], statuses: STATUS_OPTIONS.slice(1) },
+    filters: { events: [], statuses: STATUS_OPTIONS.map((status) => status.value) },
     limit: 20,
     page: 1,
     stats: { total: 0, SUCCESS: 0, PENDING: 0, FAILED: 0 },
@@ -73,7 +72,7 @@ export default function BusinessWalletWebhooksPage() {
     }
 
     setData({
-      filters: body.filters || { events: [], statuses: STATUS_OPTIONS.slice(1) },
+      filters: body.filters || { events: [], statuses: STATUS_OPTIONS.map((status) => status.value) },
       limit: body.limit || 20,
       page: body.page || 1,
       stats: body.stats || { total: 0, SUCCESS: 0, PENDING: 0, FAILED: 0 },
@@ -293,8 +292,9 @@ export default function BusinessWalletWebhooksPage() {
               }}
               className="business-wallet-input h-10 rounded-xl border px-4 text-sm outline-none"
             >
+              <option value="ALL">ALL</option>
               {STATUS_OPTIONS.map((status) => (
-                <option key={status} value={status}>{status}</option>
+                <option key={status.value} value={status.value}>{status.label}</option>
               ))}
             </select>
             <select
@@ -327,8 +327,8 @@ export default function BusinessWalletWebhooksPage() {
               {data.webhooks.map((webhook) => (
                 <div key={webhook.id} className="business-wallet-activity-row grid grid-cols-1 gap-3 px-4 py-3 xl:grid-cols-[170px_1fr_160px_180px] xl:items-center">
                   <div className="space-y-1">
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(webhook.status)}`}>
-                      {webhook.status}
+                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>
+                      {getWebhookStatusLabel(webhook)}
                     </span>
                     <p className="break-all font-mono text-[11px] text-zinc-500">{webhook.delivery?.requestId || webhook.requestId || "-"}</p>
                     <p className="break-all font-mono text-[11px] text-zinc-600">{webhook.delivery?.eventId || webhook.id}</p>

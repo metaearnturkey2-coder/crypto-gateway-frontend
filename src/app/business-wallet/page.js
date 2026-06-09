@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import OverviewShell from "@/components/overview-shell";
-import { getEffectivePaymentStatus } from "@/features/merchant-payments/formatters";
+import { getPaymentStatusCounts } from "@/features/merchant-payments/formatters";
 import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { hasMoreThanDecimals, parseMoneyAmount } from "@/lib/money";
@@ -81,26 +81,7 @@ const getDashboardPaymentStats = (paymentsData) => {
     return paymentsData?.stats || DEFAULT_PAYMENT_STATS;
   }
 
-  const stats = payments.reduce(
-    (counts, payment) => {
-      const status = getEffectivePaymentStatus(payment);
-
-      return {
-        total: counts.total,
-        paid: counts.paid + (status === "PAID" ? 1 : 0),
-        pending: counts.pending + (status === "PENDING" ? 1 : 0),
-        expired: counts.expired + (status === "EXPIRED" || status === "CANCELLED" ? 1 : 0),
-      };
-    },
-    {
-      total: paymentsData?.stats?.total ?? payments.length,
-      paid: 0,
-      pending: 0,
-      expired: 0,
-    }
-  );
-
-  return stats;
+  return getPaymentStatusCounts(payments, Date.now(), paymentsData?.stats);
 };
 
 const isPayoutAddressActive = (address) =>

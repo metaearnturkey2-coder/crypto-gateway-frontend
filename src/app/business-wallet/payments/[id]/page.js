@@ -6,55 +6,19 @@ import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
 import OverviewShell from "@/components/overview-shell";
 import { merchantFetch } from "@/lib/api";
-import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
+import { useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 import { formatTokenAmount } from "@/lib/money";
-
-const getPaymentStatusClassName = (status) => {
-  if (status === "PAID") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
-  if (status === "EXPIRED" || status === "CANCELLED") return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
-  if (status === "UNDERPAID") return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
-  if (status === "EXPIRED_PAID_REVIEW") return "bg-sky-400/20 text-sky-200 border border-sky-300/40";
-  return "bg-yellow-400/20 text-yellow-100 border border-yellow-300/40";
-};
-
-const getWebhookStatusClassName = (status) => {
-  if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
-  if (status === "FAILED") return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
-  return "bg-zinc-700/40 text-zinc-200 border border-zinc-500/40";
-};
-
-const formatDateTime = (value, timeZone) => {
-  if (!value) return "-";
-  return formatDashboardDateTime(value, timeZone);
-};
-
-const getTimeLeft = (expiresAt, now) => {
-  if (!expiresAt) return "No expiration";
-  const diff = new Date(expiresAt).getTime() - now;
-  if (diff <= 0) return "Expired";
-  const totalSeconds = Math.floor(diff / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
-};
-
-const getEffectivePaymentStatus = (payment, now = Date.now()) => {
-  if (!payment || payment.status !== "PENDING" || !payment.expiresAt) return payment?.status;
-  const expiresAt = new Date(payment.expiresAt).getTime();
-  return Number.isFinite(expiresAt) && expiresAt <= now ? "EXPIRED" : payment.status;
-};
-
-const getWebhookSummary = (events = []) => ({
-  total: events.length,
-  successful: events.filter((event) => event.status === "SUCCESS").length,
-  pending: events.filter((event) => event.status === "PENDING").length,
-  failed: events.filter((event) => event.status === "FAILED").length,
-});
-
-const canRetryWebhook = (webhook) =>
-  webhook &&
-  webhook.status !== "SUCCESS" &&
-  Number(webhook.attempts || 0) < Number(webhook.maxAttempts || 0);
+import {
+  canRetryWebhook,
+  formatDateTime,
+  formatTimeLeft,
+  getEffectivePaymentStatus,
+  getPaymentStatusClassName,
+  getWebhookStatusClassName,
+  getWebhookStatusLabel,
+  getWebhookStatusMessage,
+  getWebhookSummary,
+} from "@/features/merchant-payments/formatters";
 
 export default function MerchantPaymentDetailPage() {
   const params = useParams();
@@ -215,7 +179,7 @@ export default function MerchantPaymentDetailPage() {
               </div>
               <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                 <p className="text-xs text-zinc-500">{t("merchantPayments.timeLeft")}</p>
-                <p className="mt-2 text-lg font-semibold">{getTimeLeft(payment.expiresAt, now)}</p>
+                <p className="mt-2 text-lg font-semibold">{formatTimeLeft(payment.expiresAt, now)}</p>
               </div>
               <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                 <p className="text-xs text-zinc-500">{t("merchantPayments.webhookEvents")}</p>
@@ -311,7 +275,17 @@ export default function MerchantPaymentDetailPage() {
                 </div>
 
                 <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
-                  <h2 className="text-xl font-bold">{t("merchantPayments.webhookDelivery")}</h2>
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h2 className="text-xl font-bold">{t("merchantPayments.webhookDelivery")}</h2>
+                      <p className="mt-1 text-sm text-zinc-500">
+                        {getWebhookStatusMessage(webhookSummary.latest)}
+                      </p>
+                    </div>
+                    <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhookSummary.latest?.status)}`}>
+                      {getWebhookStatusLabel(webhookSummary.latest)}
+                    </span>
+                  </div>
                   {!payment.webhookEvents?.length ? (
                     <div className="mt-4 rounded-xl border border-zinc-800 bg-black p-4 text-sm text-zinc-500">
                       {t("merchantPayments.noWebhookEvents")}
@@ -324,7 +298,7 @@ export default function MerchantPaymentDetailPage() {
                             <div className="min-w-0">
                               <div className="flex flex-wrap items-center gap-2">
                                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>
-                                  {webhook.status}
+                                  {getWebhookStatusLabel(webhook)}
                                 </span>
                                 <span className="text-xs text-zinc-500">{webhook.event}</span>
                               </div>

@@ -8,6 +8,10 @@ import {
   getEffectivePaymentStatus,
   getPaymentStatusClassName,
   getWebhookStatusClassName,
+  getWebhookStatusDescription,
+  getWebhookStatusLabel,
+  MERCHANT_PAYMENT_STATUS_OPTIONS,
+  WEBHOOK_STATUS_OPTIONS,
 } from "@/features/merchant-payments/formatters";
 
 export function PaymentOperationsPanel({
@@ -74,10 +78,11 @@ export function PaymentOperationsPanel({
           className="operations-filter-field p-3 rounded-xl border outline-none transition"
         >
           <option value="ALL">{t("merchantPayments.allPaymentStatuses")}</option>
-          <option value="PENDING">Pending</option>
-          <option value="PAID">Paid</option>
-          <option value="EXPIRED">Expired</option>
-          <option value="CANCELLED">Cancelled</option>
+          {MERCHANT_PAYMENT_STATUS_OPTIONS.map((status) => (
+            <option key={status.value} value={status.value}>
+              {status.label}
+            </option>
+          ))}
         </select>
         <select
           value={webhookStatusFilter}
@@ -88,10 +93,11 @@ export function PaymentOperationsPanel({
           className="operations-filter-field p-3 rounded-xl border outline-none transition"
         >
           <option value="ALL">{t("merchantPayments.allWebhookStatuses")}</option>
-          <option value="SUCCESS">Webhook success</option>
-          <option value="PENDING">Webhook pending</option>
-          <option value="FAILED">Webhook failed</option>
-          <option value="NONE">No webhook</option>
+          {WEBHOOK_STATUS_OPTIONS.map((status) => (
+            <option key={status.value} value={status.value}>
+              {status.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -183,17 +189,18 @@ function PaymentOperationCard({
               <p>{formatTimeLeft(payment.expiresAt, now)}</p>
             </div>
           </div>
-          {latestWebhook && (
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              <span className={`webhook-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook.status)}`}>
-                Webhook: {latestWebhook.status}
-              </span>
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className={`webhook-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook?.status)}`}>
+              {getWebhookStatusLabel(latestWebhook)}
+            </span>
+            <span className="text-xs text-zinc-500">{getWebhookStatusDescription(latestWebhook)}</span>
+            {latestWebhook && (
               <div className="payment-card-meta-row payment-card-attempts-row">
                 <span>Attempts</span>
                 <p>{latestWebhook.attempts}/{latestWebhook.maxAttempts}</p>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
         <div className="xl:justify-self-center">
           <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>{effectiveStatus}</span>

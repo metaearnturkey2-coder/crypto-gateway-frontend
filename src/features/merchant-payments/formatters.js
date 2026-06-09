@@ -1,25 +1,76 @@
 import { formatDashboardDateTime } from "@/lib/i18n";
+import {
+  getEffectivePaymentStatus,
+  isExpiredPendingPayment,
+} from "@/lib/payment-status";
+
+export {
+  getEffectivePaymentStatus,
+  isExpiredPendingPayment,
+};
+
+export const MERCHANT_PAYMENT_STATUS_OPTIONS = [
+  { label: "Pending", value: "PENDING" },
+  { label: "Paid", value: "PAID" },
+  { label: "Expired", value: "EXPIRED" },
+  { label: "Cancelled", value: "CANCELLED" },
+  { label: "Underpaid", value: "UNDERPAID" },
+  { label: "Expired paid review", value: "EXPIRED_PAID_REVIEW" },
+  { label: "Confirming", value: "CONFIRMING" },
+];
+
+export const WEBHOOK_STATUS_OPTIONS = [
+  { label: "Webhook success", value: "SUCCESS" },
+  { label: "Webhook pending", value: "PENDING" },
+  { label: "Webhook failed", value: "FAILED" },
+  { label: "No webhook", value: "NONE" },
+];
 
 export const getWebhookStatusClassName = (status) => {
   if (status === "SUCCESS") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
   if (status === "FAILED") return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
+  if (status === "PENDING") return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
   return "bg-zinc-700/40 text-zinc-200 border border-zinc-500/40";
+};
+
+export const getWebhookStatusLabel = (webhook) => webhook?.status || "NO EVENTS";
+
+export const getWebhookStatusDescription = (webhook) => {
+  if (!webhook) return "No webhook delivery has been recorded.";
+  if (webhook.status === "SUCCESS") return "Delivered";
+  if (webhook.status === "FAILED") return "Failed";
+  return "Pending retry";
 };
 
 export const getPaymentStatusClassName = (status) => {
   if (status === "PAID") return "bg-emerald-500/20 text-emerald-300 border border-emerald-400/40";
   if (status === "EXPIRED" || status === "CANCELLED") return "bg-rose-500/20 text-rose-300 border border-rose-400/40";
+  if (status === "UNDERPAID") return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
+  if (status === "EXPIRED_PAID_REVIEW" || status === "CONFIRMING") {
+    return "bg-sky-400/20 text-sky-200 border border-sky-300/40";
+  }
   return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
 };
 
-export const isExpiredPendingPayment = (payment, now = Date.now()) => {
-  if (!payment || payment.status !== "PENDING" || !payment.expiresAt) return false;
-  const expiresAt = new Date(payment.expiresAt).getTime();
-  return Number.isFinite(expiresAt) && expiresAt <= now;
-};
+export const getPaymentStatusCounts = (payments = [], now = Date.now(), fallbackStats = {}) =>
+  payments.reduce(
+    (counts, payment) => {
+      const status = getEffectivePaymentStatus(payment, now);
 
-export const getEffectivePaymentStatus = (payment, now = Date.now()) =>
-  isExpiredPendingPayment(payment, now) ? "EXPIRED" : payment?.status;
+      return {
+        total: counts.total,
+        paid: counts.paid + (status === "PAID" ? 1 : 0),
+        pending: counts.pending + (status === "PENDING" ? 1 : 0),
+        expired: counts.expired + (status === "EXPIRED" || status === "CANCELLED" ? 1 : 0),
+      };
+    },
+    {
+      total: fallbackStats.total ?? payments.length,
+      paid: 0,
+      pending: 0,
+      expired: 0,
+    }
+  );
 
 export const formatTimeLeft = (expiresAt, now) => {
   if (!expiresAt) return "No expiration";

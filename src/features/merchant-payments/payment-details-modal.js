@@ -8,6 +8,7 @@ import {
   getEffectivePaymentStatus,
   getPaymentStatusClassName,
   getWebhookStatusClassName,
+  getWebhookStatusLabel,
   getWebhookStatusMessage,
   getWebhookSummary,
 } from "@/features/merchant-payments/formatters";
@@ -184,7 +185,7 @@ export function PaymentDetailsModal({
                     ? getWebhookStatusClassName(webhookSummary.latest.status)
                     : "border border-zinc-700 bg-zinc-950 text-zinc-400"
                 }`}>
-                  {webhookSummary.latest?.status || "NO EVENTS"}
+                  {getWebhookStatusLabel(webhookSummary.latest)}
                 </span>
               </div>
 
@@ -237,7 +238,7 @@ function WebhookEventCard({ paymentId, retryWebhook, timeZone, t, webhook, webho
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>{webhook.status}</span>
+            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>{getWebhookStatusLabel(webhook)}</span>
             <span className="text-xs text-zinc-500">{webhook.event}</span>
           </div>
           <p className="mt-2 break-all text-sm text-zinc-400">{webhook.url || "No callback URL recorded"}</p>
