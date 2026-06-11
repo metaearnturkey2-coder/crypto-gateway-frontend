@@ -52,6 +52,62 @@ export const getPaymentStatusClassName = (status) => {
   return "bg-amber-400/20 text-amber-200 border border-amber-300/40";
 };
 
+export const getPaymentStatusGuidance = (status) => {
+  if (status === "PAID") {
+    return {
+      label: "Paid",
+      title: "Payment confirmed",
+      description: "Funds are confirmed and the payment can be fulfilled.",
+    };
+  }
+
+  if (status === "EXPIRED") {
+    return {
+      label: "Expired",
+      title: "Payment window closed",
+      description: "Do not ask the customer to send funds to this checkout. Create a new payment link if needed.",
+    };
+  }
+
+  if (status === "CANCELLED") {
+    return {
+      label: "Cancelled",
+      title: "Payment was cancelled",
+      description: "This checkout no longer accepts payment. Share a new checkout link if the order should continue.",
+    };
+  }
+
+  if (status === "UNDERPAID") {
+    return {
+      label: "Underpaid",
+      title: "Manual review needed",
+      description: "The detected transfer is below the required amount. Review the tx before fulfilling the order.",
+    };
+  }
+
+  if (status === "EXPIRED_PAID_REVIEW") {
+    return {
+      label: "Review",
+      title: "Late payment detected",
+      description: "Funds arrived after expiry. Review the payment before settlement or fulfillment.",
+    };
+  }
+
+  if (status === "CONFIRMING") {
+    return {
+      label: "Confirming",
+      title: "Network confirmation pending",
+      description: "A transfer was detected and is waiting for confirmation.",
+    };
+  }
+
+  return {
+    label: "Pending",
+    title: "Awaiting customer payment",
+    description: "The checkout is still open. Customer should send the exact amount before expiry.",
+  };
+};
+
 export const getPaymentStatusCounts = (payments = [], now = Date.now(), fallbackStats = {}) =>
   payments.reduce(
     (counts, payment) => {

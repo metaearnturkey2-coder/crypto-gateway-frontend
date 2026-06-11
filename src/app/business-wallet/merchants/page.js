@@ -31,6 +31,7 @@ export default function BusinessWalletMerchantsPage() {
   const [payments, setPayments] = useState([]);
   const [paymentPagination, setPaymentPagination] = useState({ page: 1, totalCount: 0, totalPages: 1 });
   const [paymentSearch, setPaymentSearch] = useState("");
+  const [needsAttentionOnly, setNeedsAttentionOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
   const [paymentPage, setPaymentPage] = useState(1);
@@ -77,6 +78,7 @@ export default function BusinessWalletMerchantsPage() {
 
   const fetchOps = useCallback(async () => {
     const { body: data } = await listPayments({
+      needsAttention: needsAttentionOnly,
       page: paymentPage,
       search: paymentSearch,
       status: statusFilter,
@@ -93,7 +95,7 @@ export default function BusinessWalletMerchantsPage() {
         0,
       totalPages: data.pagination?.totalPages || data.totalPages || 1,
     });
-  }, [paymentPage, paymentSearch, statusFilter, webhookStatusFilter]);
+  }, [needsAttentionOnly, paymentPage, paymentSearch, statusFilter, webhookStatusFilter]);
 
   const fetchActivity = useCallback(async () => {
     const { body: data } = await listAuditLogs({
@@ -171,6 +173,7 @@ export default function BusinessWalletMerchantsPage() {
       setNewCustomerEmail("");
       setPaymentPage(1);
       setPaymentSearch("");
+      setNeedsAttentionOnly(false);
       setStatusFilter("ALL");
       setWebhookStatusFilter("ALL");
       await fetchOps();
@@ -347,10 +350,12 @@ export default function BusinessWalletMerchantsPage() {
         paymentPagination={paymentPagination}
         payments={payments}
         paymentSearch={paymentSearch}
+        needsAttentionOnly={needsAttentionOnly}
         runPaymentAction={runPaymentAction}
         setConfirmAction={setConfirmAction}
         setPaymentPage={setPaymentPage}
         setPaymentSearch={setPaymentSearch}
+        setNeedsAttentionOnly={setNeedsAttentionOnly}
         setStatusFilter={setStatusFilter}
         setWebhookStatusFilter={setWebhookStatusFilter}
         statusFilter={statusFilter}

@@ -7,6 +7,7 @@ import {
   getCheckoutUrl,
   getEffectivePaymentStatus,
   getPaymentStatusClassName,
+  getPaymentStatusGuidance,
   getWebhookStatusClassName,
   getWebhookStatusDescription,
   getWebhookStatusLabel,
@@ -19,12 +20,14 @@ export function PaymentOperationsPanel({
   copyText,
   loading,
   now,
+  needsAttentionOnly,
   paymentAction,
   paymentPagination,
   payments,
   paymentSearch,
   runPaymentAction,
   setConfirmAction,
+  setNeedsAttentionOnly,
   setPaymentPage,
   setPaymentSearch,
   setStatusFilter,
@@ -48,6 +51,7 @@ export function PaymentOperationsPanel({
         <button
           onClick={() => {
             setPaymentSearch("");
+            setNeedsAttentionOnly(false);
             setStatusFilter("ALL");
             setWebhookStatusFilter("ALL");
             setPaymentPage(1);
@@ -58,7 +62,7 @@ export function PaymentOperationsPanel({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] mb-6">
         <input
           type="text"
           placeholder={t("merchantPayments.searchPlaceholder")}
@@ -99,6 +103,18 @@ export function PaymentOperationsPanel({
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => {
+            setNeedsAttentionOnly((current) => !current);
+            setPaymentPage(1);
+          }}
+          className={`operations-filter-button rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+            needsAttentionOnly ? "border-amber-300/50 bg-amber-300/15 text-amber-100" : ""
+          }`}
+        >
+          {needsAttentionOnly ? t("merchantPayments.attentionOnlyOn") : t("merchantPayments.attentionOnly")}
+        </button>
       </div>
 
       <div className="space-y-3">
@@ -151,6 +167,7 @@ function PaymentOperationCard({
 }) {
   const latestWebhook = payment.webhookEvents?.[0];
   const effectiveStatus = getEffectivePaymentStatus(payment, now);
+  const statusGuidance = getPaymentStatusGuidance(effectiveStatus);
   const canManagePayment = effectiveStatus === "PENDING" && paymentAction?.paymentId !== payment.id;
 
   return (
@@ -203,7 +220,11 @@ function PaymentOperationCard({
           </div>
         </div>
         <div className="xl:justify-self-center">
-          <span className={`payment-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>{effectiveStatus}</span>
+          <div className="max-w-[180px]">
+            <span className={`payment-status-badge inline-block rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>{statusGuidance.label}</span>
+            <p className="mt-2 text-sm font-semibold">{statusGuidance.title}</p>
+            <p className="mt-1 text-xs text-zinc-500">{statusGuidance.description}</p>
+          </div>
         </div>
         <div className="flex flex-col gap-2 xl:items-end">
           <div className="grid w-full grid-cols-2 gap-2 xl:max-w-[320px]">

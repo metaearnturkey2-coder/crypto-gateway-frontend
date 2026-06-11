@@ -208,6 +208,42 @@ const getStatusPillClassName = (status) => {
   return "bg-yellow-300 text-black";
 };
 
+const getSafetyChecks = ({ amountLabel, isPayable, payment, t, timeZone }) => {
+  if (!isPayable) {
+    return [
+      {
+        label: t("checkout.safetyClosedPayment"),
+        value: t("checkout.safetyClosedPaymentDescription"),
+      },
+      {
+        label: t("checkout.safetyMerchantReview"),
+        value: t("checkout.safetyMerchantReviewDescription"),
+      },
+      {
+        label: t("checkout.safetyNewSession"),
+        value: t("checkout.safetyNewSessionDescription"),
+      },
+    ];
+  }
+
+  return [
+    {
+      label: t("checkout.safetyExactAmount"),
+      value: amountLabel,
+    },
+    {
+      label: t("checkout.safetyCorrectNetwork"),
+      value: t("checkout.safetyNetworkValue").replace("{network}", payment.network).replace("{currency}", payment.currency),
+    },
+    {
+      label: t("checkout.safetyTimeWindow"),
+      value: payment.expiresAt
+        ? t("checkout.safetyBeforeExpiry").replace("{date}", formatDashboardDateTime(payment.expiresAt, timeZone))
+        : t("checkout.noExpiration"),
+    },
+  ];
+};
+
 export default function PaymentCheckoutPage() {
   const params = useParams();
   const paymentId = params.id;
@@ -217,7 +253,7 @@ export default function PaymentCheckoutPage() {
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(() => Date.now());
-  const [copiedKey, setCopiedKey] = useState("");
+  const [copiedValue, setCopiedValue] = useState(null);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
   const [lastCheckedAt, setLastCheckedAt] = useState(null);
@@ -252,12 +288,12 @@ export default function PaymentCheckoutPage() {
     setChecking(false);
   };
 
-  const copyText = async (value, key) => {
+  const copyText = async (value, key, label) => {
     await navigator.clipboard.writeText(String(value));
-    setCopiedKey(key);
+    setCopiedValue({ key, label, value: String(value) });
 
     setTimeout(() => {
-      setCopiedKey("");
+      setCopiedValue(null);
     }, 1500);
   };
 
@@ -318,6 +354,7 @@ export default function PaymentCheckoutPage() {
     ? formatDashboardDateTime(payment.createdAt, timeZone)
     : "";
   const timelineSteps = getTimelineSteps(payment, checkoutState, t, createdAtLabel);
+  const safetyChecks = getSafetyChecks({ amountLabel, isPayable, payment, t, timeZone });
 
   return (
     <main className="min-h-screen bg-black px-4 py-5 text-white md:px-6 md:py-8">
@@ -374,19 +411,34 @@ export default function PaymentCheckoutPage() {
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_1fr]">
           <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+            <div className={`mb-5 rounded-xl border p-4 ${isPayable ? "border-emerald-400/30 bg-emerald-400/10" : "border-red-400/30 bg-red-400/10"}`}>
+              <p className="text-sm font-semibold">{t("checkout.safetyTitle")}</p>
+              <div className="mt-3 space-y-2">
+                {safetyChecks.map((item) => (
+                  <div key={item.label} className="rounded-lg border border-zinc-800 bg-black/40 px-3 py-2">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{item.label}</p>
+                    <p className="mt-1 text-sm text-zinc-100">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm text-zinc-500">{t("checkout.amountDue")}</p>
                 <p className="mt-1 text-3xl font-bold">{amountLabel}</p>
               </div>
               <button
-                onClick={() => copyText(payment.amount, "amount")}
+                onClick={() => copyText(payment.amount, "amount", t("checkout.amountDue"))}
                 disabled={!isPayable}
                 className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {copiedKey === "amount" ? t("checkout.amountCopied") : t("checkout.copyAmount")}
+                {copiedValue?.key === "amount" ? t("checkout.amountCopied") : t("checkout.copyAmount")}
               </button>
             </div>
+            {copiedValue?.key === "amount" && (
+              <CopyConfirmation label={copiedValue.label} value={amountLabel} />
+            )}
 
             <div
               className={`mx-auto my-5 w-fit rounded-xl p-3 ${
@@ -515,17 +567,20 @@ export default function PaymentCheckoutPage() {
                 </div>
 
                 <button
-                  onClick={() => copyText(payment.walletAddress, "wallet")}
+                  onClick={() => copyText(payment.walletAddress, "wallet", t("checkout.walletAddress"))}
                   disabled={!isPayable}
                   className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {copiedKey === "wallet" ? t("common.copied") : t("checkout.copyAddress")}
+                  {copiedValue?.key === "wallet" ? t("common.copied") : t("checkout.copyAddress")}
                 </button>
               </div>
 
               <p className="break-all rounded-lg bg-black p-3 font-mono text-sm text-zinc-200">
                 {payment.walletAddress}
               </p>
+              {copiedValue?.key === "wallet" && (
+                <CopyConfirmation label={copiedValue.label} value={payment.walletAddress} />
+              )}
             </div>
           </section>
         </div>
@@ -535,22 +590,34 @@ export default function PaymentCheckoutPage() {
             <p>{t("checkout.autoRefreshDescription")}</p>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => copyText(payment.walletAddress, "wallet-bottom")}
+                onClick={() => copyText(payment.walletAddress, "wallet-bottom", t("checkout.walletAddress"))}
                 disabled={!isPayable}
                 className="rounded-lg bg-zinc-800 px-4 py-2 font-semibold text-zinc-100 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {copiedKey === "wallet-bottom" ? t("checkout.addressCopied") : t("checkout.copyWallet")}
+                {copiedValue?.key === "wallet-bottom" ? t("checkout.addressCopied") : t("checkout.copyWallet")}
               </button>
               <button
-                onClick={() => copyText(payment.id, "payment-id")}
+                onClick={() => copyText(payment.id, "payment-id", t("checkout.paymentId"))}
                 className="rounded-lg bg-zinc-800 px-4 py-2 font-semibold text-zinc-100 transition hover:bg-zinc-700"
               >
-                {copiedKey === "payment-id" ? t("checkout.idCopied") : t("checkout.copyPaymentId")}
+                {copiedValue?.key === "payment-id" ? t("checkout.idCopied") : t("checkout.copyPaymentId")}
               </button>
             </div>
           </div>
+          {(copiedValue?.key === "wallet-bottom" || copiedValue?.key === "payment-id") && (
+            <CopyConfirmation label={copiedValue.label} value={copiedValue.value} />
+          )}
         </footer>
       </div>
     </main>
+  );
+}
+
+function CopyConfirmation({ label, value }) {
+  return (
+    <div className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100">
+      <p className="font-semibold">{label} copied</p>
+      <p className="mt-1 break-all font-mono text-emerald-50">{value}</p>
+    </div>
   );
 }

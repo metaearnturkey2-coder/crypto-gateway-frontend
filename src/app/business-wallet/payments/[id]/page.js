@@ -14,6 +14,7 @@ import {
   formatTimeLeft,
   getEffectivePaymentStatus,
   getPaymentStatusClassName,
+  getPaymentStatusGuidance,
   getWebhookStatusClassName,
   getWebhookStatusLabel,
   getWebhookStatusMessage,
@@ -30,7 +31,7 @@ export default function MerchantPaymentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState(null);
   const [now, setNow] = useState(() => Date.now());
-  const [copiedLabel, setCopiedLabel] = useState("");
+  const [copiedValue, setCopiedValue] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [webhookAction, setWebhookAction] = useState(null);
 
@@ -61,8 +62,8 @@ export default function MerchantPaymentDetailPage() {
 
   const copyText = async (value, label) => {
     await navigator.clipboard.writeText(String(value));
-    setCopiedLabel(label);
-    setTimeout(() => setCopiedLabel(""), 1500);
+    setCopiedValue({ label, value: String(value) });
+    setTimeout(() => setCopiedValue(null), 1500);
   };
 
   const retryWebhook = async (webhookId) => {
@@ -100,6 +101,11 @@ export default function MerchantPaymentDetailPage() {
     [payment?.webhookEvents]
   );
   const effectiveStatus = getEffectivePaymentStatus(payment, now);
+  const statusGuidance = getPaymentStatusGuidance(effectiveStatus);
+  const latestWebhook = webhookSummary.latest;
+  const requiresAction =
+    ["UNDERPAID", "EXPIRED_PAID_REVIEW"].includes(effectiveStatus) ||
+    latestWebhook?.status === "FAILED";
 
   return (
     <OverviewShell>
@@ -113,7 +119,7 @@ export default function MerchantPaymentDetailPage() {
               <h1 className="text-3xl font-bold md:text-4xl">{t("merchantPayments.paymentDetails")}</h1>
               {payment && (
                 <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
-                  {effectiveStatus}
+                  {statusGuidance.label}
                 </span>
               )}
               {payment?.mode && (
@@ -123,10 +129,13 @@ export default function MerchantPaymentDetailPage() {
               )}
             </div>
             {payment && (
-              <p className="mt-2 text-sm text-zinc-500">
-                {formatTokenAmount(payment.amount, payment.currency)}
-                {payment.orderId ? ` - ${payment.orderId}` : ""}
-              </p>
+              <div className="mt-2 max-w-3xl space-y-1 text-sm text-zinc-500">
+                <p>
+                  {formatTokenAmount(payment.amount, payment.currency)}
+                  {payment.orderId ? ` - ${payment.orderId}` : ""}
+                </p>
+                <p>{statusGuidance.description}</p>
+              </div>
             )}
           </div>
 
@@ -172,6 +181,32 @@ export default function MerchantPaymentDetailPage() {
 
         {payment && (
           <>
+            <section className={`rounded-xl border p-5 ${
+              requiresAction
+                ? "border-amber-400/40 bg-amber-400/10"
+                : effectiveStatus === "PAID"
+                  ? "border-emerald-400/40 bg-emerald-400/10"
+                  : "border-zinc-800 bg-zinc-950"
+            }`}>
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                    {requiresAction ? "Action required" : "Payment decision"}
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold">{statusGuidance.title}</h2>
+                  <p className="mt-2 max-w-3xl text-sm text-zinc-300">{statusGuidance.description}</p>
+                  {latestWebhook?.status === "FAILED" && (
+                    <p className="mt-2 text-sm text-amber-100">
+                      Latest webhook failed. Retry delivery or inspect the callback response before closing operations.
+                    </p>
+                  )}
+                </div>
+                <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
+                  {requiresAction ? "NEEDS ATTENTION" : statusGuidance.label}
+                </span>
+              </div>
+            </section>
+
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
               <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
                 <p className="text-xs text-zinc-500">{t("merchantPayments.paymentId")}</p>
@@ -240,6 +275,12 @@ export default function MerchantPaymentDetailPage() {
               </aside>
 
               <div className="space-y-5">
+                <div className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-5 md:grid-cols-3">
+                  <EvidenceBox label="Customer" value={payment.customerEmail || "-"} />
+                  <EvidenceBox label="Order" value={payment.orderId || "-"} />
+                  <EvidenceBox label="Latest webhook" value={latestWebhook ? getWebhookStatusLabel(latestWebhook) : "NO EVENTS"} />
+                </div>
+
                 <div className="grid grid-cols-1 gap-4 rounded-xl border border-zinc-800 bg-zinc-950 p-5 md:grid-cols-[150px_1fr]">
                   <div className="w-fit rounded-lg bg-white p-2">
                     <QRCodeSVG value={payment.walletAddress} size={126} />
@@ -252,15 +293,21 @@ export default function MerchantPaymentDetailPage() {
                         onClick={() => copyText(payment.checkoutUrl, "checkout")}
                         className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-800"
                       >
-                        {copiedLabel === "checkout" ? "Copied" : t("merchantPayments.copyCheckoutLink")}
+                        {copiedValue?.label === "checkout" ? "Copied" : t("merchantPayments.copyCheckoutLink")}
                       </button>
                       <button
                         onClick={() => copyText(payment.walletAddress, "wallet")}
                         className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-800"
                       >
-                        {copiedLabel === "wallet" ? "Copied" : t("checkout.copyWallet")}
+                        {copiedValue?.label === "wallet" ? "Copied" : t("checkout.copyWallet")}
                       </button>
                     </div>
+                    {(copiedValue?.label === "checkout" || copiedValue?.label === "wallet") && (
+                      <CopyConfirmation
+                        label={copiedValue.label === "checkout" ? t("merchantPayments.checkoutUrl") : t("merchantPayments.walletAddress")}
+                        value={copiedValue.value}
+                      />
+                    )}
                   </div>
                 </div>
 
@@ -351,6 +398,24 @@ function DetailBox({ label, value, mono = false }) {
     <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
       <p className="text-xs text-zinc-500">{label}</p>
       <p className={`mt-2 break-all text-sm ${mono ? "font-mono" : "font-medium"}`}>{value}</p>
+    </div>
+  );
+}
+
+function EvidenceBox({ label, value }) {
+  return (
+    <div className="rounded-lg border border-zinc-800 bg-black p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mt-2 break-all text-sm font-semibold text-zinc-100">{value}</p>
+    </div>
+  );
+}
+
+function CopyConfirmation({ label, value }) {
+  return (
+    <div className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100">
+      <p className="font-semibold">{label} copied</p>
+      <p className="mt-1 break-all font-mono text-emerald-50">{value}</p>
     </div>
   );
 }

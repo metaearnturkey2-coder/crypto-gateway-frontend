@@ -7,6 +7,7 @@ import {
   getCheckoutUrl,
   getEffectivePaymentStatus,
   getPaymentStatusClassName,
+  getPaymentStatusGuidance,
   getWebhookStatusClassName,
   getWebhookStatusLabel,
   getWebhookStatusMessage,
@@ -35,6 +36,7 @@ export function PaymentDetailsModal({
 
   const webhookSummary = getWebhookSummary(selectedPayment.webhookEvents || []);
   const effectiveStatus = getEffectivePaymentStatus(selectedPayment, now);
+  const statusGuidance = getPaymentStatusGuidance(effectiveStatus);
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 px-4 py-8">
@@ -44,13 +46,14 @@ export function PaymentDetailsModal({
             <div className="mb-2 flex flex-wrap items-center gap-3">
               <h2 className="text-4xl font-bold">{t("merchantPayments.paymentDetails")}</h2>
               <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
-                {effectiveStatus}
+                {statusGuidance.label}
               </span>
             </div>
             <p className="text-sm text-zinc-400">
               {formatTokenAmount(selectedPayment.amount, selectedPayment.currency)}
               {selectedPayment.orderId ? ` - ${selectedPayment.orderId}` : ""}
             </p>
+            <p className="mt-2 max-w-2xl text-sm text-zinc-500">{statusGuidance.description}</p>
           </div>
 
           <div className="flex flex-wrap gap-3">
@@ -140,6 +143,7 @@ export function PaymentDetailsModal({
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4">
               <h3 className="mb-3 text-2xl font-bold">{t("merchantPayments.operationSummary")}</h3>
               <div className="space-y-2 text-sm text-zinc-400">
+                <p><span className="text-zinc-500">Status:</span> {statusGuidance.title}</p>
                 <p><span className="text-zinc-500">{t("merchantPayments.timeLeft")}:</span> {formatTimeLeft(selectedPayment.expiresAt, now)}</p>
                 <p><span className="text-zinc-500">{t("merchantPayments.webhookEvents")}:</span> {selectedPayment.webhookEvents?.length || 0}</p>
                 <p><span className="text-zinc-500">{t("merchantPayments.network")}:</span> {selectedPayment.network}</p>

@@ -1,6 +1,7 @@
 import { merchantFetch } from "@/lib/api";
 
 export const listPayments = async ({
+  needsAttention,
   page,
   search,
   status,
@@ -13,6 +14,7 @@ export const listPayments = async ({
   });
 
   if (search?.trim()) params.set("search", search.trim());
+  if (needsAttention) params.set("needsAttention", "true");
   if (status && status !== "ALL") params.set("status", status);
   if (webhookStatus && webhookStatus !== "ALL") {
     params.set("webhookStatus", webhookStatus);
