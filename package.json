@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "qa:local": "npm run lint && npm run build && npm run guard:ui && npm run guard:navigation && npm run smoke",
+    "guard:ui": "node scripts/guard-dashboard-ui.mjs",
+    "guard:navigation": "node scripts/guard-navigation.mjs",
+    "smoke": "node scripts/smoke-routes.mjs"
   },
   "dependencies": {
     "cryptocurrency-icons": "^0.18.1",

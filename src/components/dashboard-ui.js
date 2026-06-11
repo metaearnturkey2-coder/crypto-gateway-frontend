@@ -46,9 +46,9 @@ const inputVariants = {
   business: "business-wallet-input",
 };
 
-export function DashboardPanel({ as: Component = "section", children, className = "", variant = "business" }) {
+export function DashboardPanel({ as: Component = "section", children, className = "", variant = "business", ...props }) {
   return (
-    <Component className={cn(panelVariants[variant] || panelVariants.business, "rounded-2xl border p-4 sm:p-5", className)}>
+    <Component className={cn(panelVariants[variant] || panelVariants.business, "rounded-2xl border p-4 sm:p-5", className)} {...props}>
       {children}
     </Component>
   );
