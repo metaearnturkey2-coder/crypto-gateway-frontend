@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { DashboardButton, DashboardInput, DashboardPanel } from "@/components/dashboard-ui";
 import { apiResponseResult, fetchApi } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { ADMIN_NAV_ITEMS, clearStoredAdminSession, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -101,16 +102,18 @@ export default function AdminHomePage() {
               Tek giris noktasi, operasyon konsollari ve kritik finansal kontroller.
             </p>
           </div>
-          <Link
+          <DashboardButton
+            as={Link}
+            variant="adminSecondary"
             href="/overview"
-            className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800"
+            className="px-4 py-3"
           >
             Merchant Dashboard
-          </Link>
+          </DashboardButton>
         </header>
 
         {sessionState !== "signed-in" && (
-          <section className="grid grid-cols-1 overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 lg:grid-cols-[1.1fr_0.9fr]">
+          <DashboardPanel variant="admin" className="grid grid-cols-1 overflow-hidden p-0 sm:p-0 lg:grid-cols-[1.1fr_0.9fr]">
             <div className="p-6">
               <p className="text-sm font-semibold text-zinc-400">Admin Sign In</p>
               <h2 className="mt-2 text-2xl font-bold">Guvenli admin oturumu ac</h2>
@@ -119,28 +122,31 @@ export default function AdminHomePage() {
                 ilgili operasyon ekranina gecebilirsin.
               </p>
               <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto]">
-                <input
+                <DashboardInput
                   type="email"
+                  variant="admin"
                   value={credentials.email}
                   onChange={(event) => setCredentials((current) => ({ ...current, email: event.target.value }))}
                   placeholder="Admin e-posta"
-                  className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-white"
+                  className="py-3"
                 />
-                <input
+                <DashboardInput
                   type="password"
+                  variant="admin"
                   value={credentials.password}
                   onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
                   placeholder="Admin sifre"
-                  className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none focus:border-white"
+                  className="py-3"
                 />
-                <button
+                <DashboardButton
                   type="button"
+                  variant="adminPrimary"
                   onClick={login}
                   disabled={loading || sessionState === "checking"}
-                  className="rounded-xl bg-white px-5 py-3 font-semibold text-black hover:bg-zinc-200 disabled:opacity-40"
+                  className="px-5 py-3 disabled:opacity-40"
                 >
                   {loading ? "Giris yapiliyor..." : "Giris yap"}
-                </button>
+                </DashboardButton>
               </div>
               {notice && (
                 <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
@@ -152,14 +158,14 @@ export default function AdminHomePage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Locked until sign in</p>
               <div className="mt-4 grid gap-3">
                 {ADMIN_NAV_ITEMS.slice(0, 4).map((item) => (
-                  <div key={item.href} className="rounded-xl border border-zinc-900 bg-zinc-950 px-4 py-3">
+                  <DashboardPanel as="div" key={item.href} variant="admin" className="rounded-xl border-zinc-900 px-4 py-3 sm:p-4">
                     <p className="font-semibold text-zinc-300">{item.label}</p>
                     <p className="mt-1 text-xs text-zinc-600">{item.description}</p>
-                  </div>
+                  </DashboardPanel>
                 ))}
               </div>
             </aside>
-          </section>
+          </DashboardPanel>
         )}
 
         {sessionState === "signed-in" && (
@@ -171,25 +177,28 @@ export default function AdminHomePage() {
                   {admin?.email ? `${admin.email} ile giris yapildi.` : "Admin oturumu aktif."}
                 </p>
               </div>
-              <button
+              <DashboardButton
                 type="button"
+                variant="plain"
                 onClick={logout}
                 className="rounded-xl border border-emerald-400/30 bg-black/30 px-4 py-3 text-sm font-semibold text-emerald-100 hover:bg-black/50"
               >
                 Oturumu kapat
-              </button>
+              </DashboardButton>
             </section>
 
             <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               {ADMIN_NAV_ITEMS.map((item) => (
-                <Link
+                <DashboardPanel
+                  as={Link}
                   key={item.href}
                   href={item.href}
-                  className="rounded-2xl border border-zinc-800 bg-zinc-950 p-5 transition hover:border-zinc-600 hover:bg-zinc-900"
+                  variant="admin"
+                  className="p-5 transition hover:border-zinc-600 hover:bg-zinc-900"
                 >
                   <p className="text-lg font-bold">{item.label}</p>
                   <p className="mt-2 text-sm leading-6 text-zinc-500">{item.description}</p>
-                </Link>
+                </DashboardPanel>
               ))}
             </section>
           </>

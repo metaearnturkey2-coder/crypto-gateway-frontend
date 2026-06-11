@@ -2,6 +2,14 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  DashboardButton,
+  DashboardEmptyState,
+  DashboardInput,
+  DashboardMetric,
+  DashboardPanel,
+  DashboardPill,
+} from "@/components/dashboard-ui";
 import OverviewShell from "@/components/overview-shell";
 import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -124,12 +132,13 @@ export default function BusinessWalletLedgerPage() {
               {t("ledger.description")}
             </p>
           </div>
-          <Link
+          <DashboardPill
+            as={Link}
             href="/business-wallet"
-            className="business-wallet-pill flex w-full justify-center rounded-full border px-4 py-2 text-sm font-semibold sm:w-fit"
+            className="flex w-full justify-center px-4 py-2 text-sm sm:w-fit"
           >
             {t("ledger.balanceOverview")}
-          </Link>
+          </DashboardPill>
         </div>
 
         <section className="grid grid-cols-1 gap-3 md:grid-cols-3">
@@ -138,13 +147,13 @@ export default function BusinessWalletLedgerPage() {
           <LedgerMetric label={t("ledger.pageDebits")} value={formatTokenAmount(totals.debit, totals.currency)} tone="debit" />
         </section>
 
-        <section className="business-wallet-panel rounded-2xl border p-4">
+        <DashboardPanel className="p-4 sm:p-4">
           <form onSubmit={submitSearch} className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(220px,1fr)_180px_180px_180px_110px_110px]">
-            <input
+            <DashboardInput
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
               placeholder={t("ledger.searchPlaceholder")}
-              className="business-wallet-input h-10 rounded-xl border px-4 text-sm outline-none"
+              className="h-10"
             />
             <select
               value={entryType}
@@ -185,20 +194,21 @@ export default function BusinessWalletLedgerPage() {
                 <option key={item} value={item}>{formatLedgerLabel(item)}</option>
               ))}
             </select>
-            <button className="business-wallet-primary-button h-10 rounded-xl border px-4 text-sm font-semibold">
+            <DashboardButton className="h-10 px-4">
               {t("ledger.search")}
-            </button>
-            <button
+            </DashboardButton>
+            <DashboardButton
               type="button"
               onClick={clearFilters}
-              className="business-wallet-pill h-10 rounded-xl border px-4 text-sm font-semibold"
+              variant="secondary"
+              className="h-10 px-4"
             >
               {t("ledger.clear")}
-            </button>
+            </DashboardButton>
           </form>
-        </section>
+        </DashboardPanel>
 
-        <section className="business-wallet-panel overflow-hidden rounded-2xl border">
+        <DashboardPanel className="overflow-hidden p-0 sm:p-0">
           <div className="hidden grid-cols-[155px_1.1fr_0.8fr_0.8fr_1fr_1fr] gap-3 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 xl:grid">
             <span>{t("ledger.date")}</span>
             <span>{t("ledger.entry")}</span>
@@ -209,11 +219,11 @@ export default function BusinessWalletLedgerPage() {
           </div>
 
           {loading ? (
-            <p className="business-wallet-empty-state px-4 py-5 text-sm">{t("overview.loading")}</p>
+            <DashboardEmptyState className="rounded-none border-0 px-4 py-5">{t("overview.loading")}</DashboardEmptyState>
           ) : notice ? (
-            <p className="business-wallet-empty-state px-4 py-5 text-sm">{notice}</p>
+            <DashboardEmptyState className="rounded-none border-0 px-4 py-5">{notice}</DashboardEmptyState>
           ) : entries.length === 0 ? (
-            <p className="business-wallet-empty-state px-4 py-5 text-sm">{t("ledger.empty")}</p>
+            <DashboardEmptyState className="rounded-none border-0 px-4 py-5">{t("ledger.empty")}</DashboardEmptyState>
           ) : (
             <div className="divide-y divide-zinc-800">
               {entries.map((entry) => {
@@ -262,27 +272,29 @@ export default function BusinessWalletLedgerPage() {
               })}
             </div>
           )}
-        </section>
+        </DashboardPanel>
 
         <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <span className="w-fit rounded-full border border-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-500">
+          <DashboardPill className="w-fit text-zinc-500">
             {t("ledger.page")} {pagination.page} / {pagination.totalPages}
-          </span>
+          </DashboardPill>
           <div className="grid grid-cols-2 gap-2 sm:flex">
-            <button
+            <DashboardButton
+              variant="secondary"
               onClick={() => setPage((current) => Math.max(current - 1, 1))}
               disabled={pagination.page <= 1 || loading}
-              className="business-wallet-pill h-9 rounded-lg border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-lg px-4 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {t("merchantPayments.previous")}
-            </button>
-            <button
+            </DashboardButton>
+            <DashboardButton
+              variant="secondary"
               onClick={() => setPage((current) => Math.min(current + 1, pagination.totalPages))}
               disabled={pagination.page >= pagination.totalPages || loading}
-              className="business-wallet-pill h-9 rounded-lg border px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              className="h-9 rounded-lg px-4 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {t("merchantPayments.next")}
-            </button>
+            </DashboardButton>
           </div>
         </div>
       </div>
@@ -299,9 +311,9 @@ function LedgerMetric({ label, value, tone = "neutral" }) {
         : "text-white";
 
   return (
-    <div className="business-wallet-metric rounded-xl border px-4 py-3">
+    <DashboardMetric>
       <p className="text-sm text-zinc-500">{label}</p>
       <p className={`mt-1 break-words text-2xl font-bold ${toneClassName}`}>{value}</p>
-    </div>
+    </DashboardMetric>
   );
 }

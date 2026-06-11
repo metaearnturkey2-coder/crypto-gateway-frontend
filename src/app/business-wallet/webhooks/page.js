@@ -1,6 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  DashboardButton,
+  DashboardEmptyState,
+  DashboardInput,
+  DashboardMetric,
+  DashboardPanel,
+} from "@/components/dashboard-ui";
 import OverviewShell from "@/components/overview-shell";
 import {
   getWebhookStatusClassName,
@@ -130,90 +137,92 @@ export default function BusinessWalletWebhooksPage() {
   return (
     <OverviewShell>
       <div className="space-y-5">
-        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+        <DashboardPanel>
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.title")}</h2>
               <p className="text-sm text-zinc-500">{t("webhooks.description")}</p>
             </div>
-            <button
+            <DashboardButton
               type="button"
               onClick={refreshPage}
-              className="business-wallet-pill rounded-full border px-4 py-2 text-sm font-semibold"
+              variant="secondary"
+              className="rounded-full px-4 py-2"
             >
               {t("common.refresh")}
-            </button>
+            </DashboardButton>
           </div>
 
           <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">{t("webhooks.total")}</p>
               <p className="font-mono text-2xl font-bold">{data.stats.total || 0}</p>
-            </div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            </DashboardMetric>
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">SUCCESS</p>
               <p className="font-mono text-2xl font-bold">{data.stats.SUCCESS || 0}</p>
-            </div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            </DashboardMetric>
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">PENDING</p>
               <p className="font-mono text-2xl font-bold">{data.stats.PENDING || 0}</p>
-            </div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            </DashboardMetric>
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">FAILED</p>
               <p className="font-mono text-2xl font-bold">{data.stats.FAILED || 0}</p>
-            </div>
+            </DashboardMetric>
           </div>
           <p className="mt-3 text-xs text-zinc-500">
             {t("webhooks.deadLetter")}: {data.stats.deadLetter || 0}
           </p>
-        </section>
+        </DashboardPanel>
 
-        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+        <DashboardPanel>
           <div className="mb-4">
             <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.operationsTitle")}</h2>
             <p className="text-sm text-zinc-500">{t("webhooks.operationsDescription")}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-4">
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">{t("webhooks.paymentWatcherQueue")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.queues?.paymentWatcher?.pendingJobs ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">{opsSummary?.queues?.paymentWatcher?.backend || "-"}</p>
-            </div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            </DashboardMetric>
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">{t("webhooks.webhookRetryQueue")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.queues?.webhookRetry?.pendingJobs ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">{opsSummary?.queues?.webhookRetry?.backend || "-"}</p>
-            </div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            </DashboardMetric>
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">{t("webhooks.dueRetries")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.webhooks?.dueRetries ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">FAILED/PENDING</p>
-            </div>
-            <div className="business-wallet-metric rounded-xl border px-4 py-3">
+            </DashboardMetric>
+            <DashboardMetric>
               <p className="text-xs text-zinc-500">{t("webhooks.deadLetter")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.webhooks?.deadLetter ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">
                 {opsSummary?.generatedAt ? formatDashboardDateTime(opsSummary.generatedAt, timeZone) : "-"}
               </p>
-            </div>
+            </DashboardMetric>
           </div>
-        </section>
+        </DashboardPanel>
 
-        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+        <DashboardPanel>
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.testToolTitle")}</h2>
               <p className="text-sm text-zinc-500">{t("webhooks.testToolDescription")}</p>
             </div>
-            <button
+            <DashboardButton
               type="button"
               onClick={sendTestWebhook}
               disabled={testingWebhook}
-              className="business-wallet-pill rounded-full border px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
+              variant="secondary"
+              className="rounded-full px-4 py-2 disabled:cursor-wait disabled:opacity-60"
             >
               {testingWebhook ? t("webhooks.testing") : t("webhooks.sendTest")}
-            </button>
+            </DashboardButton>
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
@@ -271,18 +280,18 @@ export default function BusinessWalletWebhooksPage() {
               </pre>
             </div>
           </div>
-        </section>
+        </DashboardPanel>
 
-        <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+        <DashboardPanel>
           <div className="mb-4 grid grid-cols-1 gap-2.5 lg:grid-cols-[1fr_180px_220px]">
-            <input
+            <DashboardInput
               value={search}
               onChange={(event) => {
                 setPage(1);
                 setSearch(event.target.value);
               }}
               placeholder={t("webhooks.searchPlaceholder")}
-              className="business-wallet-input h-10 rounded-xl border px-4 text-sm outline-none"
+              className="h-10"
             />
             <select
               value={statusFilter}
@@ -319,9 +328,9 @@ export default function BusinessWalletWebhooksPage() {
           )}
 
           {loading ? (
-            <p className="business-wallet-empty-state rounded-xl border px-4 py-3 text-sm">{t("overview.loading")}</p>
+            <DashboardEmptyState>{t("overview.loading")}</DashboardEmptyState>
           ) : data.webhooks.length === 0 ? (
-            <p className="business-wallet-empty-state rounded-xl border px-4 py-3 text-sm">{t("webhooks.empty")}</p>
+            <DashboardEmptyState>{t("webhooks.empty")}</DashboardEmptyState>
           ) : (
             <div className="business-wallet-activity-list divide-y overflow-hidden rounded-xl border">
               {data.webhooks.map((webhook) => (
@@ -387,25 +396,27 @@ export default function BusinessWalletWebhooksPage() {
               {t("webhooks.page")} {data.page || page} / {data.totalPages || 1}
             </p>
             <div className="flex gap-2">
-              <button
+              <DashboardButton
                 type="button"
                 disabled={page <= 1}
                 onClick={() => setPage((value) => Math.max(value - 1, 1))}
-                className="business-wallet-pill rounded-full border px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                variant="secondary"
+                className="rounded-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t("common.previous")}
-              </button>
-              <button
+              </DashboardButton>
+              <DashboardButton
                 type="button"
                 disabled={page >= (data.totalPages || 1)}
                 onClick={() => setPage((value) => value + 1)}
-                className="business-wallet-pill rounded-full border px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+                variant="secondary"
+                className="rounded-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t("common.next")}
-              </button>
+              </DashboardButton>
             </div>
           </div>
-        </section>
+        </DashboardPanel>
       </div>
     </OverviewShell>
   );

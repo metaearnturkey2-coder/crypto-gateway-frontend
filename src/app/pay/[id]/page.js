@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
+import { cn } from "@/components/dashboard-ui";
 import { apiUrl } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, getTranslation, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -244,6 +245,36 @@ const getSafetyChecks = ({ amountLabel, isPayable, payment, t, timeZone }) => {
   ];
 };
 
+function CheckoutPanel({ children, className = "", as: Component = "section" }) {
+  return (
+    <Component className={cn("rounded-xl border border-zinc-800 bg-zinc-900 p-5", className)}>
+      {children}
+    </Component>
+  );
+}
+
+function CheckoutInfoCard({ children, className = "" }) {
+  return <div className={cn("rounded-xl border border-zinc-800 bg-zinc-950 p-3", className)}>{children}</div>;
+}
+
+function CheckoutButton({ children, className = "", variant = "secondary", ...props }) {
+  const variants = {
+    primary: "bg-blue-400 px-5 py-3 font-semibold text-black hover:opacity-80 disabled:cursor-wait",
+    secondary: "border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800",
+    light: "bg-white px-4 py-2 text-sm font-semibold text-black hover:opacity-80",
+    muted: "bg-zinc-800 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-700",
+  };
+
+  return (
+    <button
+      className={cn("rounded-lg transition disabled:cursor-not-allowed disabled:opacity-40", variants[variant], className)}
+      {...props}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function PaymentCheckoutPage() {
   const params = useParams();
   const paymentId = params.id;
@@ -410,7 +441,7 @@ export default function PaymentCheckoutPage() {
         </section>
 
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_1fr]">
-          <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <CheckoutPanel>
             <div className={`mb-5 rounded-xl border p-4 ${isPayable ? "border-emerald-400/30 bg-emerald-400/10" : "border-red-400/30 bg-red-400/10"}`}>
               <p className="text-sm font-semibold">{t("checkout.safetyTitle")}</p>
               <div className="mt-3 space-y-2">
@@ -428,16 +459,17 @@ export default function PaymentCheckoutPage() {
                 <p className="text-sm text-zinc-500">{t("checkout.amountDue")}</p>
                 <p className="mt-1 text-3xl font-bold">{amountLabel}</p>
               </div>
-              <button
+              <CheckoutButton
+                type="button"
                 onClick={() => copyText(payment.amount, "amount", t("checkout.amountDue"))}
                 disabled={!isPayable}
-                className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40"
+                variant="secondary"
               >
                 {copiedValue?.key === "amount" ? t("checkout.amountCopied") : t("checkout.copyAmount")}
-              </button>
+              </CheckoutButton>
             </div>
             {copiedValue?.key === "amount" && (
-              <CopyConfirmation label={copiedValue.label} value={amountLabel} />
+              <CopyConfirmation copiedText={t("common.copied")} label={copiedValue.label} value={amountLabel} />
             )}
 
             <div
@@ -452,7 +484,7 @@ export default function PaymentCheckoutPage() {
               {isPayable ? t("checkout.scanWalletQr") : t("checkout.qrDisabled")}
             </p>
 
-            <div className="mt-5 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <CheckoutInfoCard className="mt-5 p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-zinc-500">{t("checkout.paymentWindow")}</p>
                 <p className={`text-sm font-semibold ${paymentWindow.urgent ? "text-amber-200" : "text-zinc-100"}`}>
@@ -476,10 +508,10 @@ export default function PaymentCheckoutPage() {
                   ? formatDashboardDateTime(payment.expiresAt, timeZone)
                   : t("checkout.noExpiration")}
               </p>
-            </div>
-          </section>
+            </CheckoutInfoCard>
+          </CheckoutPanel>
 
-          <section className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+          <CheckoutPanel>
             <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm text-zinc-500">{t("checkout.status")}</p>
@@ -491,16 +523,18 @@ export default function PaymentCheckoutPage() {
                   {effectiveStatus}
                 </span>
               </div>
-              <button
+              <CheckoutButton
+                type="button"
                 onClick={checkPayment}
                 disabled={checking}
-                className="rounded-xl bg-blue-400 px-5 py-3 font-semibold text-black transition hover:opacity-80 disabled:cursor-wait disabled:opacity-60"
+                variant="primary"
+                className="rounded-xl disabled:opacity-60"
               >
                 {checking ? t("checkout.checking") : t("checkout.checkStatus")}
-              </button>
+              </CheckoutButton>
             </div>
 
-            <div className="mb-5 rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <CheckoutInfoCard className="mb-5 p-4">
               <p className="mb-4 text-sm font-semibold">{t("checkout.timeline")}</p>
               <div className="space-y-4">
                 {timelineSteps.map((step, index) => (
@@ -527,37 +561,37 @@ export default function PaymentCheckoutPage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </CheckoutInfoCard>
 
             <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-2">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+              <CheckoutInfoCard>
                 <p className="mb-1 text-xs text-zinc-500">{t("checkout.orderId")}</p>
                 <p className="break-all font-semibold">
                   {payment.orderId || t("checkout.notProvided")}
                 </p>
-              </div>
+              </CheckoutInfoCard>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+              <CheckoutInfoCard>
                 <p className="mb-1 text-xs text-zinc-500">{t("checkout.customer")}</p>
                 <p className="break-all">
                   {payment.customerEmail || t("checkout.notProvided")}
                 </p>
-              </div>
+              </CheckoutInfoCard>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+              <CheckoutInfoCard>
                 <p className="mb-1 text-xs text-zinc-500">{t("checkout.paymentId")}</p>
                 <p className="break-all font-mono text-sm">{payment.id}</p>
-              </div>
+              </CheckoutInfoCard>
 
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+              <CheckoutInfoCard>
                 <p className="mb-1 text-xs text-zinc-500">{t("checkout.transactionHash")}</p>
                 <p className="break-all font-mono text-sm">
                   {payment.txHash || t("checkout.notConfirmed")}
                 </p>
-              </div>
+              </CheckoutInfoCard>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+            <CheckoutInfoCard className="p-4">
               <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="text-sm font-semibold">{t("checkout.walletAddress")}</p>
@@ -566,46 +600,49 @@ export default function PaymentCheckoutPage() {
                   </p>
                 </div>
 
-                <button
+                <CheckoutButton
+                  type="button"
                   onClick={() => copyText(payment.walletAddress, "wallet", t("checkout.walletAddress"))}
                   disabled={!isPayable}
-                  className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black transition hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+                  variant="light"
                 >
                   {copiedValue?.key === "wallet" ? t("common.copied") : t("checkout.copyAddress")}
-                </button>
+                </CheckoutButton>
               </div>
 
               <p className="break-all rounded-lg bg-black p-3 font-mono text-sm text-zinc-200">
                 {payment.walletAddress}
               </p>
               {copiedValue?.key === "wallet" && (
-                <CopyConfirmation label={copiedValue.label} value={payment.walletAddress} />
+                <CopyConfirmation copiedText={t("common.copied")} label={copiedValue.label} value={payment.walletAddress} />
               )}
-            </div>
-          </section>
+            </CheckoutInfoCard>
+          </CheckoutPanel>
         </div>
 
         <footer className="mt-5 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
           <div className="flex flex-col gap-3 text-sm text-zinc-400 md:flex-row md:items-center md:justify-between">
             <p>{t("checkout.autoRefreshDescription")}</p>
             <div className="flex flex-wrap gap-2">
-              <button
+              <CheckoutButton
+                type="button"
                 onClick={() => copyText(payment.walletAddress, "wallet-bottom", t("checkout.walletAddress"))}
                 disabled={!isPayable}
-                className="rounded-lg bg-zinc-800 px-4 py-2 font-semibold text-zinc-100 transition hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
+                variant="muted"
               >
                 {copiedValue?.key === "wallet-bottom" ? t("checkout.addressCopied") : t("checkout.copyWallet")}
-              </button>
-              <button
+              </CheckoutButton>
+              <CheckoutButton
+                type="button"
                 onClick={() => copyText(payment.id, "payment-id", t("checkout.paymentId"))}
-                className="rounded-lg bg-zinc-800 px-4 py-2 font-semibold text-zinc-100 transition hover:bg-zinc-700"
+                variant="muted"
               >
                 {copiedValue?.key === "payment-id" ? t("checkout.idCopied") : t("checkout.copyPaymentId")}
-              </button>
+              </CheckoutButton>
             </div>
           </div>
           {(copiedValue?.key === "wallet-bottom" || copiedValue?.key === "payment-id") && (
-            <CopyConfirmation label={copiedValue.label} value={copiedValue.value} />
+            <CopyConfirmation copiedText={t("common.copied")} label={copiedValue.label} value={copiedValue.value} />
           )}
         </footer>
       </div>
@@ -613,10 +650,10 @@ export default function PaymentCheckoutPage() {
   );
 }
 
-function CopyConfirmation({ label, value }) {
+function CopyConfirmation({ copiedText, label, value }) {
   return (
     <div className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100">
-      <p className="font-semibold">{label} copied</p>
+      <p className="font-semibold">{label}: {copiedText}</p>
       <p className="mt-1 break-all font-mono text-emerald-50">{value}</p>
     </div>
   );

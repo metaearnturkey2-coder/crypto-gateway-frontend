@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { DashboardButton, DashboardPill } from "@/components/dashboard-ui";
 import OverviewShell from "@/components/overview-shell";
 import { apiUrl, merchantFetch } from "@/lib/api";
 import { formatDashboardTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -317,23 +318,23 @@ export default function OverviewPage() {
                   <p className="text-3xl font-bold leading-none tracking-tight text-white">
                     {formatDisplayAmount(available)}
                   </p>
-                  <span className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-950 px-2.5 py-1 text-xs font-semibold text-zinc-200">
+                  <DashboardPill className="inline-flex items-center border-zinc-700 bg-zinc-950 px-2.5 text-zinc-200">
                     {displayCurrency}
-                  </span>
+                  </DashboardPill>
                 </div>
               )}
             </div>
 
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 lg:w-auto lg:min-w-[390px]">
-              <Link href="/business-wallet/merchants" className="overview-summary-action overview-summary-action-primary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
+              <DashboardButton as={Link} variant="plain" href="/business-wallet/merchants" className="overview-summary-action overview-summary-action-primary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
                 {t("overview.createPayment")}
-              </Link>
-              <Link href="/business-wallet" className="overview-summary-action overview-summary-action-secondary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
+              </DashboardButton>
+              <DashboardButton as={Link} variant="plain" href="/business-wallet" className="overview-summary-action overview-summary-action-secondary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
                 {t("overview.requestPayout")}
-              </Link>
-              <Link href="/business-wallet/api-docs" className="overview-summary-action overview-summary-action-secondary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
+              </DashboardButton>
+              <DashboardButton as={Link} variant="plain" href="/business-wallet/api-docs" className="overview-summary-action overview-summary-action-secondary flex h-9 items-center justify-center rounded-lg border px-4 text-sm font-semibold shadow-sm transition">
                 {t("overview.apiDocs")}
-              </Link>
+              </DashboardButton>
             </div>
           </div>
 
@@ -434,12 +435,14 @@ export default function OverviewPage() {
                 <h3 className="mt-1 text-lg font-semibold text-white">{nextOnboardingStep.title}</h3>
                 <p className="mt-1 max-w-2xl text-sm text-zinc-400">{nextOnboardingStep.description}</p>
               </div>
-              <Link
+              <DashboardButton
+                as={Link}
+                variant="plain"
                 href={nextOnboardingStep.href}
                 className="flex h-10 shrink-0 items-center justify-center rounded-lg bg-amber-200 px-4 text-sm font-semibold text-amber-950 transition hover:bg-amber-100"
               >
                 {nextOnboardingStep.action}
-              </Link>
+              </DashboardButton>
             </div>
           ) : null}
 
@@ -505,9 +508,9 @@ export default function OverviewPage() {
                   {t("overview.business")}
                 </button>
               </div>
-              <Link href="/business-wallet" className="assets-wallet-link rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition">
+              <DashboardButton as={Link} variant="plain" href="/business-wallet" className="assets-wallet-link rounded-lg border px-3 py-2 text-xs font-semibold shadow-sm transition">
                 {t("overview.walletDetails")}
-              </Link>
+              </DashboardButton>
             </div>
             <div className="assets-price-status px-5 py-2 text-xs border-b border-zinc-800">
               {pricesLoading

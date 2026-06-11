@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { DashboardEmptyState, DashboardMetric, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import OverviewShell from "@/components/overview-shell";
 import { API_BASE_URL, apiUrl, merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -135,27 +136,27 @@ export default function BusinessWalletApiDocsPage() {
 
   return (
     <OverviewShell>
-      <div className="api-docs-panel rounded-2xl border p-5 mb-5">
+      <DashboardPanel as="div" variant="api" className="mb-5 p-5 sm:p-5">
         <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
             <h2 className="text-2xl font-bold">{t("apiDocs.apiUsage")}</h2>
             <p className="api-docs-muted text-sm">{t("apiDocs.usageDescription")}</p>
           </div>
-          <span className="api-docs-pill rounded-full border px-3 py-1 text-xs font-semibold">{t("apiDocs.last24Hours")}</span>
+          <DashboardPill variant="api">{t("apiDocs.last24Hours")}</DashboardPill>
         </div>
 
         <div className="api-docs-stat-strip mb-3 grid grid-cols-2 gap-2 rounded-xl border p-2 lg:grid-cols-5">
-          <div className="api-docs-stat-item rounded-lg px-3 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.requests")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.total}</p></div>
-          <div className="api-docs-stat-item rounded-lg px-3 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.successful")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.successful}</p></div>
-          <div className="api-docs-stat-item rounded-lg px-3 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.failed")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.failed}</p></div>
-          <div className="api-docs-stat-item rounded-lg px-3 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.createCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.createCalls}</p></div>
-          <div className="api-docs-stat-item rounded-lg px-3 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.statusCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.statusCalls}</p></div>
+          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.requests")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.total}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.successful")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.successful}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.failed")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.failed}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.createCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.createCalls}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.statusCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.statusCalls}</p></DashboardMetric>
         </div>
 
         {loading ? (
           <p className="api-docs-muted text-sm">{t("overview.loading")}</p>
         ) : apiUsage.recentCalls.length === 0 ? (
-          <p className="api-docs-empty rounded-lg border px-3 py-2 text-sm">{t("apiDocs.noRequests")}</p>
+          <DashboardEmptyState variant="api" className="rounded-lg px-3 py-2">{t("apiDocs.noRequests")}</DashboardEmptyState>
         ) : (
           <div className="api-docs-list divide-y rounded-xl border overflow-hidden">
             {apiUsage.recentCalls.map((call) => (
@@ -176,9 +177,9 @@ export default function BusinessWalletApiDocsPage() {
             ))}
           </div>
         )}
-      </div>
+      </DashboardPanel>
 
-      <div className="api-docs-panel rounded-2xl border p-5">
+      <DashboardPanel as="div" variant="api" className="p-5 sm:p-5">
         <div className="mb-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
@@ -207,19 +208,19 @@ export default function BusinessWalletApiDocsPage() {
               <h3 className="text-lg font-bold">{t("apiDocs.goLiveChecklist")}</h3>
               <p className="api-docs-muted text-sm">{t("apiDocs.goLiveChecklistDescription")}</p>
             </div>
-            <span className="api-docs-pill w-fit rounded-full border px-3 py-1 text-xs font-semibold">
+            <DashboardPill variant="api" className="w-fit">
               {goLiveChecklist.length} steps
-            </span>
+            </DashboardPill>
           </div>
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-5">
             {goLiveChecklist.map((item, index) => (
-              <div key={item.title} className="api-docs-stat-item rounded-lg border px-3 py-3">
+              <DashboardMetric key={item.title} variant="api">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold">
                   {index + 1}
                 </span>
                 <p className="mt-3 text-sm font-semibold">{item.title}</p>
                 <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
-              </div>
+              </DashboardMetric>
             ))}
           </div>
         </div>
@@ -231,10 +232,10 @@ export default function BusinessWalletApiDocsPage() {
           </div>
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
             {readinessNotes.map((item) => (
-              <div key={item.title} className="api-docs-stat-item rounded-lg border px-3 py-3">
+              <DashboardMetric key={item.title} variant="api">
                 <p className="text-sm font-semibold">{item.title}</p>
                 <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
-              </div>
+              </DashboardMetric>
             ))}
           </div>
         </div>
@@ -246,13 +247,13 @@ export default function BusinessWalletApiDocsPage() {
           </div>
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-4">
             {troubleshootingNotes.map((item) => (
-              <div key={item.code} className="api-docs-stat-item rounded-lg border px-3 py-3">
+              <DashboardMetric key={item.code} variant="api">
                 <span className="inline-flex rounded-md border px-2 py-1 font-mono text-[10px] font-bold">
                   {item.code}
                 </span>
                 <p className="mt-3 text-sm font-semibold">{item.title}</p>
                 <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
-              </div>
+              </DashboardMetric>
             ))}
           </div>
         </div>
@@ -263,18 +264,18 @@ export default function BusinessWalletApiDocsPage() {
               <h3 className="text-lg font-bold">{t("apiDocs.preflightTitle")}</h3>
               <p className="api-docs-muted text-sm">{t("apiDocs.preflightDescription")}</p>
             </div>
-            <span className="api-docs-pill w-fit rounded-full border px-3 py-1 text-xs font-semibold">
+            <DashboardPill variant="api" className="w-fit">
               {preflightChecks.length} checks
-            </span>
+            </DashboardPill>
           </div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
             {preflightChecks.map((item, index) => (
-              <div key={item} className="api-docs-stat-item flex gap-3 rounded-lg border px-3 py-3">
+              <DashboardMetric key={item} variant="api" className="flex gap-3">
                 <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
                   {index + 1}
                 </span>
                 <p className="api-docs-muted text-sm">{item}</p>
-              </div>
+              </DashboardMetric>
             ))}
           </div>
         </div>
@@ -751,7 +752,7 @@ http_response_code(200);`,
             </>
           );
         })()}
-      </div>
+      </DashboardPanel>
     </OverviewShell>
   );
 }

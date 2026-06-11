@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardMetric, DashboardPanel, DashboardPill, DashboardSelect } from "@/components/dashboard-ui";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -127,9 +128,9 @@ export default function AdminTreasuryPage() {
               Payment wallet fon toplama kayitlari, treasury policy ve custody durumunu izleyin.
             </p>
           </div>
-          <a href="/admin/settlement-console" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+          <DashboardButton as="a" href="/admin/settlement-console" variant="adminSecondary" className="px-4 py-3">
             Settlement Console
-          </a>
+          </DashboardButton>
         </header>
 
         <AdminConsoleNav currentPath="/admin/treasury" onRefresh={() => fetchTreasuryData()} loading={loading || !adminAccessToken} />
@@ -140,62 +141,63 @@ export default function AdminTreasuryPage() {
         )}
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <DashboardPanel variant="adminMuted" className="p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Hot wallet</p>
             <p className="mt-3 break-all text-sm">{policy?.treasuryPolicy?.hotWallet?.address || "Not configured"}</p>
-            <span className={`mt-4 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${policy?.treasuryPolicy?.hotWallet?.valid ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200" : "border-red-500/30 bg-red-500/10 text-red-200"}`}>
+            <DashboardPill className={`mt-4 inline-flex ${policy?.treasuryPolicy?.hotWallet?.valid ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200" : "border-red-500/30 bg-red-500/10 text-red-200"}`}>
               {policy?.treasuryPolicy?.hotWallet?.configured ? "configured" : "missing"}
-            </span>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            </DashboardPill>
+          </DashboardPanel>
+          <DashboardPanel variant="adminMuted" className="p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Cold wallet</p>
             <p className="mt-3 break-all text-sm">{policy?.treasuryPolicy?.coldWallet?.address || "Optional / not configured"}</p>
-            <span className="mt-4 inline-flex rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-300">
+            <DashboardPill variant="admin" className="mt-4 inline-flex">
               {policy?.treasuryPolicy?.coldWallet?.configured ? "configured" : "optional"}
-            </span>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            </DashboardPill>
+          </DashboardPanel>
+          <DashboardPanel variant="adminMuted" className="p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Custody</p>
             <p className="mt-3 text-lg font-bold">{policy?.custodyPolicy?.provider || "-"}</p>
             <p className="mt-2 text-sm text-zinc-500">Threshold {policy?.thresholdPolicy?.minAmount || "-"} USDT, gas {policy?.gasPolicy?.minTrxGas || "-"} TRX</p>
-          </div>
+          </DashboardPanel>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <DashboardPanel variant="adminMuted" className="p-5">
           <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <h2 className="text-xl font-bold">Sweep kayitlari</h2>
               <p className="mt-1 text-sm text-zinc-500">{stats.total || 0} toplam sweep kaydi</p>
             </div>
-            <select
+            <DashboardSelect
+              variant="admin"
               value={statusFilter}
               onChange={(event) => {
                 setStatusFilter(event.target.value);
                 fetchTreasuryData(undefined, event.target.value);
               }}
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none"
+              className="py-3"
             >
               {STATUS_OPTIONS.map((status) => (
                 <option key={status} value={status}>{status}</option>
               ))}
-            </select>
+            </DashboardSelect>
           </div>
 
           <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">
             {statusCards.map((item) => (
-              <div key={item.status} className="rounded-xl border border-zinc-800 bg-black p-4">
+              <DashboardMetric key={item.status} variant="admin" className="rounded-xl p-4">
                 <p className="text-xs font-semibold text-zinc-500">{item.status}</p>
                 <p className="mt-2 text-2xl font-bold">{item.value}</p>
-              </div>
+              </DashboardMetric>
             ))}
           </div>
 
           <div className="space-y-3">
             {sweeps.map((sweep) => (
-              <div key={sweep.id} className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-black p-4 text-sm lg:grid-cols-[140px_1fr_1fr_160px]">
-                <span className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(sweep.status)}`}>
+              <DashboardPanel as="div" key={sweep.id} variant="admin" className="grid grid-cols-1 gap-3 rounded-xl bg-black p-4 text-sm sm:p-4 lg:grid-cols-[140px_1fr_1fr_160px]">
+                <DashboardPill className={`w-fit ${getStatusClassName(sweep.status)}`}>
                   {sweep.status}
-                </span>
+                </DashboardPill>
                 <div>
                   <p className="text-zinc-500">Amount</p>
                   <p className="font-semibold">{sweep.amount} {sweep.currency}</p>
@@ -211,14 +213,14 @@ export default function AdminTreasuryPage() {
                   <p>{formatDate(sweep.createdAt)}</p>
                   <p className="mt-1 break-all text-xs">{sweep.txHash ? shortId(sweep.txHash) : "no tx yet"}</p>
                 </div>
-              </div>
+              </DashboardPanel>
             ))}
           </div>
 
           {!loading && sweeps.length === 0 && (
-            <p className="rounded-xl border border-zinc-800 bg-black p-6 text-zinc-500">Bu filtre icin sweep kaydi yok.</p>
+            <DashboardEmptyState variant="admin" className="p-6">Bu filtre icin sweep kaydi yok.</DashboardEmptyState>
           )}
-        </section>
+        </DashboardPanel>
       </div>
     </main>
   );

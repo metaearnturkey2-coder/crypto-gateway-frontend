@@ -2,6 +2,7 @@
 
 import { Bell, Clock, DollarSign, Globe2, MapPinned, Moon } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DashboardPanel, DashboardSelect } from "@/components/dashboard-ui";
 import SettingsShell from "@/components/settings-shell";
 import { merchantFetch } from "@/lib/api";
 import { useDashboardLanguage } from "@/lib/i18n";
@@ -161,7 +162,7 @@ export default function BasicPreferencesPage() {
           {notice.message}
         </div>
       )}
-      <div className="max-w-4xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+      <DashboardPanel as="div" className="max-w-4xl overflow-hidden p-0 sm:p-0">
         {rows.map((row) => {
           const Icon = row.icon;
           return (
@@ -175,18 +176,18 @@ export default function BasicPreferencesPage() {
                 </span>
                 <p className="text-sm font-semibold text-white light-dashboard:text-zinc-950">{t(row.labelKey)}</p>
               </div>
-              <select
+              <DashboardSelect
                 value={preferences[row.key]}
                 onChange={(event) => updatePreference(row.key, event.target.value)}
                 disabled={!ready || savingKey === row.key}
-                className="h-9 w-full rounded-xl border border-zinc-700/80 bg-zinc-800/60 px-3 text-sm font-semibold text-white outline-none transition hover:border-zinc-500 hover:bg-zinc-800 focus:border-zinc-400 disabled:opacity-60 light-dashboard:border-zinc-300 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-950 light-dashboard:hover:border-zinc-400 light-dashboard:hover:bg-white light-dashboard:focus:border-zinc-500 sm:w-[168px]"
+                className="h-9 w-full font-semibold transition disabled:opacity-60 sm:w-[168px]"
               >
                 {row.options.map((option) => (
                   <option key={option} value={option}>
                     {option}
                   </option>
                 ))}
-              </select>
+              </DashboardSelect>
             </div>
           );
         })}
@@ -218,7 +219,7 @@ export default function BasicPreferencesPage() {
             </button>
           </div>
         </div>
-      </div>
+      </DashboardPanel>
     </SettingsShell>
   );
 }

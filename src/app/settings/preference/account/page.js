@@ -2,6 +2,7 @@
 
 import { CheckCircle2, Copy, KeyRound, ShieldCheck, UserRound } from "lucide-react";
 import { useEffect, useState } from "react";
+import { DashboardButton, DashboardPanel } from "@/components/dashboard-ui";
 import SettingsShell from "@/components/settings-shell";
 import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -81,7 +82,7 @@ export default function PreferenceAccountPage() {
         </div>
       )}
 
-      <section className="max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/55 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+      <DashboardPanel className="max-w-3xl overflow-hidden p-0 sm:p-0">
         {loading ? (
           <div className="space-y-3 p-5">
             <div className="h-14 animate-pulse rounded-xl bg-zinc-800/70 light-dashboard:bg-zinc-100" />
@@ -101,14 +102,15 @@ export default function PreferenceAccountPage() {
                   </h3>
                   <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-zinc-400 light-dashboard:text-zinc-500">
                     <span>{t("account.uid")} · {shortenUid(merchant?.id)}</span>
-                    <button
+                    <DashboardButton
                       type="button"
+                      variant="secondary"
                       onClick={copyUid}
                       disabled={!merchant?.id}
-                      className="inline-flex h-6 items-center justify-center rounded-md border border-zinc-700 px-2 text-xs font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50 light-dashboard:border-zinc-200 light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
+                      className="inline-flex h-6 items-center justify-center rounded-md px-2 text-xs disabled:opacity-50"
                     >
                       <Copy size={13} />
-                    </button>
+                    </DashboardButton>
                     {copiedUid ? (
                       <span className="text-xs font-semibold text-emerald-300 light-dashboard:text-emerald-700">
                         {t("account.uidCopied")}
@@ -117,15 +119,16 @@ export default function PreferenceAccountPage() {
                   </div>
                 </div>
               </div>
-              <button
+              <DashboardButton
                 type="button"
+                variant="secondary"
                 onClick={copyUid}
                 disabled={!merchant?.id}
-                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-900 disabled:opacity-50 light-dashboard:border-zinc-200 light-dashboard:bg-white light-dashboard:text-zinc-950 light-dashboard:hover:bg-zinc-50"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-4 disabled:opacity-50"
               >
                 <Copy size={16} />
                 {copiedUid ? t("account.uidCopied") : t("account.copyUid")}
-              </button>
+              </DashboardButton>
             </div>
 
             <div className="grid gap-0 divide-y divide-zinc-800 light-dashboard:divide-zinc-200 md:grid-cols-2 md:divide-x md:divide-y-0">
@@ -175,7 +178,7 @@ export default function PreferenceAccountPage() {
             </div>
           </div>
         )}
-      </section>
+      </DashboardPanel>
     </SettingsShell>
   );
 }

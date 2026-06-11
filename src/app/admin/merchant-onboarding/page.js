@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardInput, DashboardMetric, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -131,35 +132,37 @@ export default function AdminMerchantOnboardingPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/admin/pilot-readiness" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            <DashboardButton as="a" href="/admin/pilot-readiness" variant="adminSecondary" className="px-4 py-3">
               Pilot Readiness
-            </a>
-            <a href="/admin/reconciliation" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/reconciliation" variant="adminSecondary" className="px-4 py-3">
               Reconciliation
-            </a>
-            <a href="/admin/risk-review" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/risk-review" variant="adminSecondary" className="px-4 py-3">
               Risk Review
-            </a>
+            </DashboardButton>
           </div>
         </header>
 
         <AdminConsoleNav currentPath="/admin/merchant-onboarding" onRefresh={() => loadChecklists()} loading={loading || !adminAccessToken} />
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <DashboardPanel variant="adminMuted" className="p-5">
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px_auto_auto]">
-            <input
+            <DashboardInput
+              variant="admin"
               value={merchantId}
               onChange={(event) => setMerchantId(event.target.value)}
               placeholder="Merchant ID ile tek kontrol"
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none"
+              className="py-3"
             />
-            <input
+            <DashboardInput
+              variant="admin"
               type="number"
               min="1"
               max="100"
               value={limit}
               onChange={(event) => setLimit(event.target.value)}
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none"
+              className="py-3"
             />
             <label className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-black px-4 py-3 text-sm">
               <input
@@ -170,21 +173,22 @@ export default function AdminMerchantOnboardingPage() {
               />
               Only blocked
             </label>
-            <button
+            <DashboardButton
               type="button"
+              variant="plain"
               onClick={() => loadChecklists()}
               disabled={loading || !adminAccessToken}
               className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Apply filters
-            </button>
+            </DashboardButton>
           </div>
           {notice && (
             <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
               {notice.message}
             </div>
           )}
-        </section>
+        </DashboardPanel>
 
         <section className={`rounded-2xl border p-5 ${getPilotStatusClassName(operatorStatus)}`}>
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -193,24 +197,24 @@ export default function AdminMerchantOnboardingPage() {
               <h2 className="mt-2 text-xl font-bold">{operatorSummary.title}</h2>
               <p className="mt-2 max-w-3xl text-sm opacity-80">{operatorSummary.description}</p>
             </div>
-            <span className="w-fit rounded-full border border-current px-3 py-1 text-xs font-semibold">
+            <DashboardPill className="w-fit border-current">
               {operatorSummary.status}
-            </span>
+            </DashboardPill>
           </div>
         </section>
 
         <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {summaryCards.map((card) => (
-            <div key={card.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <DashboardMetric key={card.label} variant="admin" className="rounded-2xl bg-zinc-900 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{card.label}</p>
               <p className={`mt-2 text-3xl font-bold ${card.className}`}>{card.value}</p>
-            </div>
+            </DashboardMetric>
           ))}
         </section>
 
         <section className="space-y-4">
           {prioritizedChecklists.map((checklist) => (
-            <article key={checklist.merchant.id} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <DashboardPanel as="article" key={checklist.merchant.id} variant="adminMuted" className="p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h2 className="text-lg font-bold">{checklist.merchant.name}</h2>
@@ -221,9 +225,9 @@ export default function AdminMerchantOnboardingPage() {
                   </p>
                 </div>
                 <div className="flex max-w-sm flex-col items-start gap-2 md:items-end">
-                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getPilotStatusClassName(checklist.overallStatus)}`}>
+                  <DashboardPill className={getPilotStatusClassName(checklist.overallStatus)}>
                     {checklist.overallStatus}
-                  </span>
+                  </DashboardPill>
                   <p className="text-left text-xs text-zinc-500 md:text-right">
                     {getPilotDecision(checklist.overallStatus).description}
                   </p>
@@ -236,15 +240,15 @@ export default function AdminMerchantOnboardingPage() {
                   const evidence = getPilotEvidence(check.details, checklist.generatedAt);
 
                   return (
-                    <div key={check.code} className="rounded-xl border border-zinc-800 bg-black p-4">
+                    <DashboardPanel as="div" key={check.code} variant="admin" className="rounded-xl bg-black p-4 sm:p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-semibold">{formatPilotCode(check.code)}</p>
                           <p className="mt-1 text-sm text-zinc-500">{check.message}</p>
                         </div>
-                        <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${getPilotStatusClassName(check.status)}`}>
+                        <DashboardPill className={`shrink-0 ${getPilotStatusClassName(check.status)}`}>
                           {check.status}
-                        </span>
+                        </DashboardPill>
                       </div>
                       {evidence.length > 0 && (
                         <dl className="mt-3 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
@@ -260,9 +264,9 @@ export default function AdminMerchantOnboardingPage() {
                         <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-3">
                           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Next action</p>
                           <p className="mt-1 text-sm text-zinc-400">{action.text}</p>
-                          <a href={action.href} className="mt-3 inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/20">
+                          <DashboardButton as="a" href={action.href} variant="plain" className="mt-3 inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/20">
                             {action.label}
-                          </a>
+                          </DashboardButton>
                         </div>
                       )}
                       <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-zinc-500 md:grid-cols-2">
@@ -273,20 +277,20 @@ export default function AdminMerchantOnboardingPage() {
                           </div>
                         ))}
                       </div>
-                    </div>
+                    </DashboardPanel>
                   );
                 })}
               </div>
-            </article>
+            </DashboardPanel>
           ))}
 
           {!loading && checklists.length === 0 && (
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+            <DashboardEmptyState variant="admin" className="rounded-2xl bg-zinc-900 p-6">
               <p className="font-semibold text-zinc-200">No merchant checklist found</p>
               <p className="mt-1 text-sm text-zinc-500">
                 Adjust the merchant ID, limit, or blocked-only filter and run the checklist again.
               </p>
-            </div>
+            </DashboardEmptyState>
           )}
         </section>
       </div>

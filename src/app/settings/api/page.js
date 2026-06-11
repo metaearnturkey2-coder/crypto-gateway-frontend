@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardPanel } from "@/components/dashboard-ui";
 import SettingsShell from "@/components/settings-shell";
 import { merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -73,7 +74,7 @@ export default function ApiSettingsPage() {
   return (
     <SettingsShell title={t("settings.api")} activeSection="api">
       <div className="space-y-5">
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+        <DashboardPanel className="p-6">
           <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white light-dashboard:text-zinc-950">
@@ -83,14 +84,15 @@ export default function ApiSettingsPage() {
                 {t("apiKeys.description")}
               </p>
             </div>
-            <a
+            <DashboardButton
+              as="a"
               href="/settings/security"
-              className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-black transition hover:opacity-80 light-dashboard:bg-zinc-950 light-dashboard:text-white"
+              className="px-4 py-3"
             >
               {t("apiKeys.createOrRotate")}
-            </a>
+            </DashboardButton>
           </div>
-        </div>
+        </DashboardPanel>
 
         {notice && (
           <div
@@ -104,7 +106,7 @@ export default function ApiSettingsPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/70 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+        <DashboardPanel className="overflow-hidden p-0 sm:p-0">
           <div className="grid grid-cols-[1.2fr_90px_100px_1.2fr_1fr_1fr_110px] gap-3 border-b border-zinc-800 px-5 py-3 text-xs font-semibold uppercase text-zinc-500 light-dashboard:border-zinc-200">
             <span>{t("apiKeys.prefix")}</span>
             <span>{t("apiKeys.mode")}</span>
@@ -115,10 +117,16 @@ export default function ApiSettingsPage() {
             <span className="text-right">{t("apiKeys.actions")}</span>
           </div>
 
-          {loading && <p className="px-5 py-6 text-sm text-zinc-400">{t("apiKeys.loading")}</p>}
+          {loading && (
+            <DashboardEmptyState className="rounded-none border-0 px-5 py-6">
+              {t("apiKeys.loading")}
+            </DashboardEmptyState>
+          )}
 
           {!loading && apiKeys.length === 0 && (
-            <p className="px-5 py-6 text-sm text-zinc-400">{t("apiKeys.empty")}</p>
+            <DashboardEmptyState className="rounded-none border-0 px-5 py-6">
+              {t("apiKeys.empty")}
+            </DashboardEmptyState>
           )}
 
           {!loading &&
@@ -150,18 +158,20 @@ export default function ApiSettingsPage() {
                   {apiKey.expiresAt ? formatDashboardDateTime(apiKey.expiresAt, timeZone) : t("apiKeys.noExpiry")}
                 </p>
                 <div className="flex justify-start lg:justify-end">
-                  <button
+                  <DashboardButton
+                    type="button"
+                    variant="danger"
                     onClick={() => revokeApiKey(apiKey.prefix)}
                     disabled={effectiveStatus !== "ACTIVE" || revokingPrefix === apiKey.prefix}
-                    className="rounded-lg border border-red-500/40 px-3 py-2 text-xs font-semibold text-red-200 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="rounded-lg px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {revokingPrefix === apiKey.prefix ? t("apiKeys.revoking") : t("apiKeys.revoke")}
-                  </button>
+                  </DashboardButton>
                 </div>
               </div>
               );
             })}
-        </div>
+        </DashboardPanel>
       </div>
     </SettingsShell>
   );

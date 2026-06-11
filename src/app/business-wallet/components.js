@@ -2,19 +2,27 @@
 
 import { formatDashboardDateTime } from "@/lib/i18n";
 import { formatTokenAmount } from "@/lib/money";
+import {
+  DashboardButton,
+  DashboardEmptyState,
+  DashboardInput,
+  DashboardMetric,
+  DashboardPanel,
+  DashboardPill,
+} from "@/components/dashboard-ui";
 
 export function PaymentOverviewPanel({ paymentStats, t }) {
   return (
-    <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+    <DashboardPanel>
       <h2 className="mb-1 text-xl font-semibold sm:text-[22px]">{t("businessWallet.overview")}</h2>
       <p className="mb-4 text-sm text-zinc-500">{t("businessWallet.snapshot")}</p>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("businessWallet.totalPayments")}</p><p className="text-2xl font-bold">{paymentStats.total}</p></div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("businessWallet.paidPayments")}</p><p className="text-2xl font-bold">{paymentStats.paid}</p></div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("businessWallet.pendingPayments")}</p><p className="text-2xl font-bold">{paymentStats.pending}</p></div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-3"><p className="text-sm text-zinc-500">{t("businessWallet.expiredPayments")}</p><p className="text-2xl font-bold">{paymentStats.expired}</p></div>
+        <DashboardMetric><p className="text-sm text-zinc-500">{t("businessWallet.totalPayments")}</p><p className="text-2xl font-bold">{paymentStats.total}</p></DashboardMetric>
+        <DashboardMetric><p className="text-sm text-zinc-500">{t("businessWallet.paidPayments")}</p><p className="text-2xl font-bold">{paymentStats.paid}</p></DashboardMetric>
+        <DashboardMetric><p className="text-sm text-zinc-500">{t("businessWallet.pendingPayments")}</p><p className="text-2xl font-bold">{paymentStats.pending}</p></DashboardMetric>
+        <DashboardMetric><p className="text-sm text-zinc-500">{t("businessWallet.expiredPayments")}</p><p className="text-2xl font-bold">{paymentStats.expired}</p></DashboardMetric>
       </div>
-    </section>
+    </DashboardPanel>
   );
 }
 
@@ -43,7 +51,7 @@ export function FinancePayoutPanel({
   whitelisting,
 }) {
   return (
-    <section className="business-wallet-panel rounded-2xl border p-4">
+    <DashboardPanel className="p-4 sm:p-4">
       <div className="mb-3">
         <div>
           <h2 className="text-xl font-semibold sm:text-[22px]">{t("businessWallet.finance")}</h2>
@@ -52,32 +60,32 @@ export function FinancePayoutPanel({
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-4">
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.available")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.available, settlements.summary.currency)}</p></div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.pending")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.pendingBalance, settlements.summary.currency)}</p></div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.grossPaid")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.grossPaid, settlements.summary.currency)}</p></div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5"><p className="text-xs text-zinc-500">{t("overview.reserved")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.reservedForPayouts, settlements.summary.currency)}</p></div>
+        <DashboardMetric className="py-2.5"><p className="text-xs text-zinc-500">{t("overview.available")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.available, settlements.summary.currency)}</p></DashboardMetric>
+        <DashboardMetric className="py-2.5"><p className="text-xs text-zinc-500">{t("overview.pending")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.pendingBalance, settlements.summary.currency)}</p></DashboardMetric>
+        <DashboardMetric className="py-2.5"><p className="text-xs text-zinc-500">{t("overview.grossPaid")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.grossPaid, settlements.summary.currency)}</p></DashboardMetric>
+        <DashboardMetric className="py-2.5"><p className="text-xs text-zinc-500">{t("overview.reserved")}</p><p className="break-words text-xl font-bold">{formatTokenAmount(settlements.summary.reservedForPayouts, settlements.summary.currency)}</p></DashboardMetric>
       </div>
 
       <div className="mb-3 grid grid-cols-1 gap-2.5 md:grid-cols-4">
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
+        <DashboardMetric className="py-2.5">
           <p className="text-xs text-zinc-500">{t("businessWallet.maxWithdrawable")}</p>
           <p className="break-words text-lg font-bold">{formatTokenAmount(payoutAvailability.maxWithdrawable, settlements.summary.currency)}</p>
           <p className="text-[11px] text-zinc-500">{t("businessWallet.balanceBound")}</p>
-        </div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
+        </DashboardMetric>
+        <DashboardMetric className="py-2.5">
           <p className="text-xs text-zinc-500">{t("businessWallet.perTransactionLimit")}</p>
           <p className="break-words text-lg font-bold">{formatTokenAmount(settlements.payoutLimits?.perTransactionLimit, settlements.payoutLimits?.currency || "USDT")}</p>
-        </div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
+        </DashboardMetric>
+        <DashboardMetric className="py-2.5">
           <p className="text-xs text-zinc-500">{t("businessWallet.dailyRemaining")}</p>
           <p className="break-words text-lg font-bold">{formatTokenAmount(settlements.payoutLimits?.dailyRemaining, settlements.payoutLimits?.currency || "USDT")}</p>
           <p className="text-[11px] text-zinc-500">{t("businessWallet.used")} {formatTokenAmount(settlements.payoutLimits?.dailyUsed, settlements.payoutLimits?.currency || "USDT")}</p>
-        </div>
-        <div className="business-wallet-metric rounded-xl border px-4 py-2.5">
+        </DashboardMetric>
+        <DashboardMetric className="py-2.5">
           <p className="text-xs text-zinc-500">{t("businessWallet.weeklyRemaining")}</p>
           <p className="break-words text-lg font-bold">{formatTokenAmount(settlements.payoutLimits?.weeklyRemaining, settlements.payoutLimits?.currency || "USDT")}</p>
           <p className="text-[11px] text-zinc-500">{t("businessWallet.used")} {formatTokenAmount(settlements.payoutLimits?.weeklyUsed, settlements.payoutLimits?.currency || "USDT")}</p>
-        </div>
+        </DashboardMetric>
       </div>
 
       <PayoutRequestForm
@@ -115,7 +123,7 @@ export function FinancePayoutPanel({
         t={t}
         timeZone={timeZone}
       />
-    </section>
+    </DashboardPanel>
   );
 }
 
@@ -140,11 +148,11 @@ function PayoutRequestForm({
       <form onSubmit={createPayoutRequest} className="mb-2.5 grid grid-cols-1 gap-2.5 lg:grid-cols-[160px_minmax(250px,1.15fr)_minmax(210px,0.95fr)_190px] lg:items-end">
         <label className="grid gap-1.5">
           <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">{t("businessWallet.amount")}</span>
-          <input type="number" min={MIN_PAYOUT_AMOUNT} max={payoutAvailability.maxWithdrawable} step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none" />
+          <DashboardInput type="number" min={MIN_PAYOUT_AMOUNT} max={payoutAvailability.maxWithdrawable} step="0.01" placeholder="0.00" value={amount} onChange={(e) => setAmount(e.target.value)} className="h-9" />
         </label>
         <label className="grid gap-1.5">
           <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">{t("businessWallet.walletPlaceholder")}</span>
-          <input type="text" placeholder={t("businessWallet.walletPlaceholder")} value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} list="payout-address-whitelist" className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none" />
+          <DashboardInput type="text" placeholder={t("businessWallet.walletPlaceholder")} value={walletAddress} onChange={(e) => setWalletAddress(e.target.value)} list="payout-address-whitelist" className="h-9" />
           <datalist id="payout-address-whitelist">
             {payoutAddresses.filter(isPayoutAddressActive).map((address) => (
               <option key={address.id} value={address.walletAddress}>{address.label || address.walletAddress}</option>
@@ -153,11 +161,11 @@ function PayoutRequestForm({
         </label>
         <label className="grid gap-1.5">
           <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">{t("businessWallet.optionalNote")}</span>
-          <input type="text" placeholder={t("businessWallet.optionalNote")} value={note} onChange={(e) => setNote(e.target.value)} className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none" />
+          <DashboardInput type="text" placeholder={t("businessWallet.optionalNote")} value={note} onChange={(e) => setNote(e.target.value)} className="h-9" />
         </label>
-        <button disabled={payoutSubmitDisabled} className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+        <DashboardButton disabled={payoutSubmitDisabled} className="h-9 px-5 disabled:cursor-not-allowed disabled:opacity-50">
           {t("businessWallet.requestPayout")}
-        </button>
+        </DashboardButton>
       </form>
 
       <p className="mb-2.5 text-xs text-zinc-500">
@@ -188,15 +196,15 @@ function PayoutAddressWhitelistPanel({
       <div className="mb-3 flex flex-col gap-2 md:flex-row md:items-end">
         <label className="grid flex-1 gap-1.5">
           <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">Whitelist label</span>
-          <input type="text" placeholder="Main payout wallet" value={payoutAddressLabel} onChange={(e) => setPayoutAddressLabel(e.target.value)} className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none" />
+          <DashboardInput type="text" placeholder="Main payout wallet" value={payoutAddressLabel} onChange={(e) => setPayoutAddressLabel(e.target.value)} className="h-9" />
         </label>
         <label className="grid flex-[1.4] gap-1.5">
           <span className="business-wallet-field-label text-[10px] font-semibold uppercase tracking-wide">Whitelist wallet address</span>
-          <input type="text" placeholder="TRON payout wallet address" value={whitelistAddress} onChange={(e) => setWhitelistAddress(e.target.value)} className="business-wallet-input h-9 rounded-xl border px-4 text-sm outline-none" />
+          <DashboardInput type="text" placeholder="TRON payout wallet address" value={whitelistAddress} onChange={(e) => setWhitelistAddress(e.target.value)} className="h-9" />
         </label>
-        <button type="button" onClick={addPayoutAddress} disabled={whitelisting} className="business-wallet-primary-button h-9 rounded-xl border px-5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50">
+        <DashboardButton type="button" onClick={addPayoutAddress} disabled={whitelisting} className="h-9 px-5 disabled:cursor-not-allowed disabled:opacity-50">
           {whitelisting ? "Whitelisting..." : "Whitelist address"}
-        </button>
+        </DashboardButton>
       </div>
       {payoutAddresses.length === 0 ? (
         <p className="text-xs text-zinc-500">Henuz whitelist payout adresi yok.</p>
@@ -217,7 +225,7 @@ function PayoutHistoryList({ payoutRequests, payoutStatusClass, t, timeZone }) {
   return (
     <div className="business-wallet-payout-list overflow-hidden rounded-xl border">
       {payoutRequests.length === 0 ? (
-        <p className="business-wallet-empty-state px-4 py-3 text-sm">{t("businessWallet.noPayoutRequests")}</p>
+        <DashboardEmptyState className="rounded-none border-0">{t("businessWallet.noPayoutRequests")}</DashboardEmptyState>
       ) : (
         payoutRequests.map((request) => (
           <div key={request.id} className="grid grid-cols-1 gap-3 border-t px-4 py-3 first:border-t-0 lg:grid-cols-[160px_1fr_140px_170px]">
@@ -240,7 +248,7 @@ export function RecentActivityPanel({
   timeZone,
 }) {
   return (
-    <section className="business-wallet-panel rounded-2xl border p-4 sm:p-5">
+    <DashboardPanel>
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-3">
@@ -253,13 +261,13 @@ export function RecentActivityPanel({
           </div>
           <p className="text-sm text-zinc-500">{t("businessWallet.activityDescription")}</p>
         </div>
-        <a href="/business-wallet/webhooks" className="business-wallet-pill flex w-full justify-center rounded-full border px-4 py-2 text-sm font-semibold sm:w-fit">
+        <DashboardPill as="a" href="/business-wallet/webhooks" className="flex w-full justify-center px-4 py-2 text-sm sm:w-fit">
           {t("webhooks.openLogs")}
-        </a>
+        </DashboardPill>
       </div>
 
       {recentActivity.length === 0 ? (
-        <p className="business-wallet-empty-state rounded-xl border px-4 py-3 text-sm">{t("businessWallet.noActivity")}</p>
+        <DashboardEmptyState>{t("businessWallet.noActivity")}</DashboardEmptyState>
       ) : (
         <div className="business-wallet-activity-list divide-y rounded-xl border">
           {recentActivity.map((log) => {
@@ -282,6 +290,6 @@ export function RecentActivityPanel({
           })}
         </div>
       )}
-    </section>
+    </DashboardPanel>
   );
 }

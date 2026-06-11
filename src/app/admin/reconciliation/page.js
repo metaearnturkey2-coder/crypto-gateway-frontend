@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardInput, DashboardMetric, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -158,21 +159,21 @@ export default function AdminReconciliationPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/admin/merchant-onboarding" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            <DashboardButton as="a" href="/admin/merchant-onboarding" variant="adminSecondary" className="px-4 py-3">
               Merchant Onboarding
-            </a>
-            <a href="/admin/pilot-readiness" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/pilot-readiness" variant="adminSecondary" className="px-4 py-3">
               Pilot Readiness
-            </a>
-            <a href="/admin/risk-review" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/risk-review" variant="adminSecondary" className="px-4 py-3">
               Risk Review
-            </a>
-            <a href="/admin/settlement-console" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/settlement-console" variant="adminSecondary" className="px-4 py-3">
               Settlement
-            </a>
-            <a href="/admin/treasury" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/treasury" variant="adminSecondary" className="px-4 py-3">
               Treasury
-            </a>
+            </DashboardButton>
           </div>
         </header>
 
@@ -184,41 +185,43 @@ export default function AdminReconciliationPage() {
         )}
 
         <section className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Checked</p>
             <p className="mt-2 text-3xl font-bold">{summary.checkedMerchants || 0}</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          </DashboardMetric>
+          <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Mismatches</p>
             <p className={`mt-2 text-3xl font-bold ${summary.mismatchedMerchants ? "text-red-300" : "text-emerald-300"}`}>
               {summary.mismatchedMerchants || 0}
             </p>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          </DashboardMetric>
+          <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Returned</p>
             <p className="mt-2 text-3xl font-bold">{summary.returnedMerchants || 0}</p>
-          </div>
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          </DashboardMetric>
+          <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Checked At</p>
             <p className="mt-3 text-sm text-zinc-300">{formatDate(checkedAt)}</p>
-          </div>
+          </DashboardMetric>
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <DashboardPanel variant="adminMuted" className="p-5">
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_140px_auto_auto]">
-            <input
+            <DashboardInput
+              variant="admin"
               value={merchantId}
               onChange={(event) => setMerchantId(event.target.value)}
               placeholder="Merchant ID ile tekil kontrol"
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none"
+              className="py-3"
             />
-            <input
+            <DashboardInput
+              variant="admin"
               value={limit}
               onChange={(event) => setLimit(event.target.value)}
               disabled={Boolean(merchantId.trim())}
               inputMode="numeric"
               placeholder="Limit"
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none disabled:opacity-40"
+              className="py-3 disabled:opacity-40"
             />
             <label className="flex items-center gap-3 rounded-xl border border-zinc-700 bg-black px-4 py-3 text-sm text-zinc-300">
               <input
@@ -230,26 +233,26 @@ export default function AdminReconciliationPage() {
               />
               Only mismatches
             </label>
-            <button onClick={() => loadReconciliation()} disabled={loading || !adminAccessToken} className="rounded-xl bg-white px-5 py-3 font-semibold text-black disabled:opacity-40">
+            <DashboardButton type="button" variant="adminPrimary" onClick={() => loadReconciliation()} disabled={loading || !adminAccessToken} className="px-5 py-3 disabled:opacity-40">
               Kontrol et
-            </button>
+            </DashboardButton>
           </div>
           {singleResult && (
             <p className="mt-3 text-xs text-zinc-500">
               Tekil merchant sonucu gösteriliyor: {singleResult.merchant?.email || singleResult.merchant?.id}
             </p>
           )}
-        </section>
+        </DashboardPanel>
 
         <section className="space-y-4">
           {visibleResults.map((result) => (
-            <div key={result.merchant.id} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <DashboardPanel as="div" key={result.merchant.id} variant="adminMuted" className="p-5">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(result.status)}`}>
+                    <DashboardPill className={getStatusClassName(result.status)}>
                       {result.status}
-                    </span>
+                    </DashboardPill>
                     <span className="font-semibold">{result.merchant.name}</span>
                     <span className="text-sm text-zinc-500">{result.merchant.email}</span>
                   </div>
@@ -284,9 +287,9 @@ export default function AdminReconciliationPage() {
                             {check.difference}
                           </td>
                           <td className="rounded-r-xl px-3 py-3">
-                            <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(check.status)}`}>
+                            <DashboardPill className={getStatusClassName(check.status)}>
                               {check.status}
-                            </span>
+                            </DashboardPill>
                           </td>
                         </tr>
                       );
@@ -294,13 +297,13 @@ export default function AdminReconciliationPage() {
                   </tbody>
                 </table>
               </div>
-            </div>
+            </DashboardPanel>
           ))}
 
           {!loading && visibleResults.length === 0 && (
-            <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-500">
+            <DashboardEmptyState variant="admin" className="rounded-2xl bg-zinc-900 p-6">
               Reconciliation sonucu yok.
-            </p>
+            </DashboardEmptyState>
           )}
         </section>
       </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import { DashboardButton, DashboardEmptyState, DashboardMetric, DashboardPanel, DashboardPill, DashboardSelect } from "@/components/dashboard-ui";
 import { formatTokenAmount } from "@/lib/money";
 
 export const CRITICAL_CONFIRMATION_TEXT = "CONFIRM";
@@ -190,7 +191,9 @@ export function PayoutStatusConfirmPanel({
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <button
+        <DashboardButton
+          type="button"
+          variant="plain"
           onClick={() =>
             updatePayoutStatus(confirmAction.payoutId, confirmAction.status)
           }
@@ -203,16 +206,18 @@ export function PayoutStatusConfirmPanel({
             !adminMfaCode.trim() ||
             (confirmAction.status === "APPROVED" && !statusNote.trim())
           }
-          className="rounded-lg bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-lg border-yellow-500 bg-yellow-500 px-4 py-2 font-semibold text-black hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {t("admin.confirmStatusChange")}
-        </button>
-        <button
+        </DashboardButton>
+        <DashboardButton
+          type="button"
+          variant="adminSecondary"
           onClick={clearConfirmAction}
-          className="rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-800"
+          className="rounded-lg px-4 py-2"
         >
           {t("admin.cancel")}
-        </button>
+        </DashboardButton>
       </div>
     </div>
   );
@@ -247,7 +252,7 @@ export function AdminSecurityEventsPanel({
   timeZone,
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+    <DashboardPanel variant="adminMuted" className="p-6">
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.adminSecurity")}</p>
@@ -256,42 +261,44 @@ export function AdminSecurityEventsPanel({
             {t("admin.securityDescription")}
           </p>
         </div>
-        <span className="w-fit rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-400">
+        <DashboardPill variant="admin" className="w-fit text-zinc-400">
           {t("admin.lastEvents")}
-        </span>
+        </DashboardPill>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-4">
+        <DashboardMetric variant="admin" className="rounded-xl border-emerald-500/20 bg-emerald-500/10 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200/70">{t("admin.successful")}</p>
           <p className="mt-2 text-2xl font-bold text-emerald-100">{securitySummary.success}</p>
-        </div>
-        <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+        </DashboardMetric>
+        <DashboardMetric variant="admin" className="rounded-xl border-red-500/20 bg-red-500/10 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-red-200/70">{t("admin.failed")}</p>
           <p className="mt-2 text-2xl font-bold text-red-100">{securitySummary.failed}</p>
-        </div>
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+        </DashboardMetric>
+        <DashboardMetric variant="admin" className="rounded-xl border-amber-500/20 bg-amber-500/10 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/70">{t("admin.blocked")}</p>
           <p className="mt-2 text-2xl font-bold text-amber-100">{securitySummary.blocked}</p>
-        </div>
+        </DashboardMetric>
       </div>
 
       {securityEvents.length === 0 && (
-        <p className="text-zinc-400">{t("admin.noSecurityEvents")}</p>
+        <DashboardEmptyState variant="admin">{t("admin.noSecurityEvents")}</DashboardEmptyState>
       )}
 
       <div className="space-y-3">
         {securityEvents.map((event) => (
-          <div
+          <DashboardPanel
+            as="div"
             key={event.id}
-            className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-black p-4 text-sm md:grid-cols-[1fr_auto]"
+            variant="admin"
+            className="grid grid-cols-1 gap-3 rounded-xl bg-black p-4 text-sm sm:p-4 md:grid-cols-[1fr_auto]"
           >
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-semibold text-zinc-100">{formatSecurityEvent(event.event)}</span>
-                <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${getSecurityStatusClassName(event.status)}`}>
+                <DashboardPill className={`px-2.5 ${getSecurityStatusClassName(event.status)}`}>
                   {event.status}
-                </span>
+                </DashboardPill>
               </div>
               <p className="mt-2 text-zinc-500">
                 {event.reason ? event.reason.replace(/_/g, " ") : t("admin.noReason")}
@@ -301,10 +308,10 @@ export function AdminSecurityEventsPanel({
               <p>{event.ipAddress || t("admin.unknownIp")}</p>
               <p className="mt-1">{formatDashboardDateTime(event.createdAt, timeZone)}</p>
             </div>
-          </div>
+          </DashboardPanel>
         ))}
       </div>
-    </section>
+    </DashboardPanel>
   );
 }
 
@@ -316,24 +323,24 @@ export function PayoutOverviewPanel({ pagination, payoutSummary, t }) {
         <p className="text-zinc-500 text-sm">{t("admin.overviewDescription")}</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+        <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-4">
           <p className="text-zinc-500 text-sm mb-2">{t("admin.matchingRequests")}</p>
           <p className="text-2xl font-bold">{pagination.totalCount}</p>
-        </div>
+        </DashboardMetric>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+        <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-4">
           <p className="text-zinc-500 text-sm mb-2">{t("admin.matchingAmount")}</p>
           <p className="text-2xl font-bold">
             {formatTokenAmount(payoutSummary.totalAmount, "USDT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
-        </div>
+        </DashboardMetric>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4">
+        <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-4">
           <p className="text-zinc-500 text-sm mb-2">{t("admin.currentPage")}</p>
           <p className="text-2xl font-bold">
             {pagination.page}/{pagination.totalPages}
           </p>
-        </div>
+        </DashboardMetric>
       </div>
     </section>
   );
@@ -355,7 +362,6 @@ export function PayoutOperationsPanel({
   page,
   pagination,
   providerError,
-  secondaryButtonClass,
   setAdminMfaCode,
   setAuditSummaryFilter,
   setCriticalConfirmationText,
@@ -379,7 +385,7 @@ export function PayoutOperationsPanel({
   visiblePayoutRequests,
 }) {
   return (
-    <section className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
+    <DashboardPanel variant="adminMuted" className="p-5">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
         <div>
           <h2 className="text-2xl font-bold">{t("admin.operations")}</h2>
@@ -391,7 +397,8 @@ export function PayoutOperationsPanel({
         </div>
 
         <div className="flex flex-col md:flex-row gap-3">
-          <select
+          <DashboardSelect
+            variant="admin"
             value={statusFilter}
             onChange={(event) => {
               setStatusFilter(event.target.value);
@@ -401,37 +408,42 @@ export function PayoutOperationsPanel({
                 status: event.target.value,
               });
             }}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="p-3"
           >
             {STATUS_OPTIONS.map((status) => (
               <option key={status} value={status}>
                 {status === "ALL" ? t("admin.allStatuses") : status}
               </option>
             ))}
-          </select>
+          </DashboardSelect>
 
-          <select
+          <DashboardSelect
+            variant="admin"
             value={auditSummaryFilter}
             onChange={(event) => setAuditSummaryFilter(event.target.value)}
-            className="p-3 rounded-xl bg-zinc-800 border border-zinc-700 outline-none"
+            className="p-3"
           >
             <option value="ALL">{t("admin.allAuditSummaries")}</option>
             <option value="SETTLED_TX">{t("admin.hasSettlementTx")}</option>
             <option value="REJECT_REASON">{t("admin.hasRejectReason")}</option>
-          </select>
+          </DashboardSelect>
 
-          <button
+          <DashboardButton
+            type="button"
+            variant="adminSecondary"
             onClick={() => fetchPayouts()}
-            className={secondaryButtonClass}
+            className="px-4 py-3 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t("admin.refresh")}
-          </button>
-          <button
+          </DashboardButton>
+          <DashboardButton
+            type="button"
+            variant="adminSecondary"
             onClick={fetchSecurityEvents}
-            className={secondaryButtonClass}
+            className="px-4 py-3 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t("admin.securityEvents")}
-          </button>
+          </DashboardButton>
         </div>
       </div>
 
@@ -444,7 +456,7 @@ export function PayoutOperationsPanel({
       )}
 
       {!loading && visiblePayoutRequests.length === 0 && (
-        <p className="text-zinc-400">{t("admin.noPayoutRequests")}</p>
+        <DashboardEmptyState variant="admin">{t("admin.noPayoutRequests")}</DashboardEmptyState>
       )}
 
       <div className="space-y-4">
@@ -452,9 +464,11 @@ export function PayoutOperationsPanel({
           const auditSummary = getPayoutAuditSummary(request);
 
           return (
-            <div
+            <DashboardPanel
+              as="div"
               key={request.id}
-              className="border border-zinc-800 rounded-xl p-5"
+              variant="admin"
+              className="rounded-xl p-5"
             >
               <div className="grid grid-cols-1 xl:grid-cols-[180px_1fr_220px] gap-5">
                 <div>
@@ -528,21 +542,25 @@ export function PayoutOperationsPanel({
                 </div>
 
                 <div className="flex flex-col sm:flex-row xl:flex-col gap-3">
-                  <button
+                  <DashboardButton
+                    type="button"
+                    variant="adminSecondary"
                     onClick={() => openPayoutDetails(request)}
-                    className="bg-zinc-800 px-4 py-3 rounded-xl font-semibold hover:bg-zinc-700 transition"
+                    className="px-4 py-3 hover:bg-zinc-700"
                   >
                     {t("admin.details")}
-                  </button>
+                  </DashboardButton>
 
                   {getAllowedActions(request.status).map((action) => (
-                    <button
+                    <DashboardButton
+                      type="button"
+                      variant="plain"
                       key={action.status}
                       onClick={() => openStatusConfirm(request.id, action.status)}
                       className={`${action.className} text-black px-4 py-3 rounded-xl font-semibold hover:opacity-80 transition`}
                     >
                       {action.label}
-                    </button>
+                    </DashboardButton>
                   ))}
 
                   {getAllowedActions(request.status).length === 0 && (
@@ -578,7 +596,7 @@ export function PayoutOperationsPanel({
                     updatePayoutStatus={updatePayoutStatus}
                   />
                 )}
-            </div>
+            </DashboardPanel>
           );
         })}
       </div>
@@ -589,32 +607,36 @@ export function PayoutOperationsPanel({
         </p>
 
         <div className="flex gap-3">
-          <button
+          <DashboardButton
+            type="button"
+            variant="adminSecondary"
             onClick={() => {
               const nextPage = Math.max(page - 1, 1);
               setPage(nextPage);
               fetchPayouts({ page: nextPage });
             }}
             disabled={pagination.page <= 1}
-            className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+            className="px-4 py-2 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t("admin.previous")}
-          </button>
+          </DashboardButton>
 
-          <button
+          <DashboardButton
+            type="button"
+            variant="adminSecondary"
             onClick={() => {
               const nextPage = Math.min(page + 1, pagination.totalPages);
               setPage(nextPage);
               fetchPayouts({ page: nextPage });
             }}
             disabled={pagination.page >= pagination.totalPages}
-            className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition disabled:cursor-not-allowed disabled:opacity-40"
+            className="px-4 py-2 hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {t("admin.next")}
-          </button>
+          </DashboardButton>
         </div>
       </div>
-    </section>
+    </DashboardPanel>
   );
 }
 
@@ -623,12 +645,11 @@ export function AdminSessionsPanel({
   adminSessions,
   formatDashboardDateTime,
   onRefresh,
-  secondaryButtonClass,
   t,
   timeZone,
 }) {
   return (
-    <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+    <DashboardPanel variant="adminMuted" className="p-6">
       <div className="mb-5 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.adminSessions")}</p>
@@ -637,12 +658,14 @@ export function AdminSessionsPanel({
             {t("admin.sessionDescription")}
           </p>
         </div>
-        <button
+        <DashboardButton
+          type="button"
+          variant="adminSecondary"
           onClick={onRefresh}
-          className={secondaryButtonClass}
+          className="px-4 py-3 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {t("admin.refreshSessions")}
-        </button>
+        </DashboardButton>
       </div>
 
       <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -652,25 +675,27 @@ export function AdminSessionsPanel({
           { label: t("admin.expired"), value: adminSessionSummary.expired, className: "border-amber-500/20 bg-amber-500/10 text-amber-100" },
           { label: t("admin.total"), value: adminSessionSummary.total, className: "border-zinc-700 bg-zinc-950 text-zinc-100" },
         ].map((item) => (
-          <div key={item.label} className={`rounded-xl border p-4 ${item.className}`}>
+          <DashboardMetric key={item.label} variant="admin" className={`rounded-xl p-4 ${item.className}`}>
             <p className="text-xs font-semibold uppercase tracking-wide opacity-70">{item.label}</p>
             <p className="mt-2 text-2xl font-bold">{item.value}</p>
-          </div>
+          </DashboardMetric>
         ))}
       </div>
 
       {adminSessions.length === 0 && (
-        <p className="text-zinc-400">{t("admin.noSessions")}</p>
+        <DashboardEmptyState variant="admin">{t("admin.noSessions")}</DashboardEmptyState>
       )}
 
       <div className="space-y-3">
         {adminSessions.map((session) => (
-          <div
+          <DashboardPanel
+            as="div"
             key={session.id}
-            className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-black p-4 text-sm md:grid-cols-[140px_1fr_1fr]"
+            variant="admin"
+            className="grid grid-cols-1 gap-3 rounded-xl bg-black p-4 text-sm sm:p-4 md:grid-cols-[140px_1fr_1fr]"
           >
-            <span
-              className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${
+            <DashboardPill
+              className={`w-fit ${
                 session.status === "ACTIVE"
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
                   : session.status === "REVOKED"
@@ -679,16 +704,16 @@ export function AdminSessionsPanel({
               }`}
             >
               {session.status}
-            </span>
+            </DashboardPill>
             <p className="text-zinc-400">
               {t("admin.sessionCreated")} <span className="text-zinc-200">{formatDashboardDateTime(session.createdAt, timeZone)}</span>
             </p>
             <p className="text-zinc-400">
               {t("admin.sessionExpires")} <span className="text-zinc-200">{formatDashboardDateTime(session.expiresAt, timeZone)}</span>
             </p>
-          </div>
+          </DashboardPanel>
         ))}
       </div>
-    </section>
+    </DashboardPanel>
   );
 }

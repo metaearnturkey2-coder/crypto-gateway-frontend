@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardMetric, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -112,18 +113,18 @@ export default function AdminPilotReadinessPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/admin/merchant-onboarding" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            <DashboardButton as="a" href="/admin/merchant-onboarding" variant="adminSecondary" className="px-4 py-3">
               Merchant Onboarding
-            </a>
-            <a href="/admin/reconciliation" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/reconciliation" variant="adminSecondary" className="px-4 py-3">
               Reconciliation
-            </a>
-            <a href="/admin/risk-review" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/risk-review" variant="adminSecondary" className="px-4 py-3">
               Risk Review
-            </a>
-            <a href="/admin/settlement-console" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/settlement-console" variant="adminSecondary" className="px-4 py-3">
               Settlement
-            </a>
+            </DashboardButton>
           </div>
         </header>
 
@@ -141,9 +142,9 @@ export default function AdminPilotReadinessPage() {
               <h2 className="mt-2 text-xl font-bold">{operatorSummary.title}</h2>
               <p className="mt-2 max-w-3xl text-sm opacity-80">{operatorSummary.description}</p>
             </div>
-            <span className="w-fit rounded-full border border-current px-3 py-1 text-xs font-semibold">
+            <DashboardPill className="w-fit border-current">
               {operatorSummary.status}
-            </span>
+            </DashboardPill>
           </div>
         </section>
 
@@ -155,9 +156,9 @@ export default function AdminPilotReadinessPage() {
                 <p className="mt-2 text-2xl font-bold">{decision.title}</p>
                 <p className="mt-2 max-w-xl text-sm opacity-80">{decision.description}</p>
               </div>
-              <span className="w-fit rounded-full border border-current px-3 py-1 text-xs font-semibold">
+              <DashboardPill className="w-fit border-current">
                 {readiness?.status || "UNKNOWN"}
-              </span>
+              </DashboardPill>
             </div>
             <dl className="mt-4 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
               {topEvidence.map(([label, value]) => (
@@ -169,10 +170,10 @@ export default function AdminPilotReadinessPage() {
             </dl>
           </div>
           {summaryCards.map((card) => (
-            <div key={card.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <DashboardMetric key={card.label} variant="admin" className="rounded-2xl bg-zinc-900 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{card.label}</p>
               <p className={`mt-2 text-3xl font-bold ${card.className}`}>{card.value}</p>
-            </div>
+            </DashboardMetric>
           ))}
         </section>
 
@@ -182,12 +183,12 @@ export default function AdminPilotReadinessPage() {
             const evidence = getPilotEvidence(check.details, readiness?.checkedAt);
 
             return (
-              <div key={check.name} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+              <DashboardPanel as="div" key={check.name} variant="adminMuted" className="p-5">
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-[180px_1fr_320px]">
                   <div>
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPilotStatusClassName(check.status)}`}>
+                    <DashboardPill className={`inline-flex ${getPilotStatusClassName(check.status)}`}>
                       {check.status}
-                    </span>
+                    </DashboardPill>
                   </div>
                   <div>
                     <h2 className="font-semibold">{formatPilotCode(check.name)}</h2>
@@ -206,9 +207,9 @@ export default function AdminPilotReadinessPage() {
                       <div className="mt-4 rounded-xl border border-zinc-800 bg-black p-4">
                         <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Next action</p>
                         <p className="mt-1 text-sm text-zinc-300">{action.text}</p>
-                        <a href={action.href} className="mt-3 inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/20">
+                        <DashboardButton as="a" href={action.href} variant="plain" className="mt-3 inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/20">
                           {action.label}
-                        </a>
+                        </DashboardButton>
                       </div>
                     )}
                   </div>
@@ -229,14 +230,14 @@ export default function AdminPilotReadinessPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </DashboardPanel>
             );
           })}
 
           {!loading && checks.length === 0 && (
-            <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-500">
+            <DashboardEmptyState variant="admin" className="rounded-2xl bg-zinc-900 p-6">
               Pilot readiness sonucu yok.
-            </p>
+            </DashboardEmptyState>
           )}
         </section>
       </div>

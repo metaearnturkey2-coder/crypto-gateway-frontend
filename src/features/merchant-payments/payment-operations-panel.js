@@ -1,5 +1,6 @@
 ﻿import Link from "next/link";
 import { QRCodeSVG } from "qrcode.react";
+import { DashboardButton, DashboardEmptyState, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import { formatTokenAmount } from "@/lib/money";
 import {
   formatDateTime,
@@ -38,7 +39,7 @@ export function PaymentOperationsPanel({
   webhookStatusFilter,
 }) {
   return (
-    <div className="merchant-payments-panel rounded-2xl border p-5 mb-8">
+    <DashboardPanel as="div" variant="merchant" className="mb-8 p-5 sm:p-5">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
         <div>
           <h2 className="text-2xl font-bold">{t("merchantPayments.operations")}</h2>
@@ -48,7 +49,7 @@ export function PaymentOperationsPanel({
               .replace("{total}", paymentPagination.totalCount)}
           </p>
         </div>
-        <button
+        <DashboardButton
           onClick={() => {
             setPaymentSearch("");
             setNeedsAttentionOnly(false);
@@ -56,10 +57,11 @@ export function PaymentOperationsPanel({
             setWebhookStatusFilter("ALL");
             setPaymentPage(1);
           }}
-          className="operations-filter-button rounded-xl border px-4 py-2 font-semibold transition"
+          variant="filter"
+          className="px-4 py-2"
         >
           {t("merchantPayments.clearFilters")}
-        </button>
+        </DashboardButton>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] mb-6">
@@ -103,22 +105,23 @@ export function PaymentOperationsPanel({
             </option>
           ))}
         </select>
-        <button
+        <DashboardButton
           type="button"
           onClick={() => {
             setNeedsAttentionOnly((current) => !current);
             setPaymentPage(1);
           }}
-          className={`operations-filter-button rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+          variant="filter"
+          className={`px-4 py-3 ${
             needsAttentionOnly ? "border-amber-300/50 bg-amber-300/15 text-amber-100" : ""
           }`}
         >
           {needsAttentionOnly ? t("merchantPayments.attentionOnlyOn") : t("merchantPayments.attentionOnly")}
-        </button>
+        </DashboardButton>
       </div>
 
       <div className="space-y-3">
-        {!loading && payments.length === 0 && <p className="text-zinc-400">{t("merchantPayments.noPayments")}</p>}
+        {!loading && payments.length === 0 && <DashboardEmptyState>{t("merchantPayments.noPayments")}</DashboardEmptyState>}
 
         {payments.map((payment) => (
           <PaymentOperationCard
@@ -138,19 +141,21 @@ export function PaymentOperationsPanel({
 
       <div className="operations-list-footer mt-4 flex flex-col gap-3 rounded-xl border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="operations-page-pill rounded-full border px-3 py-1 text-xs font-semibold">
-            Page {paymentPagination.page} of {paymentPagination.totalPages}
-          </span>
-          <span className="operations-refresh-pill rounded-full border px-3 py-1 text-xs font-semibold">
-            Auto refresh - 10s
-          </span>
+          <DashboardPill className="operations-page-pill">
+            {t("merchantPayments.pageIndicator")
+              .replace("{page}", paymentPagination.page)
+              .replace("{totalPages}", paymentPagination.totalPages)}
+          </DashboardPill>
+          <DashboardPill className="operations-refresh-pill">
+            {t("merchantPayments.autoRefreshInterval").replace("{seconds}", "10")}
+          </DashboardPill>
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
-          <button onClick={() => setPaymentPage((page) => Math.max(page - 1, 1))} disabled={paymentPagination.page <= 1} className="operations-filter-button h-9 rounded-lg border px-4 text-sm font-semibold transition disabled:opacity-40">{t("merchantPayments.previous")}</button>
-          <button onClick={() => setPaymentPage((page) => Math.min(page + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="operations-filter-button h-9 rounded-lg border px-4 text-sm font-semibold transition disabled:opacity-40">{t("merchantPayments.next")}</button>
+          <DashboardButton variant="filter" onClick={() => setPaymentPage((page) => Math.max(page - 1, 1))} disabled={paymentPagination.page <= 1} className="h-9 rounded-lg px-4 disabled:opacity-40">{t("merchantPayments.previous")}</DashboardButton>
+          <DashboardButton variant="filter" onClick={() => setPaymentPage((page) => Math.min(page + 1, paymentPagination.totalPages))} disabled={paymentPagination.page >= paymentPagination.totalPages} className="h-9 rounded-lg px-4 disabled:opacity-40">{t("merchantPayments.next")}</DashboardButton>
         </div>
       </div>
-    </div>
+    </DashboardPanel>
   );
 }
 
@@ -185,24 +190,24 @@ function PaymentOperationCard({
             </div>
             {payment.orderId && (
               <div className="payment-card-meta-row">
-                <span>Order ID</span>
+                <span>{t("merchantPayments.orderId")}</span>
                 <p>{payment.orderId}</p>
               </div>
             )}
           </div>
           <div className="payment-card-info-cluster">
             <div className="payment-card-meta-row">
-              <span>Wallet</span>
+              <span>{t("merchantPayments.walletAddress")}</span>
               <p>{payment.walletAddress.slice(0, 10)}...{payment.walletAddress.slice(-8)}</p>
             </div>
           </div>
           <div className="payment-card-time-grid grid gap-1.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="payment-card-meta-row">
-              <span>Created</span>
+              <span>{t("merchantPayments.created")}</span>
               <p>{formatDateTime(payment.createdAt, timeZone)}</p>
             </div>
             <div className="payment-card-meta-row">
-              <span>Expires</span>
+              <span>{t("merchantPayments.expires")}</span>
               <p>{formatTimeLeft(payment.expiresAt, now)}</p>
             </div>
           </div>
@@ -213,7 +218,7 @@ function PaymentOperationCard({
             <span className="text-xs text-zinc-500">{getWebhookStatusDescription(latestWebhook)}</span>
             {latestWebhook && (
               <div className="payment-card-meta-row payment-card-attempts-row">
-                <span>Attempts</span>
+                <span>{t("merchantPayments.attempts")}</span>
                 <p>{latestWebhook.attempts}/{latestWebhook.maxAttempts}</p>
               </div>
             )}
@@ -228,7 +233,7 @@ function PaymentOperationCard({
         </div>
         <div className="flex flex-col gap-2 xl:items-end">
           <div className="grid w-full grid-cols-2 gap-2 xl:max-w-[320px]">
-            <button onClick={() => copyText(payment.walletAddress, "Wallet address")} className="operation-action-button operation-action-muted h-8 rounded-lg border px-3 text-xs font-semibold transition">Copy Wallet</button>
+            <button onClick={() => copyText(payment.walletAddress, t("merchantPayments.walletAddress"))} className="operation-action-button operation-action-muted h-8 rounded-lg border px-3 text-xs font-semibold transition">{t("merchantPayments.copyWallet")}</button>
             {effectiveStatus === "PENDING" && (
               <button
                 onClick={() => runPaymentAction(payment.id, "verify")}
@@ -259,8 +264,8 @@ function PaymentOperationCard({
           {effectiveStatus === "PENDING" && (
             <div className="payment-card-qr hidden items-center justify-between gap-3 rounded-xl border px-3 py-1.5 xl:flex xl:max-w-[360px]">
               <div>
-                <p className="text-xs font-bold uppercase">QR preview</p>
-                <p className="mt-0.5 text-xs">Full payment view in Details</p>
+                <p className="text-xs font-bold uppercase">{t("merchantPayments.qrPreview")}</p>
+                <p className="mt-0.5 text-xs">{t("merchantPayments.fullPaymentViewInDetails")}</p>
               </div>
               <div className="rounded-lg bg-white p-1">
                 <QRCodeSVG value={payment.walletAddress} size={48} />

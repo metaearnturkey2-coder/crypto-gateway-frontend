@@ -2,6 +2,7 @@
 
 import { Clock, LogOut, MonitorCheck } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import SettingsShell from "@/components/settings-shell";
 import { clearMerchantSession, merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -61,21 +62,21 @@ export default function PreferenceActiveSessionsPage() {
 
   return (
     <SettingsShell title={t("settings.preference")} activeSection="preference">
-      <section className="max-w-3xl overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/55 light-dashboard:border-zinc-200 light-dashboard:bg-white">
+      <DashboardPanel className="max-w-3xl overflow-hidden p-0 sm:p-0">
         <div className="flex items-center justify-between gap-4 border-b border-zinc-800 px-5 py-4 light-dashboard:border-zinc-200">
           <h3 className="text-base font-bold text-white light-dashboard:text-zinc-950">{t("sessions.pageTitle")}</h3>
           {sessions.length > 0 ? (
-            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/25 light-dashboard:bg-emerald-50 light-dashboard:text-emerald-700">
+            <DashboardPill className="border-emerald-500/25 bg-emerald-500/10 text-emerald-300 light-dashboard:bg-emerald-50 light-dashboard:text-emerald-700">
               {sessions.length} {t("sessions.online")}
-            </span>
+            </DashboardPill>
           ) : null}
         </div>
 
         {loading || sessions.length === 0 ? (
           <div className="p-5">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-5 text-sm font-semibold text-zinc-300 light-dashboard:border-zinc-200 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-700">
+            <DashboardEmptyState className="px-4 py-5 font-semibold">
               {loading ? t("sessions.loading") : t("sessions.noSession")}
-            </div>
+            </DashboardEmptyState>
           </div>
         ) : (
           <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
@@ -91,13 +92,13 @@ export default function PreferenceActiveSessionsPage() {
                         {session.device || t("sessions.thisBrowser")}
                       </p>
                       {session.isCurrent ? (
-                        <span className="rounded-full bg-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-300 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-700">
+                        <DashboardPill className="border-zinc-800 bg-zinc-800 px-2.5 text-zinc-300 light-dashboard:border-zinc-200 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-700">
                           {t("sessions.currentSession")}
-                        </span>
+                        </DashboardPill>
                       ) : null}
-                      <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-300 light-dashboard:bg-emerald-50 light-dashboard:text-emerald-700">
+                      <DashboardPill className="border-emerald-500/25 bg-emerald-500/10 px-2.5 text-emerald-300 light-dashboard:bg-emerald-50 light-dashboard:text-emerald-700">
                         {t("sessions.online")}
-                      </span>
+                      </DashboardPill>
                     </div>
                     <p className="mt-1 break-words text-sm text-zinc-400 light-dashboard:text-zinc-500">
                       {getSessionDetails(session)}
@@ -114,19 +115,20 @@ export default function PreferenceActiveSessionsPage() {
                     </div>
                   </div>
                 </div>
-                <button
+                <DashboardButton
                   type="button"
+                  variant="danger"
                   onClick={() => terminateSession(session.id, session.isCurrent)}
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900 px-4 text-sm font-semibold text-white transition hover:border-red-500/40 hover:bg-red-500/10 hover:text-red-200 light-dashboard:border-zinc-200 light-dashboard:bg-white light-dashboard:text-zinc-950 light-dashboard:hover:text-red-700"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-4 light-dashboard:text-red-700"
                 >
                   <LogOut size={16} />
                   {t("sessions.terminate")}
-                </button>
+                </DashboardButton>
               </div>
             ))}
           </div>
         )}
-      </section>
+      </DashboardPanel>
     </SettingsShell>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { DashboardButton, DashboardEmptyState, DashboardInput, DashboardMetric, DashboardPanel, DashboardPill, DashboardSelect } from "@/components/dashboard-ui";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -170,12 +171,12 @@ export default function AdminRiskReviewPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <a href="/admin/settlement-console" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            <DashboardButton as="a" href="/admin/settlement-console" variant="adminSecondary" className="px-4 py-3">
               Settlement Console
-            </a>
-            <a href="/admin/treasury" className="rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm font-semibold hover:bg-zinc-800">
+            </DashboardButton>
+            <DashboardButton as="a" href="/admin/treasury" variant="adminSecondary" className="px-4 py-3">
               Treasury
-            </a>
+            </DashboardButton>
           </div>
         </header>
 
@@ -187,54 +188,55 @@ export default function AdminRiskReviewPage() {
         )}
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+          <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-5">
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Total</p>
             <p className="mt-2 text-3xl font-bold">{stats.total || 0}</p>
-          </div>
+          </DashboardMetric>
           {severityCards.map((item) => (
-            <div key={item.severity} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <DashboardMetric key={item.severity} variant="admin" className="rounded-2xl bg-zinc-900 p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{item.severity}</p>
               <p className="mt-2 text-3xl font-bold">{item.value}</p>
-            </div>
+            </DashboardMetric>
           ))}
         </section>
 
-        <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+        <DashboardPanel variant="adminMuted" className="p-5">
           <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_160px_160px_160px_auto]">
-            <input
+            <DashboardInput
+              variant="admin"
               value={search}
               onChange={(event) => {
                 setPage(1);
                 setSearch(event.target.value);
               }}
               placeholder="Rule, merchant, source id ara"
-              className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none"
+              className="py-3"
             />
-            <select value={statusFilter} onChange={(event) => { setPage(1); setStatusFilter(event.target.value); }} className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none">
+            <DashboardSelect variant="admin" value={statusFilter} onChange={(event) => { setPage(1); setStatusFilter(event.target.value); }} className="py-3">
               {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
-            </select>
-            <select value={severityFilter} onChange={(event) => { setPage(1); setSeverityFilter(event.target.value); }} className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none">
+            </DashboardSelect>
+            <DashboardSelect variant="admin" value={severityFilter} onChange={(event) => { setPage(1); setSeverityFilter(event.target.value); }} className="py-3">
               {SEVERITY_OPTIONS.map((severity) => <option key={severity} value={severity}>{severity}</option>)}
-            </select>
-            <select value={sourceFilter} onChange={(event) => { setPage(1); setSourceFilter(event.target.value); }} className="rounded-xl border border-zinc-700 bg-black px-4 py-3 outline-none">
+            </DashboardSelect>
+            <DashboardSelect variant="admin" value={sourceFilter} onChange={(event) => { setPage(1); setSourceFilter(event.target.value); }} className="py-3">
               {SOURCE_OPTIONS.map((source) => <option key={source} value={source}>{source}</option>)}
-            </select>
-            <button onClick={() => fetchRiskEvents(undefined, 1)} disabled={loading || !adminAccessToken} className="rounded-xl bg-white px-5 py-3 font-semibold text-black disabled:opacity-40">
+            </DashboardSelect>
+            <DashboardButton type="button" variant="adminPrimary" onClick={() => fetchRiskEvents(undefined, 1)} disabled={loading || !adminAccessToken} className="px-5 py-3 disabled:opacity-40">
               Filtrele
-            </button>
+            </DashboardButton>
           </div>
 
           <div className="space-y-3">
             {events.map((event) => (
-              <div key={event.id} className="rounded-2xl border border-zinc-800 bg-black p-4">
+              <DashboardPanel as="div" key={event.id} variant="admin" className="rounded-2xl bg-black p-4 sm:p-4">
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-[180px_1fr_220px]">
                   <div className="space-y-2">
-                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getSeverityClassName(event.severity)}`}>
+                    <DashboardPill className={`inline-flex ${getSeverityClassName(event.severity)}`}>
                       {event.severity}
-                    </span>
-                    <span className={`ml-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(event.status)}`}>
+                    </DashboardPill>
+                    <DashboardPill className={`ml-2 inline-flex ${getStatusClassName(event.status)}`}>
                       {event.status}
-                    </span>
+                    </DashboardPill>
                     <p className="font-mono text-xs text-zinc-500">Score {event.score}</p>
                   </div>
 
@@ -258,24 +260,26 @@ export default function AdminRiskReviewPage() {
                     )}
                     <div className="flex flex-wrap gap-2 xl:justify-end">
                       {REVIEW_ACTIONS.map((status) => (
-                        <button
+                        <DashboardButton
+                          type="button"
+                          variant="adminSecondary"
                           key={status}
                           onClick={() => updateRiskStatus(event.id, status)}
                           disabled={updatingId === event.id || event.status === status}
-                          className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="rounded-lg px-3 py-2 text-xs hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           {status}
-                        </button>
+                        </DashboardButton>
                       ))}
                     </div>
                   </div>
                 </div>
-              </div>
+              </DashboardPanel>
             ))}
           </div>
 
           {!loading && events.length === 0 && (
-            <p className="rounded-xl border border-zinc-800 bg-black p-6 text-zinc-500">Bu filtre icin risk event yok.</p>
+            <DashboardEmptyState variant="admin" className="p-6">Bu filtre icin risk event yok.</DashboardEmptyState>
           )}
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -283,31 +287,35 @@ export default function AdminRiskReviewPage() {
               Sayfa {pagination.page} / {pagination.totalPages} - {pagination.totalCount} event
             </p>
             <div className="flex gap-2">
-              <button
+              <DashboardButton
+                type="button"
+                variant="adminSecondary"
                 disabled={page <= 1 || loading}
                 onClick={() => {
                   const nextPage = Math.max(page - 1, 1);
                   setPage(nextPage);
                   fetchRiskEvents(undefined, nextPage);
                 }}
-                className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+                className="px-4 py-2 disabled:opacity-40"
               >
                 Onceki
-              </button>
-              <button
+              </DashboardButton>
+              <DashboardButton
+                type="button"
+                variant="adminSecondary"
                 disabled={page >= pagination.totalPages || loading}
                 onClick={() => {
                   const nextPage = page + 1;
                   setPage(nextPage);
                   fetchRiskEvents(undefined, nextPage);
                 }}
-                className="rounded-xl border border-zinc-700 bg-zinc-950 px-4 py-2 text-sm font-semibold disabled:opacity-40"
+                className="px-4 py-2 disabled:opacity-40"
               >
                 Sonraki
-              </button>
+              </DashboardButton>
             </div>
           </div>
-        </section>
+        </DashboardPanel>
       </div>
     </main>
   );

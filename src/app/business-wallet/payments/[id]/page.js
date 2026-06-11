@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
+import { DashboardButton, DashboardEmptyState, DashboardMetric, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import OverviewShell from "@/components/overview-shell";
 import { merchantFetch } from "@/lib/api";
 import { useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -40,7 +41,7 @@ export default function MerchantPaymentDetailPage() {
       const { body: data, ok } = await merchantFetch(`/api/payments/${paymentId}`);
 
       if (!ok) {
-        setNotice({ type: "error", message: data.message || "Payment detail could not be loaded." });
+        setNotice({ type: "error", message: data.message || t("merchantPayments.detailLoadError") });
         setPayment(null);
         return;
       }
@@ -48,11 +49,11 @@ export default function MerchantPaymentDetailPage() {
       setPayment(data.payment);
       setNotice(null);
     } catch {
-      setNotice({ type: "error", message: "Payment detail could not be loaded." });
+      setNotice({ type: "error", message: t("merchantPayments.detailLoadError") });
     } finally {
       setLoading(false);
     }
-  }, [paymentId]);
+  }, [paymentId, t]);
 
   const refreshPayment = async () => {
     setRefreshing(true);
@@ -74,14 +75,14 @@ export default function MerchantPaymentDetailPage() {
       });
 
       if (!ok) {
-        setNotice({ type: "error", message: data.message || "Webhook retry failed." });
+        setNotice({ type: "error", message: data.message || t("merchantPayments.webhookRetryFailed") });
         return;
       }
 
-      setNotice({ type: "success", message: data.message || "Webhook retry queued." });
+      setNotice({ type: "success", message: data.message || t("merchantPayments.webhookRetryQueued") });
       await fetchPayment();
     } catch {
-      setNotice({ type: "error", message: "Webhook retry failed." });
+      setNotice({ type: "error", message: t("merchantPayments.webhookRetryFailed") });
     } finally {
       setWebhookAction(null);
     }
@@ -113,7 +114,7 @@ export default function MerchantPaymentDetailPage() {
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <Link href="/business-wallet/merchants" className="text-sm font-semibold text-zinc-400 hover:text-zinc-100">
-              Back to payments
+              {t("merchantPayments.backToPayments")}
             </Link>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold md:text-4xl">{t("merchantPayments.paymentDetails")}</h1>
@@ -123,9 +124,9 @@ export default function MerchantPaymentDetailPage() {
                 </span>
               )}
               {payment?.mode && (
-                <span className="rounded-full border border-zinc-700 bg-zinc-950 px-3 py-1 text-xs font-semibold text-zinc-300">
+                <DashboardPill>
                   {payment.mode}
-                </span>
+                </DashboardPill>
               )}
             </div>
             {payment && (
@@ -140,13 +141,14 @@ export default function MerchantPaymentDetailPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <button
+            <DashboardButton
+              variant="secondary"
               onClick={refreshPayment}
               disabled={refreshing}
-              className="rounded-lg border border-zinc-700 px-4 py-2 text-sm font-semibold transition hover:bg-zinc-800 disabled:cursor-wait disabled:opacity-60"
+              className="rounded-lg px-4 py-2 disabled:cursor-wait disabled:opacity-60"
             >
-              {refreshing ? "Refreshing..." : "Refresh"}
-            </button>
+              {refreshing ? t("common.refreshing") : t("common.refresh")}
+            </DashboardButton>
             {payment?.checkoutUrl && (
               <a
                 href={payment.checkoutUrl}
@@ -171,12 +173,10 @@ export default function MerchantPaymentDetailPage() {
           </div>
         )}
 
-        {loading && <p className="text-zinc-400">Loading payment detail...</p>}
+        {loading && <DashboardEmptyState>{t("merchantPayments.loadingPaymentDetail")}</DashboardEmptyState>}
 
         {!loading && !payment && (
-          <div className="rounded-xl border border-zinc-800 p-6 text-zinc-400">
-            Payment detail was not found or cannot be displayed.
-          </div>
+          <DashboardEmptyState className="p-6">{t("merchantPayments.detailUnavailable")}</DashboardEmptyState>
         )}
 
         {payment && (
@@ -191,44 +191,44 @@ export default function MerchantPaymentDetailPage() {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-                    {requiresAction ? "Action required" : "Payment decision"}
+                    {requiresAction ? t("merchantPayments.actionRequired") : t("merchantPayments.paymentDecision")}
                   </p>
                   <h2 className="mt-2 text-xl font-bold">{statusGuidance.title}</h2>
                   <p className="mt-2 max-w-3xl text-sm text-zinc-300">{statusGuidance.description}</p>
                   {latestWebhook?.status === "FAILED" && (
                     <p className="mt-2 text-sm text-amber-100">
-                      Latest webhook failed. Retry delivery or inspect the callback response before closing operations.
+                      {t("merchantPayments.latestWebhookFailedGuidance")}
                     </p>
                   )}
                 </div>
                 <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
-                  {requiresAction ? "NEEDS ATTENTION" : statusGuidance.label}
+                  {requiresAction ? t("merchantPayments.needsAttentionStatus") : statusGuidance.label}
                 </span>
               </div>
             </section>
 
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              <DashboardMetric>
                 <p className="text-xs text-zinc-500">{t("merchantPayments.paymentId")}</p>
                 <p className="mt-2 break-all font-mono text-sm">{payment.id}</p>
-              </div>
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              </DashboardMetric>
+              <DashboardMetric>
                 <p className="text-xs text-zinc-500">{t("merchantPayments.timeLeft")}</p>
                 <p className="mt-2 text-lg font-semibold">{formatTimeLeft(payment.expiresAt, now)}</p>
-              </div>
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              </DashboardMetric>
+              <DashboardMetric>
                 <p className="text-xs text-zinc-500">{t("merchantPayments.webhookEvents")}</p>
                 <p className="mt-2 text-lg font-semibold">{webhookSummary.total}</p>
-              </div>
-              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+              </DashboardMetric>
+              <DashboardMetric>
                 <p className="text-xs text-zinc-500">{t("merchantPayments.network")}</p>
                 <p className="mt-2 text-lg font-semibold">{payment.network}</p>
-              </div>
+              </DashboardMetric>
             </section>
 
             <section className="grid grid-cols-1 gap-5 xl:grid-cols-[340px_1fr]">
               <aside className="space-y-5">
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+                <DashboardPanel className="p-5 sm:p-5">
                   <h2 className="text-xl font-bold">{t("merchantPayments.timeline")}</h2>
                   <div className="mt-4 space-y-4">
                     {(payment.timeline || []).map((item, index) => (
@@ -246,42 +246,42 @@ export default function MerchantPaymentDetailPage() {
                       </div>
                     ))}
                     {!payment.timeline?.length && (
-                      <p className="text-sm text-zinc-500">No timeline events recorded yet.</p>
+                      <p className="text-sm text-zinc-500">{t("merchantPayments.noTimelineEvents")}</p>
                     )}
                   </div>
-                </div>
+                </DashboardPanel>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+                <DashboardPanel className="p-5 sm:p-5">
                   <h2 className="text-xl font-bold">{t("merchantPayments.webhookDelivery")}</h2>
                   <div className="mt-4 grid grid-cols-2 gap-3">
-                    <div className="rounded-lg border border-zinc-800 bg-black p-3">
+                    <DashboardMetric className="rounded-lg bg-black p-3">
                       <p className="text-xs text-zinc-500">{t("merchantPayments.successful")}</p>
                       <p className="mt-1 font-semibold text-emerald-300">{webhookSummary.successful}</p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-800 bg-black p-3">
+                    </DashboardMetric>
+                    <DashboardMetric className="rounded-lg bg-black p-3">
                       <p className="text-xs text-zinc-500">{t("merchantPayments.pending")}</p>
                       <p className="mt-1 font-semibold text-amber-200">{webhookSummary.pending}</p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-800 bg-black p-3">
+                    </DashboardMetric>
+                    <DashboardMetric className="rounded-lg bg-black p-3">
                       <p className="text-xs text-zinc-500">{t("merchantPayments.failed")}</p>
                       <p className="mt-1 font-semibold text-rose-300">{webhookSummary.failed}</p>
-                    </div>
-                    <div className="rounded-lg border border-zinc-800 bg-black p-3">
+                    </DashboardMetric>
+                    <DashboardMetric className="rounded-lg bg-black p-3">
                       <p className="text-xs text-zinc-500">{t("merchantPayments.events")}</p>
                       <p className="mt-1 font-semibold">{webhookSummary.total}</p>
-                    </div>
+                    </DashboardMetric>
                   </div>
-                </div>
+                </DashboardPanel>
               </aside>
 
               <div className="space-y-5">
-                <div className="grid grid-cols-1 gap-3 rounded-xl border border-zinc-800 bg-zinc-950 p-5 md:grid-cols-3">
-                  <EvidenceBox label="Customer" value={payment.customerEmail || "-"} />
-                  <EvidenceBox label="Order" value={payment.orderId || "-"} />
-                  <EvidenceBox label="Latest webhook" value={latestWebhook ? getWebhookStatusLabel(latestWebhook) : "NO EVENTS"} />
-                </div>
+                <DashboardPanel className="grid grid-cols-1 gap-3 p-5 sm:p-5 md:grid-cols-3">
+                  <EvidenceBox label={t("merchantPayments.customer")} value={payment.customerEmail || "-"} />
+                  <EvidenceBox label={t("merchantPayments.orderId")} value={payment.orderId || "-"} />
+                  <EvidenceBox label={t("merchantPayments.latestWebhook")} value={latestWebhook ? getWebhookStatusLabel(latestWebhook) : t("merchantPayments.noWebhookEventsShort")} />
+                </DashboardPanel>
 
-                <div className="grid grid-cols-1 gap-4 rounded-xl border border-zinc-800 bg-zinc-950 p-5 md:grid-cols-[150px_1fr]">
+                <DashboardPanel className="grid grid-cols-1 gap-4 p-5 sm:p-5 md:grid-cols-[150px_1fr]">
                   <div className="w-fit rounded-lg bg-white p-2">
                     <QRCodeSVG value={payment.walletAddress} size={126} />
                   </div>
@@ -293,13 +293,13 @@ export default function MerchantPaymentDetailPage() {
                         onClick={() => copyText(payment.checkoutUrl, "checkout")}
                         className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-800"
                       >
-                        {copiedValue?.label === "checkout" ? "Copied" : t("merchantPayments.copyCheckoutLink")}
+                        {copiedValue?.label === "checkout" ? t("common.copied") : t("merchantPayments.copyCheckoutLink")}
                       </button>
                       <button
                         onClick={() => copyText(payment.walletAddress, "wallet")}
                         className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-800"
                       >
-                        {copiedValue?.label === "wallet" ? "Copied" : t("checkout.copyWallet")}
+                        {copiedValue?.label === "wallet" ? t("common.copied") : t("checkout.copyWallet")}
                       </button>
                     </div>
                     {(copiedValue?.label === "checkout" || copiedValue?.label === "wallet") && (
@@ -309,7 +309,7 @@ export default function MerchantPaymentDetailPage() {
                       />
                     )}
                   </div>
-                </div>
+                </DashboardPanel>
 
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                   <DetailBox label={t("merchantPayments.orderId")} value={payment.orderId || "-"} />
@@ -321,7 +321,7 @@ export default function MerchantPaymentDetailPage() {
                   <DetailBox label={t("merchantPayments.expires")} value={formatDateTime(payment.expiresAt, timeZone)} />
                 </div>
 
-                <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-5">
+                <DashboardPanel className="p-5 sm:p-5">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                     <div>
                       <h2 className="text-xl font-bold">{t("merchantPayments.webhookDelivery")}</h2>
@@ -334,9 +334,7 @@ export default function MerchantPaymentDetailPage() {
                     </span>
                   </div>
                   {!payment.webhookEvents?.length ? (
-                    <div className="mt-4 rounded-xl border border-zinc-800 bg-black p-4 text-sm text-zinc-500">
-                      {t("merchantPayments.noWebhookEvents")}
-                    </div>
+                    <DashboardEmptyState className="mt-4 bg-black p-4">{t("merchantPayments.noWebhookEvents")}</DashboardEmptyState>
                   ) : (
                     <div className="mt-4 space-y-3">
                       {payment.webhookEvents.map((webhook) => (
@@ -383,7 +381,7 @@ export default function MerchantPaymentDetailPage() {
                       ))}
                     </div>
                   )}
-                </div>
+                </DashboardPanel>
               </div>
             </section>
           </>
@@ -395,19 +393,19 @@ export default function MerchantPaymentDetailPage() {
 
 function DetailBox({ label, value, mono = false }) {
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
+    <DashboardMetric>
       <p className="text-xs text-zinc-500">{label}</p>
       <p className={`mt-2 break-all text-sm ${mono ? "font-mono" : "font-medium"}`}>{value}</p>
-    </div>
+    </DashboardMetric>
   );
 }
 
 function EvidenceBox({ label, value }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-black p-3">
+    <DashboardMetric className="rounded-lg bg-black p-3">
       <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-2 break-all text-sm font-semibold text-zinc-100">{value}</p>
-    </div>
+    </DashboardMetric>
   );
 }
 
@@ -422,9 +420,9 @@ function CopyConfirmation({ label, value }) {
 
 function WebhookMeta({ label, value }) {
   return (
-    <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
+    <DashboardMetric className="rounded-lg p-3">
       <p className="text-zinc-500">{label}</p>
       <p className="mt-1 break-all font-semibold text-zinc-100">{value}</p>
-    </div>
+    </DashboardMetric>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DashboardButton, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import { apiResponseResult, fetchApi } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
@@ -101,10 +102,6 @@ const getPayoutAuditSummary = (request) => {
 export default function AdminPayoutsPage() {
   const { t } = useDashboardLanguage();
   const timeZone = useDashboardTimeZone();
-  const primaryButtonClass =
-    "bg-white text-black px-6 py-3 rounded-xl font-semibold hover:bg-zinc-200 transition disabled:opacity-40 disabled:cursor-not-allowed";
-  const secondaryButtonClass =
-    "border border-zinc-700 bg-zinc-900 px-4 py-3 rounded-xl font-semibold text-zinc-100 hover:bg-zinc-800 transition disabled:opacity-40 disabled:cursor-not-allowed";
   const [adminAccessToken, setAdminAccessToken] = useState("");
   const [payoutRequests, setPayoutRequests] = useState([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -618,12 +615,14 @@ export default function AdminPayoutsPage() {
             <p className="text-zinc-500 text-sm">{t("admin.subtitle")}</p>
           </div>
 
-          <a
+          <DashboardButton
+            as="a"
+            variant="adminSecondary"
             href="/dashboard"
-            className="w-fit rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800 transition"
+            className="w-fit px-4 py-2"
           >
             {t("admin.merchantDashboard")}
-          </a>
+          </DashboardButton>
         </div>
       </header>
 
@@ -660,31 +659,29 @@ export default function AdminPayoutsPage() {
                 { id: "security", label: t("admin.security") },
                 { id: "sessions", label: t("admin.sessions") },
               ].map((tab) => (
-                <button
+                <DashboardButton
+                  type="button"
+                  variant={activeAdminTab === tab.id ? "adminPrimary" : "adminSecondary"}
                   key={tab.id}
                   onClick={() => {
                     setActiveAdminTab(tab.id);
                     if (tab.id === "security") fetchSecurityEvents();
                     if (tab.id === "sessions") fetchAdminSessions();
                   }}
-                  className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition ${
-                    activeAdminTab === tab.id
-                      ? "border-white bg-white text-black"
-                      : "border-zinc-700 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-                  }`}
+                  className="px-3 py-1.5"
                 >
                   {tab.label}
-                </button>
+                </DashboardButton>
               ))}
             </div>
 
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-200">
+              <DashboardPill className="border-emerald-500/30 bg-emerald-500/10 text-emerald-200">
                 {adminSessionSummary.active} {t("admin.activeSessions")}
-              </span>
-              <span className="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 font-semibold text-zinc-400">
+              </DashboardPill>
+              <DashboardPill variant="admin" className="bg-zinc-900 text-zinc-400">
                 {pagination.totalCount} {t("admin.payoutsCount")}
-              </span>
+              </DashboardPill>
             </div>
           </div>
         </section>
@@ -713,7 +710,6 @@ export default function AdminPayoutsPage() {
               page={page}
               pagination={pagination}
               providerError={providerError}
-              secondaryButtonClass={secondaryButtonClass}
               setAdminMfaCode={setAdminMfaCode}
               setAuditSummaryFilter={setAuditSummaryFilter}
               setCriticalConfirmationText={setCriticalConfirmationText}
@@ -754,7 +750,6 @@ export default function AdminPayoutsPage() {
             adminSessions={adminSessions}
             formatDashboardDateTime={formatDashboardDateTime}
             onRefresh={() => fetchAdminSessions()}
-            secondaryButtonClass={secondaryButtonClass}
             t={t}
             timeZone={timeZone}
           />
@@ -765,7 +760,7 @@ export default function AdminPayoutsPage() {
 
       {selectedPayout && (
         <div className="fixed inset-0 z-50 bg-black/80 px-4 py-8 overflow-y-auto">
-          <div className="max-w-5xl mx-auto bg-zinc-950 border border-zinc-800 rounded-2xl p-6">
+          <DashboardPanel as="div" variant="admin" className="max-w-5xl mx-auto p-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -786,24 +781,28 @@ export default function AdminPayoutsPage() {
 
               <div className="flex flex-wrap gap-3">
                 {getAllowedActions(selectedPayout.status).map((action) => (
-                  <button
+                  <DashboardButton
+                    type="button"
+                    variant="plain"
                     key={action.status}
                     onClick={() => openStatusConfirm(selectedPayout.id, action.status)}
                     className={`${action.className} text-black px-4 py-2 rounded-xl font-semibold hover:opacity-80 transition`}
                   >
                     {action.label}
-                  </button>
+                  </DashboardButton>
                 ))}
 
-                <button
+                <DashboardButton
+                  type="button"
+                  variant="adminSecondary"
                   onClick={() => {
                     setSelectedPayout(null);
                     setSelectedAuditLogs([]);
                   }}
-                  className="bg-zinc-800 px-4 py-2 rounded-xl hover:bg-zinc-700 transition"
+                  className="px-4 py-2 hover:bg-zinc-700"
                 >
                   {t("admin.close")}
-                </button>
+                </DashboardButton>
               </div>
             </div>
 
@@ -1000,7 +999,7 @@ export default function AdminPayoutsPage() {
                 </div>
               </aside>
             </div>
-          </div>
+          </DashboardPanel>
         </div>
       )}
     </main>
