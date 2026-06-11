@@ -4,31 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
-
-const getStatusClassName = (status) => {
-  if (status === "READY" || status === "PASS") return "border-emerald-400/40 bg-emerald-500/10 text-emerald-200";
-  if (status === "BLOCKED" || status === "FAIL") return "border-red-400/40 bg-red-500/10 text-red-200";
-  return "border-amber-400/40 bg-amber-500/10 text-amber-200";
-};
-
-const formatCode = (value) =>
-  String(value || "")
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
-    .join(" ");
-
-const summarizeDetails = (details = {}) => {
-  if (!details || Object.keys(details).length === 0) return [];
-
-  return Object.entries(details)
-    .filter(([, value]) => value !== null && value !== undefined)
-    .map(([key, value]) => [
-      key,
-      Array.isArray(value) || typeof value === "object"
-        ? JSON.stringify(value)
-        : String(value),
-    ]);
-};
+import { formatPilotCode, formatPilotDateTime, getPilotAction, getPilotDecision, getPilotEvidence, getPilotOperatorSummary, getPilotStatusClassName, sortPilotItemsByPriority, summarizePilotDetails } from "@/features/admin-pilot/ui";
 
 export default function AdminMerchantOnboardingPage() {
   const [adminAccessToken, setAdminAccessToken] = useState("");
@@ -116,6 +92,28 @@ export default function AdminMerchantOnboardingPage() {
     ],
     [summary]
   );
+  const prioritizedChecklists = useMemo(
+    () => sortPilotItemsByPriority(checklists, (checklist) => checklist.overallStatus),
+    [checklists]
+  );
+  const firstOnboardingAction = prioritizedChecklists
+    .flatMap((checklist) => sortPilotItemsByPriority(checklist.checks || []))
+    .map((check) => getPilotAction(check.code, check.status))
+    .find(Boolean);
+  const operatorSummary = getPilotOperatorSummary({
+    blocked: summary.blocked || 0,
+    firstAction: firstOnboardingAction,
+    ready: summary.ready || 0,
+    review: summary.review_required || 0,
+    total: summary.total || 0,
+  });
+  const operatorStatus = summary.total === 0
+    ? "WAITING"
+    : summary.blocked > 0
+    ? "BLOCKED"
+    : summary.review_required > 0
+      ? "REVIEW_REQUIRED"
+      : "READY";
 
   if (tokenState !== "valid") {
     return <AdminAccessRequired title="Merchant onboarding access required" />;
@@ -148,7 +146,7 @@ export default function AdminMerchantOnboardingPage() {
         <AdminConsoleNav currentPath="/admin/merchant-onboarding" onRefresh={() => loadChecklists()} loading={loading || !adminAccessToken} />
 
         <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px_auto]">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_120px_auto_auto]">
             <input
               value={merchantId}
               onChange={(event) => setMerchantId(event.target.value)}
@@ -172,12 +170,33 @@ export default function AdminMerchantOnboardingPage() {
               />
               Only blocked
             </label>
+            <button
+              type="button"
+              onClick={() => loadChecklists()}
+              disabled={loading || !adminAccessToken}
+              className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-100 hover:bg-cyan-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Apply filters
+            </button>
           </div>
           {notice && (
             <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
               {notice.message}
             </div>
           )}
+        </section>
+
+        <section className={`rounded-2xl border p-5 ${getPilotStatusClassName(operatorStatus)}`}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-80">Operator summary</p>
+              <h2 className="mt-2 text-xl font-bold">{operatorSummary.title}</h2>
+              <p className="mt-2 max-w-3xl text-sm opacity-80">{operatorSummary.description}</p>
+            </div>
+            <span className="w-fit rounded-full border border-current px-3 py-1 text-xs font-semibold">
+              {operatorSummary.status}
+            </span>
+          </div>
         </section>
 
         <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -190,44 +209,85 @@ export default function AdminMerchantOnboardingPage() {
         </section>
 
         <section className="space-y-4">
-          {checklists.map((checklist) => (
+          {prioritizedChecklists.map((checklist) => (
             <article key={checklist.merchant.id} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div>
                   <h2 className="text-lg font-bold">{checklist.merchant.name}</h2>
                   <p className="text-sm text-zinc-500">{checklist.merchant.email}</p>
                   <p className="mt-1 font-mono text-xs text-zinc-600">{checklist.merchant.id}</p>
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Checklist generated: <span className="font-mono text-zinc-300">{formatPilotDateTime(checklist.generatedAt)}</span>
+                  </p>
                 </div>
-                <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(checklist.overallStatus)}`}>
-                  {checklist.overallStatus}
-                </span>
+                <div className="flex max-w-sm flex-col items-start gap-2 md:items-end">
+                  <span className={`rounded-full border px-3 py-1 text-xs font-semibold ${getPilotStatusClassName(checklist.overallStatus)}`}>
+                    {checklist.overallStatus}
+                  </span>
+                  <p className="text-left text-xs text-zinc-500 md:text-right">
+                    {getPilotDecision(checklist.overallStatus).description}
+                  </p>
+                </div>
               </div>
 
               <div className="mt-5 grid grid-cols-1 gap-3 xl:grid-cols-2">
-                {(checklist.checks || []).map((check) => (
-                  <div key={check.code} className="rounded-xl border border-zinc-800 bg-black p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold">{formatCode(check.code)}</p>
-                        <p className="mt-1 text-sm text-zinc-500">{check.message}</p>
-                      </div>
-                      <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClassName(check.status)}`}>
-                        {check.status}
-                      </span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-zinc-500 md:grid-cols-2">
-                      {summarizeDetails(check.details).map(([key, value]) => (
-                        <div key={key} className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
-                          <p className="font-semibold text-zinc-400">{key}</p>
-                          <p className="mt-1 break-words font-mono">{value}</p>
+                {sortPilotItemsByPriority(checklist.checks || []).map((check) => {
+                  const action = getPilotAction(check.code, check.status);
+                  const evidence = getPilotEvidence(check.details, checklist.generatedAt);
+
+                  return (
+                    <div key={check.code} className="rounded-xl border border-zinc-800 bg-black p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-semibold">{formatPilotCode(check.code)}</p>
+                          <p className="mt-1 text-sm text-zinc-500">{check.message}</p>
                         </div>
-                      ))}
+                        <span className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold ${getPilotStatusClassName(check.status)}`}>
+                          {check.status}
+                        </span>
+                      </div>
+                      {evidence.length > 0 && (
+                        <dl className="mt-3 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+                          {evidence.map(([label, value]) => (
+                            <div key={label} className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+                              <dt className="text-zinc-500">{label}</dt>
+                              <dd className="mt-1 font-mono text-zinc-300">{value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                      {action && (
+                        <div className="mt-4 rounded-xl border border-zinc-800 bg-zinc-950 p-3">
+                          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Next action</p>
+                          <p className="mt-1 text-sm text-zinc-400">{action.text}</p>
+                          <a href={action.href} className="mt-3 inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/20">
+                            {action.label}
+                          </a>
+                        </div>
+                      )}
+                      <div className="mt-3 grid grid-cols-1 gap-2 text-xs text-zinc-500 md:grid-cols-2">
+                        {summarizePilotDetails(check.details, Object.keys(check.details || {})).map(([key, value]) => (
+                          <div key={key} className="rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2">
+                            <p className="font-semibold text-zinc-400">{formatPilotCode(key)}</p>
+                            <p className="mt-1 break-words font-mono">{value}</p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </article>
           ))}
+
+          {!loading && checklists.length === 0 && (
+            <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+              <p className="font-semibold text-zinc-200">No merchant checklist found</p>
+              <p className="mt-1 text-sm text-zinc-500">
+                Adjust the merchant ID, limit, or blocked-only filter and run the checklist again.
+              </p>
+            </div>
+          )}
         </section>
       </div>
     </main>

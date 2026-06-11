@@ -4,52 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
-
-const formatDate = (value) => {
-  if (!value) return "-";
-  return new Intl.DateTimeFormat("tr-TR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-};
-
-const getOverallClassName = (status) => {
-  if (status === "READY") return "border-emerald-400/40 bg-emerald-500/10 text-emerald-200";
-  if (status === "NOT_READY") return "border-red-400/40 bg-red-500/10 text-red-200";
-  return "border-amber-400/40 bg-amber-500/10 text-amber-200";
-};
-
-const getCheckClassName = (status) => {
-  if (status === "PASS") return "border-emerald-400/40 bg-emerald-500/10 text-emerald-200";
-  if (status === "FAIL") return "border-red-400/40 bg-red-500/10 text-red-200";
-  return "border-amber-400/40 bg-amber-500/10 text-amber-200";
-};
-
-const formatCheckName = (value) =>
-  String(value || "")
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-
-const summarizeDetails = (details = {}) => {
-  if (!details || Object.keys(details).length === 0) return [];
-
-  const preferredKeys = [
-    "checkedMerchants",
-    "mismatchedMerchants",
-    "lastRunTimestamp",
-    "pendingOrReviewPayments",
-    "failedWebhooks",
-    "deadLetterWebhooks",
-    "pendingOrFailedPayouts",
-    "openRiskEvents",
-    "pendingKyb",
-  ];
-
-  return preferredKeys
-    .filter((key) => details[key] !== undefined && details[key] !== null)
-    .map((key) => [key, details[key]]);
-};
+import { formatPilotCode, formatPilotDateTime, getPilotAction, getPilotDecision, getPilotEvidence, getPilotOperatorSummary, getPilotStatusClassName, sortPilotItemsByPriority, summarizePilotDetails } from "@/features/admin-pilot/ui";
 
 export default function AdminPilotReadinessPage() {
   const [adminAccessToken, setAdminAccessToken] = useState("");
@@ -110,7 +65,10 @@ export default function AdminPilotReadinessPage() {
     };
   }, [loadReadiness]);
 
-  const checks = readiness?.checks || [];
+  const checks = useMemo(
+    () => sortPilotItemsByPriority(readiness?.checks || []),
+    [readiness]
+  );
   const summaryCards = useMemo(
     () => [
       { label: "Pass", value: readiness?.summary?.pass || 0, className: "text-emerald-300" },
@@ -120,6 +78,23 @@ export default function AdminPilotReadinessPage() {
     ],
     [readiness]
   );
+  const decision = getPilotDecision(readiness?.status);
+  const firstReadinessAction = checks
+    .map((check) => getPilotAction(check.name, check.status))
+    .find(Boolean);
+  const operatorSummary = getPilotOperatorSummary({
+    blocked: readiness?.summary?.fail || 0,
+    firstAction: firstReadinessAction,
+    ready: readiness?.summary?.pass || 0,
+    review: readiness?.summary?.warn || 0,
+    total: readiness?.summary?.total || 0,
+  });
+  const topEvidence = [
+    ["Generated", formatPilotDateTime(readiness?.checkedAt)],
+    ["Controls", String(readiness?.summary?.total || 0)],
+    ["Warnings", String(readiness?.summary?.warn || 0)],
+    ["Failures", String(readiness?.summary?.fail || 0)],
+  ];
 
   if (tokenState !== "valid") {
     return <AdminAccessRequired title="Pilot readiness access required" />;
@@ -133,7 +108,7 @@ export default function AdminPilotReadinessPage() {
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Pilot Operations</p>
             <h1 className="mt-1 text-2xl font-bold">Pilot Readiness</h1>
             <p className="mt-2 max-w-2xl text-sm text-zinc-500">
-              Production pilot öncesi health, reconciliation, payment, webhook, payout, risk, KYB ve security config kontrollerini tek ekranda izleyin.
+              Production pilot oncesi health, reconciliation, payment, webhook, payout, risk, KYB ve security config kontrollerini tek ekranda izleyin.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -159,11 +134,39 @@ export default function AdminPilotReadinessPage() {
           </div>
         )}
 
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_repeat(4,1fr)]">
-          <div className={`rounded-2xl border p-5 ${getOverallClassName(readiness?.status || "REVIEW_REQUIRED")}`}>
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-80">Overall</p>
-            <p className="mt-2 text-3xl font-bold">{readiness?.status || "UNKNOWN"}</p>
-            <p className="mt-2 text-xs opacity-80">{formatDate(readiness?.checkedAt)}</p>
+        <section className={`rounded-2xl border p-5 ${getPilotStatusClassName(readiness?.status || "REVIEW_REQUIRED")}`}>
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide opacity-80">Operator summary</p>
+              <h2 className="mt-2 text-xl font-bold">{operatorSummary.title}</h2>
+              <p className="mt-2 max-w-3xl text-sm opacity-80">{operatorSummary.description}</p>
+            </div>
+            <span className="w-fit rounded-full border border-current px-3 py-1 text-xs font-semibold">
+              {operatorSummary.status}
+            </span>
+          </div>
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_repeat(4,1fr)]">
+          <div className={`rounded-2xl border p-5 ${getPilotStatusClassName(readiness?.status || "REVIEW_REQUIRED")}`}>
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide opacity-80">{decision.label}</p>
+                <p className="mt-2 text-2xl font-bold">{decision.title}</p>
+                <p className="mt-2 max-w-xl text-sm opacity-80">{decision.description}</p>
+              </div>
+              <span className="w-fit rounded-full border border-current px-3 py-1 text-xs font-semibold">
+                {readiness?.status || "UNKNOWN"}
+              </span>
+            </div>
+            <dl className="mt-4 grid grid-cols-2 gap-2 text-xs md:grid-cols-4">
+              {topEvidence.map(([label, value]) => (
+                <div key={label} className="rounded-lg border border-current/20 px-3 py-2">
+                  <dt className="opacity-70">{label}</dt>
+                  <dd className="mt-1 font-semibold">{value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
           {summaryCards.map((card) => (
             <div key={card.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
@@ -174,37 +177,61 @@ export default function AdminPilotReadinessPage() {
         </section>
 
         <section className="space-y-3">
-          {checks.map((check) => (
-            <div key={check.name} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[180px_1fr_320px]">
-                <div>
-                  <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getCheckClassName(check.status)}`}>
-                    {check.status}
-                  </span>
-                </div>
-                <div>
-                  <h2 className="font-semibold">{formatCheckName(check.name)}</h2>
-                  <p className="mt-1 text-sm text-zinc-400">{check.message}</p>
-                </div>
-                <div className="rounded-xl border border-zinc-800 bg-black p-3">
-                  {summarizeDetails(check.details).length > 0 ? (
-                    <dl className="space-y-2 text-xs">
-                      {summarizeDetails(check.details).map(([key, value]) => (
-                        <div key={key} className="flex items-center justify-between gap-4">
-                          <dt className="text-zinc-500">{formatCheckName(key)}</dt>
-                          <dd className="font-mono text-zinc-200">{String(value)}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  ) : (
-                    <pre className="max-h-36 overflow-auto whitespace-pre-wrap break-all text-xs text-zinc-500">
-                      {JSON.stringify(check.details || {}, null, 2)}
-                    </pre>
-                  )}
+          {checks.map((check) => {
+            const action = getPilotAction(check.name, check.status);
+            const evidence = getPilotEvidence(check.details, readiness?.checkedAt);
+
+            return (
+              <div key={check.name} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[180px_1fr_320px]">
+                  <div>
+                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getPilotStatusClassName(check.status)}`}>
+                      {check.status}
+                    </span>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold">{formatPilotCode(check.name)}</h2>
+                    <p className="mt-1 text-sm text-zinc-400">{check.message}</p>
+                    {evidence.length > 0 && (
+                      <dl className="mt-3 grid grid-cols-1 gap-2 text-xs md:grid-cols-2">
+                        {evidence.map(([label, value]) => (
+                          <div key={label} className="rounded-lg border border-zinc-800 bg-black px-3 py-2">
+                            <dt className="text-zinc-500">{label}</dt>
+                            <dd className="mt-1 font-mono text-zinc-300">{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    )}
+                    {action && (
+                      <div className="mt-4 rounded-xl border border-zinc-800 bg-black p-4">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Next action</p>
+                        <p className="mt-1 text-sm text-zinc-300">{action.text}</p>
+                        <a href={action.href} className="mt-3 inline-flex rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs font-semibold text-cyan-100 hover:bg-cyan-500/20">
+                          {action.label}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                  <div className="rounded-xl border border-zinc-800 bg-black p-3">
+                    {summarizePilotDetails(check.details).length > 0 ? (
+                      <dl className="space-y-2 text-xs">
+                        {summarizePilotDetails(check.details).map(([key, value]) => (
+                          <div key={key} className="flex items-center justify-between gap-4">
+                            <dt className="text-zinc-500">{formatPilotCode(key)}</dt>
+                            <dd className="font-mono text-zinc-200">{String(value)}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    ) : (
+                      <pre className="max-h-36 overflow-auto whitespace-pre-wrap break-all text-xs text-zinc-500">
+                        {JSON.stringify(check.details || {}, null, 2)}
+                      </pre>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
 
           {!loading && checks.length === 0 && (
             <p className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 text-zinc-500">
