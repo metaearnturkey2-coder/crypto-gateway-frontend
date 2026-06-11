@@ -26,6 +26,72 @@ export default function BusinessWalletApiDocsPage() {
   const [activeIntegrationKey, setActiveIntegrationKey] = useState("create-payment");
   const { t } = useDashboardLanguage();
   const timeZone = useDashboardTimeZone();
+  const goLiveChecklist = [
+    {
+      title: t("apiDocs.checklistApiKeyTitle"),
+      description: t("apiDocs.checklistApiKeyDescription"),
+    },
+    {
+      title: t("apiDocs.checklistIdempotencyTitle"),
+      description: t("apiDocs.checklistIdempotencyDescription"),
+    },
+    {
+      title: t("apiDocs.checklistCheckoutTitle"),
+      description: t("apiDocs.checklistCheckoutDescription"),
+    },
+    {
+      title: t("apiDocs.checklistWebhookTitle"),
+      description: t("apiDocs.checklistWebhookDescription"),
+    },
+    {
+      title: t("apiDocs.checklistStatusTitle"),
+      description: t("apiDocs.checklistStatusDescription"),
+    },
+  ];
+  const readinessNotes = [
+    {
+      title: t("apiDocs.readinessLocalTitle"),
+      description: t("apiDocs.readinessLocalDescription"),
+    },
+    {
+      title: t("apiDocs.readinessPublicUrlTitle"),
+      description: t("apiDocs.readinessPublicUrlDescription"),
+    },
+    {
+      title: t("apiDocs.readinessSecretsTitle"),
+      description: t("apiDocs.readinessSecretsDescription"),
+    },
+  ];
+  const troubleshootingNotes = [
+    {
+      code: "400",
+      title: t("apiDocs.troubleshootValidationTitle"),
+      description: t("apiDocs.troubleshootValidationDescription"),
+    },
+    {
+      code: "401",
+      title: t("apiDocs.troubleshootAuthTitle"),
+      description: t("apiDocs.troubleshootAuthDescription"),
+    },
+    {
+      code: "409",
+      title: t("apiDocs.troubleshootDuplicateTitle"),
+      description: t("apiDocs.troubleshootDuplicateDescription"),
+    },
+    {
+      code: "WEBHOOK",
+      title: t("apiDocs.troubleshootWebhookTitle"),
+      description: t("apiDocs.troubleshootWebhookDescription"),
+    },
+  ];
+  const preflightChecks = [
+    t("apiDocs.preflightServerCreate"),
+    t("apiDocs.preflightBrowserRedirect"),
+    t("apiDocs.preflightWebhookVerified"),
+    t("apiDocs.preflightStatusFallback"),
+    t("apiDocs.preflightDuplicateProtection"),
+    t("apiDocs.preflightOperationalLogs"),
+  ];
 
   const loadApiUsage = async () => {
     const [{ body: data, ok }, { body: dashboardData, ok: dashboardOk }] = await Promise.all([
@@ -135,6 +201,84 @@ export default function BusinessWalletApiDocsPage() {
           <span>{API_BASE_URL}/api/v1/openapi.json</span>
         </div>
 
+        <div className="mb-4 rounded-xl border p-4">
+          <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-lg font-bold">{t("apiDocs.goLiveChecklist")}</h3>
+              <p className="api-docs-muted text-sm">{t("apiDocs.goLiveChecklistDescription")}</p>
+            </div>
+            <span className="api-docs-pill w-fit rounded-full border px-3 py-1 text-xs font-semibold">
+              {goLiveChecklist.length} steps
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-5">
+            {goLiveChecklist.map((item, index) => (
+              <div key={item.title} className="api-docs-stat-item rounded-lg border px-3 py-3">
+                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold">
+                  {index + 1}
+                </span>
+                <p className="mt-3 text-sm font-semibold">{item.title}</p>
+                <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-xl border p-4">
+          <div className="mb-3">
+            <h3 className="text-lg font-bold">{t("apiDocs.testLiveReadiness")}</h3>
+            <p className="api-docs-muted text-sm">{t("apiDocs.testLiveReadinessDescription")}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
+            {readinessNotes.map((item) => (
+              <div key={item.title} className="api-docs-stat-item rounded-lg border px-3 py-3">
+                <p className="text-sm font-semibold">{item.title}</p>
+                <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-xl border p-4">
+          <div className="mb-3">
+            <h3 className="text-lg font-bold">{t("apiDocs.troubleshooting")}</h3>
+            <p className="api-docs-muted text-sm">{t("apiDocs.troubleshootingDescription")}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-4">
+            {troubleshootingNotes.map((item) => (
+              <div key={item.code} className="api-docs-stat-item rounded-lg border px-3 py-3">
+                <span className="inline-flex rounded-md border px-2 py-1 font-mono text-[10px] font-bold">
+                  {item.code}
+                </span>
+                <p className="mt-3 text-sm font-semibold">{item.title}</p>
+                <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-xl border p-4">
+          <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-lg font-bold">{t("apiDocs.preflightTitle")}</h3>
+              <p className="api-docs-muted text-sm">{t("apiDocs.preflightDescription")}</p>
+            </div>
+            <span className="api-docs-pill w-fit rounded-full border px-3 py-1 text-xs font-semibold">
+              {preflightChecks.length} checks
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+            {preflightChecks.map((item, index) => (
+              <div key={item} className="api-docs-stat-item flex gap-3 rounded-lg border px-3 py-3">
+                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
+                  {index + 1}
+                </span>
+                <p className="api-docs-muted text-sm">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <p className="api-docs-rules-note mb-4 text-xs">
           <span>{t("apiDocs.amountLimits")}: {t("apiDocs.amountLimitsDescription")}</span>
           <span className="api-docs-rule-separator">/</span>
@@ -179,6 +323,64 @@ Content-Type: application/json
     "network": "TRC20",
     "status": "PENDING"
   }
+}`,
+            },
+            {
+              key: "storefront-integration",
+              title: t("apiDocs.storefrontIntegrationTitle"),
+              method: "FLOW",
+              description: t("apiDocs.storefrontIntegrationDescription"),
+              path: "storefront server + browser",
+              value: `// Storefront backend: POST /checkout/create
+import express from "express";
+
+const app = express();
+app.use(express.json());
+
+app.post("/checkout/create", async (req, res) => {
+  const order = await loadOrder(req.body.orderId);
+
+  const gatewayResponse = await fetch("${API_BASE_URL}/api/v1/public/payments/create", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Idempotency-Key": order.id,
+      "x-api-key": process.env.CRYPTO_GATEWAY_API_KEY
+    },
+    body: JSON.stringify({
+      amount: order.total,
+      orderId: order.id,
+      customerEmail: order.customerEmail
+    })
+  });
+
+  const data = await gatewayResponse.json();
+
+  if (!gatewayResponse.ok) {
+    return res.status(gatewayResponse.status).json({
+      message: data.message,
+      errors: data.errors || []
+    });
+  }
+
+  return res.json({ redirectUrl: data.checkoutUrl });
+});
+
+// Storefront browser
+async function startCryptoCheckout(orderId) {
+  const response = await fetch("/checkout/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ orderId })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Checkout could not be created");
+  }
+
+  window.location.assign(data.redirectUrl);
 }`,
             },
             {
@@ -354,6 +556,77 @@ app.post(
     return res.sendStatus(200);
   }
 );`,
+            },
+            {
+              key: "fulfillment-status-fallback",
+              title: t("apiDocs.fulfillmentFallbackTitle"),
+              method: "FLOW",
+              description: t("apiDocs.fulfillmentFallbackDescription"),
+              path: "order fulfillment + status fallback",
+              value: `// Storefront backend: idempotent fulfillment
+app.post(
+  "/webhooks/crypto-gateway",
+  express.raw({ type: "application/json" }),
+  async (req, res) => {
+    const webhookId = req.header("x-webhook-id");
+    const event = JSON.parse(req.body.toString("utf8"));
+    const payment = event.payment;
+
+    if (!webhookId || !payment?.orderId) {
+      return res.status(400).send("Missing webhook id or order id");
+    }
+
+    const alreadyProcessed = await webhookEvents.exists(webhookId);
+    if (alreadyProcessed) {
+      return res.sendStatus(200);
+    }
+
+    await db.transaction(async (tx) => {
+      await tx.webhookEvents.insert({
+        id: webhookId,
+        paymentId: payment.id,
+        event: event.event
+      });
+
+      if (payment.status === "PAID") {
+        await tx.orders.markPaid(payment.orderId, {
+          paymentId: payment.id,
+          txHash: payment.txHash
+        });
+        return;
+      }
+
+      if (payment.status === "EXPIRED" || payment.status === "CANCELLED") {
+        await tx.orders.markPaymentClosed(payment.orderId, payment.status);
+      }
+    });
+
+    return res.sendStatus(200);
+  }
+);
+
+// Fallback when webhook delivery is delayed
+async function reconcileOrderPayment(orderId) {
+  const url = "${API_BASE_URL}/api/v1/public/payments/status?orderId=" + encodeURIComponent(orderId);
+  const response = await fetch(url, {
+    headers: { "x-api-key": process.env.CRYPTO_GATEWAY_API_KEY }
+  });
+
+  if (!response.ok) {
+    throw new Error("Payment status could not be checked");
+  }
+
+  const data = await response.json();
+
+  if (data.payment.status === "PAID") {
+    await orders.markPaid(orderId, {
+      paymentId: data.payment.id,
+      txHash: data.payment.txHash
+    });
+  }
+
+  return data.payment.status;
+}`,
             },
             {
               key: "verify-webhook-php",
