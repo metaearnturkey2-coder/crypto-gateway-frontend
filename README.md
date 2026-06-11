@@ -40,4 +40,11 @@ $env:SMOKE_BASE_URL="http://localhost:3001"; npm run smoke
 npm run lint
 npm run build
 npm run smoke
+npm run e2e:smoke
+```
+
+The browser smoke suite uses Playwright and covers desktop/mobile render paths, including mocked admin and merchant session branches plus the expired-pending payment regression. On a fresh machine, install the Chromium browser binary once:
+
+```bash
+npm exec playwright install chromium
 ```
