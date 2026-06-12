@@ -442,9 +442,9 @@ export default function OverviewPage() {
           </div>
 
           {nextOnboardingStep ? (
-            <div className="mx-5 mt-5 flex flex-col gap-4 rounded-lg border border-amber-400/25 bg-amber-400/5 p-4 md:mx-6 md:flex-row md:items-center md:justify-between">
+            <div className="overview-next-action mx-5 mt-5 flex flex-col gap-4 rounded-lg border border-amber-400/25 bg-amber-400/5 p-4 md:mx-6 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/80">{t("overview.nextRecommendedAction")}</p>
+                <p className="overview-next-action-label text-xs font-semibold uppercase tracking-wide text-amber-200/80">{t("overview.nextRecommendedAction")}</p>
                 <h3 className="mt-1 text-lg font-semibold text-white">{nextOnboardingStep.title}</h3>
                 <p className="mt-1 max-w-2xl text-sm text-zinc-400">{nextOnboardingStep.description}</p>
               </div>
@@ -467,7 +467,7 @@ export default function OverviewPage() {
               <Link
                 key={step.title}
                 href={step.href}
-                className={`group flex min-h-[126px] flex-col justify-between py-4 transition lg:px-4 ${
+                className={`merchant-setup-step group flex min-h-[126px] flex-col justify-between py-4 transition lg:px-4 ${
                   index === nextOnboardingStepIndex
                     ? "bg-zinc-950/80 hover:bg-zinc-950"
                     : step.done
@@ -594,13 +594,13 @@ export default function OverviewPage() {
                     </div>
                   </div>
 
-                  <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0">
+                  <div className="asset-mobile-stat-card min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0">
                     <p className="text-[10px] font-semibold uppercase text-zinc-500 md:hidden">{t("overview.balance")}</p>
                     <p className="mt-1 text-sm font-semibold text-white break-words md:mt-0 md:text-base">{formatTokenBalance(balance)}</p>
                     <p className="text-xs text-zinc-500">{formatDisplayAmount(usdValue)}</p>
                   </div>
 
-                  <div className="min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0">
+                  <div className="asset-mobile-stat-card min-w-0 rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-2 md:rounded-none md:border-0 md:bg-transparent md:p-0">
                     <p className="text-[10px] font-semibold uppercase text-zinc-500 md:hidden">{t("overview.price")}</p>
                     <p className="mt-1 text-sm font-semibold text-white md:mt-0 md:text-base">
                       {pricesLoading ? "..." : formatUsdPrice(asset.symbol, prices?.[asset.symbol]?.usd)}

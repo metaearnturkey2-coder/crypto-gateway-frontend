@@ -1400,6 +1400,48 @@ body {
   background: #059669 !important;
 }
 
+.merchant-setup-step,
+.dark-dashboard .merchant-setup-step {
+  border-color: #27272a !important;
+}
+
+.light-dashboard .merchant-setup-step {
+  border-color: #d1d5db !important;
+  background: transparent !important;
+}
+
+.light-dashboard .merchant-setup-step:hover {
+  background: #f8fafc !important;
+}
+
+.light-dashboard .merchant-setup-step.bg-zinc-950\/80 {
+  background: #fffdf5 !important;
+}
+
+.light-dashboard .merchant-setup-step.bg-zinc-950\/80:hover {
+  background: #fffbeb !important;
+}
+
+.overview-next-action,
+.dark-dashboard .overview-next-action {
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  background: rgba(251, 191, 36, 0.05) !important;
+}
+
+.light-dashboard .overview-next-action {
+  border-color: #facc15 !important;
+  background: #fffbeb !important;
+}
+
+.overview-next-action-label,
+.dark-dashboard .overview-next-action-label {
+  color: rgba(253, 230, 138, 0.8) !important;
+}
+
+.light-dashboard .overview-next-action-label {
+  color: #a16207 !important;
+}
+
 .overview-summary-card,
 .dark-dashboard .overview-summary-card {
   border-color: #3f3f46 !important;
@@ -1570,6 +1612,26 @@ body {
   border-color: #cbd5e1 !important;
   background: #e5e7eb !important;
   color: #334155 !important;
+}
+
+.asset-mobile-stat-card,
+.dark-dashboard .asset-mobile-stat-card {
+  border-color: #27272a !important;
+  background: rgba(39, 39, 42, 0.4) !important;
+}
+
+.light-dashboard .asset-mobile-stat-card {
+  border-color: #d1d5db !important;
+  background: #ffffff !important;
+}
+
+@media (min-width: 768px) {
+  .asset-mobile-stat-card,
+  .dark-dashboard .asset-mobile-stat-card,
+  .light-dashboard .asset-mobile-stat-card {
+    border-color: transparent !important;
+    background: transparent !important;
+  }
 }
 
 .asset-allocation-track,
