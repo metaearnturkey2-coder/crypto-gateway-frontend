@@ -3,6 +3,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useParams } from "next/navigation";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clipboard,
+  Clock3,
+  Loader2,
+  RefreshCw,
+  ShieldCheck,
+  WalletCards,
+} from "lucide-react";
 import { cn } from "@/components/dashboard-ui";
 import { apiUrl } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
@@ -247,27 +257,31 @@ const getSafetyChecks = ({ amountLabel, isPayable, payment, t, timeZone }) => {
 
 function CheckoutPanel({ children, className = "", as: Component = "section" }) {
   return (
-    <Component className={cn("rounded-xl border border-zinc-800 bg-zinc-900 p-5", className)}>
+    <Component className={cn("rounded-lg border border-zinc-800 bg-zinc-950 p-4 shadow-xl shadow-black/20 sm:p-5", className)}>
       {children}
     </Component>
   );
 }
 
 function CheckoutInfoCard({ children, className = "" }) {
-  return <div className={cn("rounded-xl border border-zinc-800 bg-zinc-950 p-3", className)}>{children}</div>;
+  return <div className={cn("rounded-lg border border-zinc-800 bg-black/35 p-3", className)}>{children}</div>;
 }
 
 function CheckoutButton({ children, className = "", variant = "secondary", ...props }) {
   const variants = {
-    primary: "bg-blue-400 px-5 py-3 font-semibold text-black hover:opacity-80 disabled:cursor-wait",
-    secondary: "border border-zinc-700 px-4 py-2 text-sm font-semibold text-zinc-100 hover:bg-zinc-800",
-    light: "bg-white px-4 py-2 text-sm font-semibold text-black hover:opacity-80",
-    muted: "bg-zinc-800 px-4 py-2 font-semibold text-zinc-100 hover:bg-zinc-700",
+    primary: "border-white bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-zinc-200 disabled:cursor-wait",
+    secondary: "border-zinc-700 bg-zinc-950 px-4 py-2.5 text-sm font-semibold text-zinc-100 hover:border-zinc-500",
+    light: "border-white bg-white px-4 py-2.5 text-sm font-bold text-black hover:bg-zinc-200",
+    muted: "border-zinc-700 bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-zinc-100 hover:bg-zinc-800",
   };
 
   return (
     <button
-      className={cn("rounded-lg transition disabled:cursor-not-allowed disabled:opacity-40", variants[variant], className)}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-lg border transition disabled:cursor-not-allowed disabled:opacity-40",
+        variants[variant],
+        className
+      )}
       {...props}
     >
       {children}
@@ -356,18 +370,27 @@ export default function PaymentCheckoutPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black text-white">
-        {t("checkout.loading")}
+      <main className="flex min-h-screen items-center justify-center bg-black px-4 text-zinc-100">
+        <div className="w-full max-w-sm rounded-lg border border-zinc-800 bg-zinc-950 p-5 text-center shadow-2xl shadow-black/30">
+          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 text-emerald-300">
+            <Loader2 size={18} className="animate-spin" />
+          </span>
+          <p className="mt-4 text-sm font-semibold text-white">{t("checkout.loading")}</p>
+          <p className="mt-1 text-xs text-zinc-500">Crypto Gateway Checkout</p>
+        </div>
       </main>
     );
   }
 
   if (!payment) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-black px-5 text-white">
-        <div className="max-w-md rounded-xl border border-red-500/30 bg-red-500/10 p-6 text-center">
-          <h1 className="text-2xl font-bold">{t("checkout.unavailable")}</h1>
-          <p className="mt-2 text-red-100">{error || t("checkout.notFound")}</p>
+      <main className="flex min-h-screen items-center justify-center bg-black px-4 text-zinc-100">
+        <div className="w-full max-w-md rounded-lg border border-red-500/30 bg-red-500/10 p-5 text-center shadow-2xl shadow-black/30">
+          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg border border-red-400/30 bg-red-400/10 text-red-200">
+            <AlertTriangle size={18} />
+          </span>
+          <h1 className="mt-4 text-xl font-bold text-white">{t("checkout.unavailable")}</h1>
+          <p className="mt-2 text-sm leading-6 text-red-100">{error || t("checkout.notFound")}</p>
         </div>
       </main>
     );
@@ -388,96 +411,91 @@ export default function PaymentCheckoutPage() {
   const safetyChecks = getSafetyChecks({ amountLabel, isPayable, payment, t, timeZone });
 
   return (
-    <main className="min-h-screen bg-black px-4 py-5 text-white md:px-6 md:py-8">
-      <div className="mx-auto max-w-5xl">
-        <header className="mb-5 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-sm text-zinc-500">{t("checkout.brand")}</p>
-            <h1 className="mt-1 text-2xl font-bold md:text-3xl">
-              {checkoutState.title}
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-400">
-              {checkoutState.message}
-            </p>
-          </div>
+    <main className="min-h-screen bg-black px-4 py-4 text-zinc-100 sm:px-6 sm:py-6">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-5 border-b border-zinc-900 pb-4">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-emerald-300">{t("checkout.brand")}</p>
+              <h1 className="mt-2 max-w-2xl text-2xl font-bold leading-tight text-white sm:text-3xl">
+                {checkoutState.title}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
+                {checkoutState.message}
+              </p>
+            </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <span
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${checkoutState.badgeClassName}`}
-            >
-              {checkoutState.label}
-            </span>
-            <span className="rounded-full border border-zinc-800 bg-zinc-950 px-4 py-2 text-sm text-zinc-300">
-              {payment.network}
-            </span>
-            {payment.mode === "TEST" && (
-              <span className="rounded-full border border-blue-400/40 bg-blue-400/10 px-4 py-2 text-sm font-semibold text-blue-100">
-                TEST
+            <div className="flex flex-wrap items-center gap-2">
+              <span className={`rounded-full px-3 py-1.5 text-xs font-bold ${checkoutState.badgeClassName}`}>
+                {checkoutState.label}
               </span>
-            )}
+              <span className="rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-zinc-300">
+                {payment.network}
+              </span>
+              {payment.mode === "TEST" && (
+                <span className="rounded-full border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 text-xs font-bold text-sky-100">
+                  TEST
+                </span>
+              )}
+            </div>
           </div>
         </header>
 
-        <section className={`mb-5 rounded-xl border p-4 ${checkoutState.panelClassName}`}>
+        <section className={`mb-5 rounded-lg border p-4 ${checkoutState.panelClassName}`}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <p className="text-sm font-semibold">
-                {isPayable
-                  ? t("checkout.sendExactAmount")
-                  : checkoutState.reviewing
-                    ? t("checkout.reviewingPayment")
-                    : t("checkout.doNotSend")}
-              </p>
-              <p className="mt-1 text-sm text-zinc-300">
-                {isPayable
-                  ? t("checkout.assetWarning").replace("{currency}", payment.currency).replace("{network}", payment.network)
-                  : checkoutState.message}
-              </p>
+            <div className="flex gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-700/60 bg-black/25 text-white">
+                {isPayable ? <ShieldCheck size={17} /> : <AlertTriangle size={17} />}
+              </span>
+              <div>
+                <p className="text-sm font-bold text-white">
+                  {isPayable
+                    ? t("checkout.sendExactAmount")
+                    : checkoutState.reviewing
+                      ? t("checkout.reviewingPayment")
+                      : t("checkout.doNotSend")}
+                </p>
+                <p className="mt-1 max-w-3xl text-sm leading-6 text-zinc-300">
+                  {isPayable
+                    ? t("checkout.assetWarning").replace("{currency}", payment.currency).replace("{network}", payment.network)
+                    : checkoutState.message}
+                </p>
+              </div>
             </div>
-            <div className="text-sm text-zinc-300">
+            <div className="shrink-0 rounded-lg border border-zinc-800 bg-black/30 px-3 py-2 text-xs text-zinc-300">
               {t("checkout.lastChecked")}: {formattedLastCheckedAt}
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[340px_1fr]">
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[380px_1fr]">
           <CheckoutPanel>
-            <div className={`mb-5 rounded-xl border p-4 ${isPayable ? "border-emerald-400/30 bg-emerald-400/10" : "border-red-400/30 bg-red-400/10"}`}>
-              <p className="text-sm font-semibold">{t("checkout.safetyTitle")}</p>
-              <div className="mt-3 space-y-2">
-                {safetyChecks.map((item) => (
-                  <div key={item.label} className="rounded-lg border border-zinc-800 bg-black/40 px-3 py-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{item.label}</p>
-                    <p className="mt-1 text-sm text-zinc-100">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3">
-              <div>
+            <div className="border-b border-zinc-800 pb-4">
+              <div className="flex items-start justify-between gap-3">
                 <p className="text-sm text-zinc-500">{t("checkout.amountDue")}</p>
-                <p className="mt-1 text-3xl font-bold">{amountLabel}</p>
+                <CheckoutButton
+                  type="button"
+                  onClick={() => copyText(payment.amount, "amount", t("checkout.amountDue"))}
+                  disabled={!isPayable}
+                  variant="secondary"
+                  className="shrink-0 px-3"
+                >
+                  <Clipboard size={15} />
+                  {copiedValue?.key === "amount" ? t("checkout.amountCopied") : t("checkout.copyAmount")}
+                </CheckoutButton>
               </div>
-              <CheckoutButton
-                type="button"
-                onClick={() => copyText(payment.amount, "amount", t("checkout.amountDue"))}
-                disabled={!isPayable}
-                variant="secondary"
-              >
-                {copiedValue?.key === "amount" ? t("checkout.amountCopied") : t("checkout.copyAmount")}
-              </CheckoutButton>
+              <p className="mt-2 text-3xl font-bold tracking-normal text-white sm:text-4xl">{amountLabel}</p>
             </div>
             {copiedValue?.key === "amount" && (
               <CopyConfirmation copiedText={t("common.copied")} label={copiedValue.label} value={amountLabel} />
             )}
 
             <div
-              className={`mx-auto my-5 w-fit rounded-xl p-3 ${
-                isPayable ? "bg-white" : "bg-zinc-800 opacity-50"
+              className={`mx-auto my-5 w-fit rounded-lg border p-3 ${
+                isPayable ? "border-zinc-200 bg-white" : "border-zinc-700 bg-zinc-800 opacity-50"
               }`}
             >
-              <QRCodeSVG value={payment.walletAddress} size={210} />
+              <QRCodeSVG value={payment.walletAddress} size={214} />
             </div>
 
             <p className="text-center text-sm text-zinc-400">
@@ -485,10 +503,38 @@ export default function PaymentCheckoutPage() {
             </p>
 
             <CheckoutInfoCard className="mt-5 p-4">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white">{t("checkout.walletAddress")}</p>
+                  <p className="mt-1 text-xs leading-5 text-zinc-500">
+                    {t("checkout.copyAddressExactly")}
+                  </p>
+                </div>
+                <CheckoutButton
+                  type="button"
+                  onClick={() => copyText(payment.walletAddress, "wallet", t("checkout.walletAddress"))}
+                  disabled={!isPayable}
+                  variant="light"
+                  className="shrink-0 px-3"
+                >
+                  <Clipboard size={15} />
+                  {copiedValue?.key === "wallet" ? t("common.copied") : t("checkout.copyAddress")}
+                </CheckoutButton>
+              </div>
+              <p className="break-all rounded-lg border border-zinc-800 bg-black px-3 py-2 font-mono text-xs leading-5 text-zinc-200">
+                {payment.walletAddress}
+              </p>
+              {copiedValue?.key === "wallet" && (
+                <CopyConfirmation copiedText={t("common.copied")} label={copiedValue.label} value={payment.walletAddress} />
+              )}
+            </CheckoutInfoCard>
+
+            <CheckoutInfoCard className="mt-3 p-4">
               <div className="flex items-center justify-between gap-3">
                 <p className="text-sm text-zinc-500">{t("checkout.paymentWindow")}</p>
-                <p className={`text-sm font-semibold ${paymentWindow.urgent ? "text-amber-200" : "text-zinc-100"}`}>
-                  {formatTimeLeft(payment.expiresAt, now, t)}
+                <p className={`inline-flex items-center gap-1.5 text-sm font-bold ${paymentWindow.urgent ? "text-amber-200" : "text-zinc-100"}`}>
+                  <Clock3 size={14} />
+                  <span>{formatTimeLeft(payment.expiresAt, now, t)}</span>
                 </p>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-zinc-800">
@@ -509,14 +555,29 @@ export default function PaymentCheckoutPage() {
                   : t("checkout.noExpiration")}
               </p>
             </CheckoutInfoCard>
+
+            <div className={`mt-3 rounded-lg border p-3 ${isPayable ? "border-emerald-400/30 bg-emerald-400/10" : "border-red-400/30 bg-red-400/10"}`}>
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={15} className={isPayable ? "text-emerald-200" : "text-red-100"} />
+                <p className="text-sm font-bold text-white">{t("checkout.safetyTitle")}</p>
+              </div>
+              <div className="mt-3 space-y-2">
+                {safetyChecks.map((item) => (
+                  <div key={item.label} className="rounded-lg border border-zinc-800 bg-black/35 px-3 py-2">
+                    <p className="text-xs font-semibold text-zinc-500">{item.label}</p>
+                    <p className="mt-1 text-sm leading-5 text-zinc-100">{item.value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </CheckoutPanel>
 
           <CheckoutPanel>
-            <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="mb-5 flex flex-col gap-3 border-b border-zinc-800 pb-4 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-sm text-zinc-500">{t("checkout.status")}</p>
                 <span
-                  className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${getStatusPillClassName(
+                  className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold ${getStatusPillClassName(
                     effectiveStatus
                   )}`}
                 >
@@ -528,14 +589,18 @@ export default function PaymentCheckoutPage() {
                 onClick={checkPayment}
                 disabled={checking}
                 variant="primary"
-                className="rounded-xl disabled:opacity-60"
+                className="w-full disabled:opacity-60 md:w-auto"
               >
+                {checking ? <Loader2 size={15} className="animate-spin" /> : <RefreshCw size={15} />}
                 {checking ? t("checkout.checking") : t("checkout.checkStatus")}
               </CheckoutButton>
             </div>
 
             <CheckoutInfoCard className="mb-5 p-4">
-              <p className="mb-4 text-sm font-semibold">{t("checkout.timeline")}</p>
+              <div className="mb-4 flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-emerald-300" />
+                <p className="text-sm font-bold text-white">{t("checkout.timeline")}</p>
+              </div>
               <div className="space-y-4">
                 {timelineSteps.map((step, index) => (
                   <div className="flex gap-3" key={step.stage}>
@@ -556,7 +621,7 @@ export default function PaymentCheckoutPage() {
                       <p className={`font-semibold ${getTimelineTextClassName(step, checkoutState)}`}>
                         {step.title}
                       </p>
-                      <p className="mt-1 text-sm text-zinc-500">{step.description}</p>
+                      <p className="mt-1 text-sm leading-5 text-zinc-500">{step.description}</p>
                     </div>
                   </div>
                 ))}
@@ -590,39 +655,12 @@ export default function PaymentCheckoutPage() {
                 </p>
               </CheckoutInfoCard>
             </div>
-
-            <CheckoutInfoCard className="p-4">
-              <div className="mb-3 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="text-sm font-semibold">{t("checkout.walletAddress")}</p>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {t("checkout.copyAddressExactly")}
-                  </p>
-                </div>
-
-                <CheckoutButton
-                  type="button"
-                  onClick={() => copyText(payment.walletAddress, "wallet", t("checkout.walletAddress"))}
-                  disabled={!isPayable}
-                  variant="light"
-                >
-                  {copiedValue?.key === "wallet" ? t("common.copied") : t("checkout.copyAddress")}
-                </CheckoutButton>
-              </div>
-
-              <p className="break-all rounded-lg bg-black p-3 font-mono text-sm text-zinc-200">
-                {payment.walletAddress}
-              </p>
-              {copiedValue?.key === "wallet" && (
-                <CopyConfirmation copiedText={t("common.copied")} label={copiedValue.label} value={payment.walletAddress} />
-              )}
-            </CheckoutInfoCard>
           </CheckoutPanel>
         </div>
 
-        <footer className="mt-5 rounded-xl border border-zinc-800 bg-zinc-900 p-4">
+        <footer className="mt-5 rounded-lg border border-zinc-800 bg-zinc-950 p-4">
           <div className="flex flex-col gap-3 text-sm text-zinc-400 md:flex-row md:items-center md:justify-between">
-            <p>{t("checkout.autoRefreshDescription")}</p>
+            <p className="leading-6">{t("checkout.autoRefreshDescription")}</p>
             <div className="flex flex-wrap gap-2">
               <CheckoutButton
                 type="button"
@@ -630,6 +668,7 @@ export default function PaymentCheckoutPage() {
                 disabled={!isPayable}
                 variant="muted"
               >
+                <WalletCards size={15} />
                 {copiedValue?.key === "wallet-bottom" ? t("checkout.addressCopied") : t("checkout.copyWallet")}
               </CheckoutButton>
               <CheckoutButton
@@ -637,6 +676,7 @@ export default function PaymentCheckoutPage() {
                 onClick={() => copyText(payment.id, "payment-id", t("checkout.paymentId"))}
                 variant="muted"
               >
+                <Clipboard size={15} />
                 {copiedValue?.key === "payment-id" ? t("checkout.idCopied") : t("checkout.copyPaymentId")}
               </CheckoutButton>
             </div>
@@ -653,7 +693,10 @@ export default function PaymentCheckoutPage() {
 function CopyConfirmation({ copiedText, label, value }) {
   return (
     <div className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100">
-      <p className="font-semibold">{label}: {copiedText}</p>
+      <p className="flex items-center gap-1.5 font-bold">
+        <CheckCircle2 size={13} />
+        <span>{label}: {copiedText}</span>
+      </p>
       <p className="mt-1 break-all font-mono text-emerald-50">{value}</p>
     </div>
   );

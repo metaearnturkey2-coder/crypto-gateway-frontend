@@ -16,7 +16,7 @@ export const formatMoneyAmount = (value, options = {}) => {
   const {
     minimumFractionDigits = 2,
     maximumFractionDigits = 6,
-    locale,
+    locale = "en-US",
   } = options;
   const numeric = parseMoneyAmount(value);
 

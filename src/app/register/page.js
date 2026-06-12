@@ -1,9 +1,24 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
+import {
+  AuthCardHeader,
+  AuthField,
+  AuthInput,
+  AuthMessage,
+  AuthPageShell,
+  AuthSubmitButton,
+  PasswordRequirementList,
+} from "@/components/auth-shell";
 import { fetchApi } from "@/lib/api";
+import { isValidEmail, normalizeEmail, normalizeMerchantName } from "@/lib/auth-validation";
 import { reportClientError } from "@/lib/client-error";
 import { useDashboardLanguage } from "@/lib/i18n";
+import {
+  getPasswordRequirementState,
+  isPasswordPolicyValid,
+} from "@/lib/password-policy";
 
 export default function RegisterPage() {
   const { t } = useDashboardLanguage();
@@ -11,6 +26,7 @@ export default function RegisterPage() {
     name: "",
     email: "",
     password: "",
+    confirmPassword: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -25,6 +41,41 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const email = normalizeEmail(form.email);
+    const name = normalizeMerchantName(form.name);
+
+    if (!name) {
+      setMessage({
+        type: "error",
+        text: t("auth.nameRequired"),
+      });
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setMessage({
+        type: "error",
+        text: t("auth.emailInvalid"),
+      });
+      return;
+    }
+
+    if (!isPasswordPolicyValid(form.password)) {
+      setMessage({
+        type: "error",
+        text: t("auth.passwordRequirementsError"),
+      });
+      return;
+    }
+
+    if (form.password !== form.confirmPassword) {
+      setMessage({
+        type: "error",
+        text: t("auth.passwordMismatch"),
+      });
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
@@ -34,7 +85,11 @@ export default function RegisterPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name,
+          email,
+          password: form.password,
+        }),
       });
 
       const data = await response.json();
@@ -74,127 +129,110 @@ export default function RegisterPage() {
     }
   };
 
+  const passwordRequirements = getPasswordRequirementState(form.password);
+  const passwordScore = passwordRequirements.filter((requirement) => requirement.met).length;
+  const passwordStrengthLabel =
+    passwordScore >= passwordRequirements.length
+      ? t("auth.passwordStrengthStrong")
+      : passwordScore >= 4
+        ? t("auth.passwordStrengthGood")
+        : t("auth.passwordStrengthWeak");
+
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center px-6 py-10">
-      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-        <section>
-          <p className="text-blue-400 font-semibold mb-4">
-            Crypto Gateway
-          </p>
+    <AuthPageShell
+      eyebrow="Crypto Gateway"
+      title={t("auth.registerHeroTitle")}
+      description={t("auth.registerHeroDescription")}
+      features={[
+        { icon: "secure", value: "TRC20", label: t("auth.usdtNetwork") },
+        { icon: "api", value: "API", label: t("auth.merchantReady") },
+        { icon: "checkout", value: "Checkout", label: t("auth.checkoutFlow") },
+      ]}
+    >
+      <AuthCardHeader title={t("auth.createMerchantAccount")} description={t("auth.registerDescription")} />
 
-          <h1 className="text-5xl font-bold leading-tight mb-6">
-            {t("auth.registerHeroTitle")}
-          </h1>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        {message && <AuthMessage type={message.type}>{message.text}</AuthMessage>}
 
-          <p className="text-zinc-400 text-lg mb-8 max-w-xl">
-            {t("auth.registerHeroDescription")}
-          </p>
+        <AuthField label={t("auth.merchantName")}>
+          <AuthInput
+            id="merchant-name"
+            type="text"
+            name="name"
+            placeholder={t("auth.namePlaceholder")}
+            value={form.name}
+            onChange={handleChange}
+            required
+          />
+        </AuthField>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-              <p className="text-2xl font-bold">TRC20</p>
-              <p className="text-zinc-500 text-sm mt-1">{t("auth.usdtNetwork")}</p>
-            </div>
+        <AuthField label={t("auth.emailAddress")}>
+          <AuthInput
+            id="merchant-email"
+            type="email"
+            name="email"
+            placeholder="merchant@example.com"
+            value={form.email}
+            onChange={handleChange}
+            required
+          />
+        </AuthField>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-              <p className="text-2xl font-bold">API</p>
-              <p className="text-zinc-500 text-sm mt-1">{t("auth.merchantReady")}</p>
-            </div>
+        <AuthField label={t("auth.password")}>
+          <AuthInput
+            id="merchant-password"
+            type="password"
+            name="password"
+            placeholder={t("auth.passwordMinPlaceholder")}
+            value={form.password}
+            onChange={handleChange}
+            required
+            minLength={10}
+          />
+        </AuthField>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5">
-              <p className="text-2xl font-bold">QR</p>
-              <p className="text-zinc-500 text-sm mt-1">{t("auth.checkoutFlow")}</p>
-            </div>
+        <div className="rounded-lg border border-zinc-800 bg-black/25 p-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-zinc-200">{t("auth.passwordStrength")}</p>
+            <p className="text-xs font-semibold text-zinc-400">{passwordStrengthLabel}</p>
           </div>
-        </section>
-
-        <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 shadow-2xl">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold">
-              {t("auth.createMerchantAccount")}
-            </h2>
-
-            <p className="text-zinc-400 mt-2">
-              {t("auth.registerDescription")}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {message && (
-              <div
-                className={`rounded-xl border px-4 py-3 text-sm ${
-                  message.type === "success"
-                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                    : "border-red-500/40 bg-red-500/10 text-red-200"
+          <div className="mt-2 grid grid-cols-6 gap-1">
+            {passwordRequirements.map((requirement) => (
+              <span
+                key={requirement.code}
+                className={`h-1 rounded-full ${
+                  requirement.met ? "bg-emerald-400" : "bg-zinc-700"
                 }`}
-              >
-                {message.text}
-              </div>
-            )}
-
-            <div>
-              <label className="block text-sm text-zinc-400 mb-2">
-                {t("auth.merchantName")}
-              </label>
-              <input
-                type="text"
-                name="name"
-                placeholder={t("auth.namePlaceholder")}
-                value={form.name}
-                onChange={handleChange}
-                required
-                className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 outline-none focus:border-blue-500 transition"
               />
-            </div>
+            ))}
+          </div>
+          <PasswordRequirementList requirements={passwordRequirements} t={t} />
+        </div>
 
-            <div>
-              <label className="block text-sm text-zinc-400 mb-2">
-                {t("auth.emailAddress")}
-              </label>
-              <input
-                type="email"
-                name="email"
-                placeholder="merchant@example.com"
-                value={form.email}
-                onChange={handleChange}
-                required
-                className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 outline-none focus:border-blue-500 transition"
-              />
-            </div>
+        <AuthField label={t("auth.confirmPassword")}>
+          <AuthInput
+            id="merchant-confirm-password"
+            type="password"
+            name="confirmPassword"
+            placeholder={t("auth.confirmPasswordPlaceholder")}
+            value={form.confirmPassword}
+            onChange={handleChange}
+            required
+            minLength={10}
+          />
+        </AuthField>
 
-            <div>
-              <label className="block text-sm text-zinc-400 mb-2">
-                {t("auth.password")}
-              </label>
-              <input
-                type="password"
-                name="password"
-                placeholder={t("auth.passwordMinPlaceholder")}
-                value={form.password}
-                onChange={handleChange}
-                required
-                minLength={6}
-                className="w-full p-4 rounded-xl bg-zinc-800 border border-zinc-700 outline-none focus:border-blue-500 transition"
-              />
-            </div>
+        <AuthSubmitButton disabled={loading}>
+          {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
+        </AuthSubmitButton>
+      </form>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-white text-black py-4 rounded-xl font-semibold hover:opacity-80 transition disabled:opacity-50"
-            >
-              {loading ? t("auth.creatingAccount") : t("auth.createAccount")}
-            </button>
-          </form>
-
-          <p className="text-zinc-500 text-sm mt-6 text-center">
-            {t("auth.alreadyHaveAccount")}{" "}
-            <a href="/login" className="text-white hover:underline">
-              {t("auth.login")}
-            </a>
-          </p>
-        </section>
-      </div>
-    </main>
+      <p className="mt-5 text-center text-sm text-zinc-500">
+        {t("auth.alreadyHaveAccount")}{" "}
+        <Link href="/login" className="font-semibold text-white hover:underline">
+          {t("auth.login")}
+        </Link>
+      </p>
+    </AuthPageShell>
   );
 }

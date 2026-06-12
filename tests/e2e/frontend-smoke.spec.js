@@ -16,6 +16,23 @@ const expiredPendingPayment = {
   webhookEvents: [],
 };
 
+const activeCheckoutPayment = {
+  amount: "148.00",
+  checkoutUrl: "/pay/checkout-polish-e2e",
+  createdAt: new Date(Date.now() - 7 * 60 * 1000).toISOString(),
+  currency: "USDT",
+  customerEmail: "customer@example.test",
+  expiresAt: new Date(Date.now() + 14 * 60 * 1000).toISOString(),
+  id: "checkout-polish-e2e",
+  mode: "LIVE",
+  network: "TRC20",
+  orderId: "ORDER-CG-1048",
+  status: "PENDING",
+  txHash: null,
+  walletAddress: "TQx7yGvQ9pR2mN4kL6sD8fH1jK3pQ5zX7mP2",
+  webhookEvents: [],
+};
+
 const watchRuntimeErrors = (page) => {
   const errors = [];
 
@@ -179,6 +196,18 @@ const mockMerchantSession = async (
   }
 };
 
+const mockPublicCheckoutPayment = async (page, payment = activeCheckoutPayment) => {
+  for (const baseUrl of backendUrls) {
+    await page.route(`${baseUrl}/api/public/payments/${payment.id}`, async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        json: { payment },
+        status: 200,
+      });
+    });
+  }
+};
+
 test.describe("public frontend smoke", () => {
   for (const route of ["/login", "/register", "/history", "/trade"]) {
     test(`${route} renders without runtime errors`, async ({ page }) => {
@@ -191,9 +220,72 @@ test.describe("public frontend smoke", () => {
       expectNoRuntimeErrors(errors);
     });
   }
+
+  test("register shows password requirements and blocks weak passwords", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+
+    await page.goto("/register");
+    await expect(page.getByText("Password strength")).toBeVisible();
+    await expect(page.getByText("10+ characters")).toBeVisible();
+    await expect(page.getByLabel("Confirm password")).toBeVisible();
+
+    await page.getByLabel("Merchant Name").fill("Weak Password Merchant");
+    await page.getByLabel("Email Address").fill("weak@example.test");
+    await page.getByLabel("Password", { exact: true }).fill("1234567890");
+    await page.getByLabel("Confirm password").fill("1234567890");
+    await page.getByRole("button", { name: "Create account" }).click();
+
+    await expect(page.getByText("Password does not meet the security requirements.")).toBeVisible();
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("login shows custom validation for invalid email", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+
+    await page.goto("/login");
+    await page.getByLabel("Email Address").fill("not-an-email");
+    await page.getByLabel("Password").fill("anything");
+    await page.getByRole("button", { name: "Login" }).click();
+
+    await expect(page.getByText("Enter a valid email address.")).toBeVisible();
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("checkout renders hosted payment details", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    await mockPublicCheckoutPayment(page);
+
+    await page.goto("/pay/checkout-polish-e2e");
+    await expect(page.getByRole("heading", { name: "Complete Payment" })).toBeVisible();
+    await expect(page.getByText("148.00 USDT").first()).toBeVisible();
+    await expect(page.getByText(activeCheckoutPayment.walletAddress)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Check Payment Status" })).toBeVisible();
+
+    expectNoRuntimeErrors(errors);
+  });
 });
 
 test.describe("merchant frontend smoke", () => {
+  test("overview renders authenticated merchant summary", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    await mockMerchantSession(page, {
+      paymentStats: {
+        expired: 2,
+        paid: 34,
+        pending: 6,
+        total: 42,
+      },
+    });
+
+    await page.goto("/overview");
+    await expect(page.getByText("Total funds")).toBeVisible();
+    await expect(page.getByRole("link", { exact: true, name: "Create payment" })).toBeVisible();
+    await expect(page.getByText("Merchant setup")).toBeVisible();
+    await expect(page.getByText("Assets")).toBeVisible();
+
+    expectNoRuntimeErrors(errors);
+  });
+
   test("business wallet renders authenticated finance surfaces", async ({ page }) => {
     const errors = watchRuntimeErrors(page);
     await mockMerchantSession(page);
