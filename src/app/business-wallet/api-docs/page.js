@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DashboardEmptyState, DashboardMetric, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import OverviewShell from "@/components/overview-shell";
@@ -7,7 +8,14 @@ import { API_BASE_URL, apiUrl, merchantFetch } from "@/lib/api";
 import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } from "@/lib/i18n";
 
 function getApiCallClassName(success) {
-  return success ? "bg-green-500 text-black" : "bg-red-500 text-black";
+  return success ? "api-docs-status-success" : "api-docs-status-failed";
+}
+
+function getSnippetMethodClassName(method) {
+  if (method === "GET") return "api-docs-method-get";
+  if (method === "400") return "api-docs-method-error";
+  if (method === "FLOW") return "api-docs-method-flow";
+  return "api-docs-method-post";
 }
 
 export default function BusinessWalletApiDocsPage() {
@@ -136,21 +144,21 @@ export default function BusinessWalletApiDocsPage() {
 
   return (
     <OverviewShell>
-      <DashboardPanel as="div" variant="api" className="mb-5 p-5 sm:p-5">
+      <DashboardPanel as="div" variant="api" className="mb-4 rounded-lg p-4 sm:p-5">
         <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
           <div>
-            <h2 className="text-2xl font-bold">{t("apiDocs.apiUsage")}</h2>
+            <h2 className="text-lg font-bold">{t("apiDocs.apiUsage")}</h2>
             <p className="api-docs-muted text-sm">{t("apiDocs.usageDescription")}</p>
           </div>
           <DashboardPill variant="api">{t("apiDocs.last24Hours")}</DashboardPill>
         </div>
 
-        <div className="api-docs-stat-strip mb-3 grid grid-cols-2 gap-2 rounded-xl border p-2 lg:grid-cols-5">
-          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.requests")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.total}</p></DashboardMetric>
-          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.successful")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.successful}</p></DashboardMetric>
-          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.failed")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.failed}</p></DashboardMetric>
-          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.createCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.createCalls}</p></DashboardMetric>
-          <DashboardMetric variant="api" className="border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.statusCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.statusCalls}</p></DashboardMetric>
+        <div className="api-docs-stat-strip mb-3 grid grid-cols-1 gap-2 rounded-lg border p-2 sm:grid-cols-2 xl:grid-cols-5">
+          <DashboardMetric variant="api" className="min-w-0 rounded-lg border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.requests")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.total}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="min-w-0 rounded-lg border-0 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.successful")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.successful}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="min-w-0 rounded-lg border-0 py-2"><p className="api-docs-muted text-xs">{t("merchantPayments.failed")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.failed}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="min-w-0 rounded-lg border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.createCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.createCalls}</p></DashboardMetric>
+          <DashboardMetric variant="api" className="min-w-0 rounded-lg border-0 py-2"><p className="api-docs-muted text-xs">{t("apiDocs.statusCalls")}</p><p className="font-mono text-xl font-bold">{apiUsage.summary.statusCalls}</p></DashboardMetric>
         </div>
 
         {loading ? (
@@ -158,9 +166,9 @@ export default function BusinessWalletApiDocsPage() {
         ) : apiUsage.recentCalls.length === 0 ? (
           <DashboardEmptyState variant="api" className="rounded-lg px-3 py-2">{t("apiDocs.noRequests")}</DashboardEmptyState>
         ) : (
-          <div className="api-docs-list divide-y rounded-xl border overflow-hidden">
+          <div className="api-docs-list divide-y overflow-hidden rounded-lg border">
             {apiUsage.recentCalls.map((call) => (
-              <div key={call.id} className="grid grid-cols-1 gap-3 p-4 text-sm lg:grid-cols-[170px_1fr_90px_170px]">
+              <div key={call.id} className="api-docs-call-row grid grid-cols-1 gap-3 p-3 text-sm lg:grid-cols-[170px_1fr_90px_170px] lg:items-center">
                 <div className="flex items-center gap-2">
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getApiCallClassName(call.success)}`}>
                     {call.success ? "SUCCESS" : "FAILED"}
@@ -179,42 +187,43 @@ export default function BusinessWalletApiDocsPage() {
         )}
       </DashboardPanel>
 
-      <DashboardPanel as="div" variant="api" className="p-5 sm:p-5">
+      <DashboardPanel as="div" variant="api" className="rounded-lg p-4 sm:p-5">
         <div className="mb-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-            <h2 className="text-2xl font-bold">{t("apiDocs.integration")}</h2>
-            <p className="api-docs-muted text-sm mt-1">{t("apiDocs.integrationDescription")}</p>
+              <h2 className="text-lg font-bold">{t("apiDocs.integration")}</h2>
+              <p className="api-docs-muted mt-1 text-sm">{t("apiDocs.integrationDescription")}</p>
             </div>
             <a
               href={apiUrl("/api/v1/openapi.json")}
               target="_blank"
-              className="api-docs-pill flex w-full justify-center rounded-full border px-4 py-2 text-sm font-semibold sm:w-fit"
+              className="api-docs-pill inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold sm:w-fit"
             >
+              <ExternalLink size={16} strokeWidth={2.2} />
               {t("apiDocs.openApiSpec")}
             </a>
           </div>
         </div>
 
-        <div className="api-docs-rules-note mb-4 rounded-xl border px-4 py-3 text-xs">
+        <div className="api-docs-rules-note mb-4 rounded-lg border px-4 py-3 text-xs">
           <span>{t("apiDocs.openApiDescription")}</span>
           <span className="api-docs-rule-separator">/</span>
           <span>{API_BASE_URL}/api/v1/openapi.json</span>
         </div>
 
-        <div className="mb-4 rounded-xl border p-4">
+        <div className="api-docs-section-card mb-4 rounded-lg border p-4">
           <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
             <div>
               <h3 className="text-lg font-bold">{t("apiDocs.goLiveChecklist")}</h3>
               <p className="api-docs-muted text-sm">{t("apiDocs.goLiveChecklistDescription")}</p>
             </div>
             <DashboardPill variant="api" className="w-fit">
-              {goLiveChecklist.length} steps
+              {goLiveChecklist.length} {t("common.steps")}
             </DashboardPill>
           </div>
-          <div className="grid grid-cols-1 gap-2 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-5">
             {goLiveChecklist.map((item, index) => (
-              <DashboardMetric key={item.title} variant="api">
+              <DashboardMetric key={item.title} variant="api" className="rounded-lg">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs font-bold">
                   {index + 1}
                 </span>
@@ -225,14 +234,14 @@ export default function BusinessWalletApiDocsPage() {
           </div>
         </div>
 
-        <div className="mb-4 rounded-xl border p-4">
+        <div className="api-docs-section-card mb-4 rounded-lg border p-4">
           <div className="mb-3">
             <h3 className="text-lg font-bold">{t("apiDocs.testLiveReadiness")}</h3>
             <p className="api-docs-muted text-sm">{t("apiDocs.testLiveReadinessDescription")}</p>
           </div>
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
             {readinessNotes.map((item) => (
-              <DashboardMetric key={item.title} variant="api">
+              <DashboardMetric key={item.title} variant="api" className="rounded-lg">
                 <p className="text-sm font-semibold">{item.title}</p>
                 <p className="api-docs-muted mt-1 text-xs">{item.description}</p>
               </DashboardMetric>
@@ -240,14 +249,14 @@ export default function BusinessWalletApiDocsPage() {
           </div>
         </div>
 
-        <div className="mb-4 rounded-xl border p-4">
+        <div className="api-docs-section-card mb-4 rounded-lg border p-4">
           <div className="mb-3">
             <h3 className="text-lg font-bold">{t("apiDocs.troubleshooting")}</h3>
             <p className="api-docs-muted text-sm">{t("apiDocs.troubleshootingDescription")}</p>
           </div>
           <div className="grid grid-cols-1 gap-2 lg:grid-cols-4">
             {troubleshootingNotes.map((item) => (
-              <DashboardMetric key={item.code} variant="api">
+              <DashboardMetric key={item.code} variant="api" className="rounded-lg">
                 <span className="inline-flex rounded-md border px-2 py-1 font-mono text-[10px] font-bold">
                   {item.code}
                 </span>
@@ -258,19 +267,19 @@ export default function BusinessWalletApiDocsPage() {
           </div>
         </div>
 
-        <div className="mb-4 rounded-xl border p-4">
+        <div className="api-docs-section-card mb-4 rounded-lg border p-4">
           <div className="mb-3 flex flex-col gap-1 md:flex-row md:items-end md:justify-between">
             <div>
               <h3 className="text-lg font-bold">{t("apiDocs.preflightTitle")}</h3>
               <p className="api-docs-muted text-sm">{t("apiDocs.preflightDescription")}</p>
             </div>
             <DashboardPill variant="api" className="w-fit">
-              {preflightChecks.length} checks
+              {preflightChecks.length} {t("common.checks")}
             </DashboardPill>
           </div>
           <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
             {preflightChecks.map((item, index) => (
-              <DashboardMetric key={item} variant="api" className="flex gap-3">
+              <DashboardMetric key={item} variant="api" className="flex gap-3 rounded-lg">
                 <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-bold">
                   {index + 1}
                 </span>
@@ -673,8 +682,8 @@ http_response_code(200);`,
 
           return (
             <>
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[260px_1fr]">
-                <div className="api-docs-endpoint-list overflow-hidden rounded-xl border">
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+                <div className="api-docs-endpoint-list max-h-[22rem] overflow-auto rounded-lg border xl:max-h-[36rem]">
                   {snippets.map((snippet) => (
                     <button
                       key={snippet.key}
@@ -687,13 +696,7 @@ http_response_code(200);`,
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold ${
-                          snippet.method === "GET"
-                            ? "bg-blue-500 text-black"
-                            : snippet.method === "400"
-                            ? "bg-red-500 text-black"
-                            : "bg-green-500 text-black"
-                        }`}>
+                        <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold ${getSnippetMethodClassName(snippet.method)}`}>
                           {snippet.method}
                         </span>
                         <div className="min-w-0">
@@ -705,22 +708,16 @@ http_response_code(200);`,
                   ))}
                 </div>
 
-                <div className="api-docs-code-panel min-w-0 rounded-xl border overflow-hidden">
-                  <div className="api-docs-code-header flex items-center justify-between gap-3 border-b px-3 py-2.5">
+                <div className="api-docs-code-panel min-w-0 overflow-hidden rounded-lg border">
+                  <div className="api-docs-code-header flex flex-col gap-3 border-b px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex min-w-0 items-center gap-2">
-                        <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold ${
-                          active.method === "GET"
-                            ? "bg-blue-500 text-black"
-                            : active.method === "400"
-                            ? "bg-red-500 text-black"
-                            : "bg-green-500 text-black"
-                        }`}>
+                        <span className={`shrink-0 rounded-md px-2 py-1 text-[10px] font-semibold ${getSnippetMethodClassName(active.method)}`}>
                           {active.method}
                         </span>
-                        <h3 className="truncate text-sm font-semibold">{active.title}</h3>
+                        <h3 className="min-w-0 text-sm font-semibold sm:truncate">{active.title}</h3>
                       </div>
-                      <p className="api-docs-muted mt-1 truncate text-xs">{active.description}</p>
+                      <p className="api-docs-muted mt-1 text-xs sm:truncate">{active.description}</p>
                     </div>
                     <button
                       type="button"
@@ -729,12 +726,13 @@ http_response_code(200);`,
                         setCopiedKey(active.key);
                         setTimeout(() => setCopiedKey(""), 1200);
                       }}
-                      className="api-docs-copy-button shrink-0 rounded-lg border px-3 py-1.5 text-xs font-semibold"
+                      className="api-docs-copy-button inline-flex h-9 w-full shrink-0 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold sm:w-auto"
                     >
+                      {copiedKey === active.key ? <Check size={15} strokeWidth={2.2} /> : <Copy size={15} strokeWidth={2.2} />}
                       {copiedKey === active.key ? t("common.copied") : t("common.copy")}
                     </button>
                   </div>
-                  <pre className="api-docs-code max-h-[28rem] overflow-auto px-4 py-3 text-[11px] leading-5 whitespace-pre-wrap">
+                  <pre className="api-docs-code max-h-[30rem] overflow-auto px-4 py-3 text-[11px] leading-5 whitespace-pre">
                     <code>{active.value}</code>
                   </pre>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowLeft, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DashboardButton,
@@ -16,9 +17,13 @@ import { formatDashboardDateTime, useDashboardLanguage, useDashboardTimeZone } f
 import { formatTokenAmount } from "@/lib/money";
 
 const getDirectionClassName = (direction) => {
-  if (direction === "CREDIT") return "border-emerald-400/40 bg-emerald-500/15 text-emerald-200";
-  if (direction === "DEBIT") return "border-rose-400/40 bg-rose-500/15 text-rose-200";
-  return "border-zinc-600 bg-zinc-800 text-zinc-200";
+  if (direction === "CREDIT") {
+    return "ledger-direction-credit border-emerald-400/60 bg-emerald-500/15 text-emerald-200 light-dashboard:border-emerald-500 light-dashboard:bg-emerald-50 light-dashboard:text-emerald-700";
+  }
+  if (direction === "DEBIT") {
+    return "ledger-direction-debit border-rose-400/60 bg-rose-500/15 text-rose-200 light-dashboard:border-rose-500 light-dashboard:bg-rose-50 light-dashboard:text-rose-700";
+  }
+  return "ledger-direction-neutral border-zinc-600 bg-zinc-800 text-zinc-200 light-dashboard:border-zinc-300 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-700";
 };
 
 const getSourceHref = (entry) => {
@@ -29,11 +34,26 @@ const getSourceHref = (entry) => {
   return "";
 };
 
-const formatLedgerLabel = (value) =>
-  String(value || "-")
+const ledgerLabelKeys = {
+  CREDIT: "ledger.credit",
+  DEBIT: "ledger.debit",
+  PAYMENT_PAID: "ledger.paymentPaid",
+  PAYOUT_RESERVED: "ledger.payoutReserved",
+  PAYOUT_RELEASED: "ledger.payoutReleased",
+  PAYMENT_EXPIRED_RELEASE: "ledger.paymentExpiredRelease",
+  payment: "ledger.sourcePayment",
+  payout: "ledger.sourcePayout",
+};
+
+const formatLedgerLabel = (value, t) => {
+  const labelKey = ledgerLabelKeys[value];
+  if (labelKey) return t(labelKey);
+
+  return String(value || "-")
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
     .join(" ");
+};
 
 export default function BusinessWalletLedgerPage() {
   const { t } = useDashboardLanguage();
@@ -69,7 +89,7 @@ export default function BusinessWalletLedgerPage() {
 
       if (!ok) {
         setEntries([]);
-        setNotice(data.message || "Ledger entries could not be loaded.");
+        setNotice(data.message || t("ledger.loadError"));
         return;
       }
 
@@ -82,11 +102,11 @@ export default function BusinessWalletLedgerPage() {
       });
     } catch {
       setEntries([]);
-      setNotice("Ledger entries could not be loaded.");
+      setNotice(t("ledger.loadError"));
     } finally {
       setLoading(false);
     }
-  }, [direction, entryType, page, search, sourceType]);
+  }, [direction, entryType, page, search, sourceType, t]);
 
   useEffect(() => {
     queueMicrotask(loadLedger);
@@ -125,7 +145,7 @@ export default function BusinessWalletLedgerPage() {
       <div className="space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-zinc-900 dark-dashboard:text-white">
+            <h1 className="text-2xl font-bold text-zinc-900 dark-dashboard:text-white">
               {t("ledger.title")}
             </h1>
             <p className="mt-2 max-w-3xl text-sm text-zinc-500">
@@ -135,8 +155,9 @@ export default function BusinessWalletLedgerPage() {
           <DashboardPill
             as={Link}
             href="/business-wallet"
-            className="flex w-full justify-center px-4 py-2 text-sm sm:w-fit"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm sm:w-fit"
           >
+            <ArrowLeft size={16} strokeWidth={2.2} />
             {t("ledger.balanceOverview")}
           </DashboardPill>
         </div>
@@ -147,13 +168,13 @@ export default function BusinessWalletLedgerPage() {
           <LedgerMetric label={t("ledger.pageDebits")} value={formatTokenAmount(totals.debit, totals.currency)} tone="debit" />
         </section>
 
-        <DashboardPanel className="p-4 sm:p-4">
+        <DashboardPanel className="rounded-lg p-4 sm:p-4">
           <form onSubmit={submitSearch} className="grid grid-cols-1 gap-2 lg:grid-cols-[minmax(220px,1fr)_180px_180px_180px_110px_110px]">
             <DashboardInput
               value={searchDraft}
               onChange={(event) => setSearchDraft(event.target.value)}
               placeholder={t("ledger.searchPlaceholder")}
-              className="h-10"
+              className="h-10 rounded-lg"
             />
             <select
               value={entryType}
@@ -161,11 +182,11 @@ export default function BusinessWalletLedgerPage() {
                 setEntryType(event.target.value);
                 setPage(1);
               }}
-              className="business-wallet-input h-10 rounded-xl border px-3 text-sm outline-none"
+              className="business-wallet-input h-10 rounded-lg border px-3 text-sm outline-none"
             >
               <option value="ALL">{t("ledger.allEntryTypes")}</option>
               {filters.entryTypes.map((item) => (
-                <option key={item} value={item}>{formatLedgerLabel(item)}</option>
+                <option key={item} value={item}>{formatLedgerLabel(item, t)}</option>
               ))}
             </select>
             <select
@@ -174,11 +195,11 @@ export default function BusinessWalletLedgerPage() {
                 setDirection(event.target.value);
                 setPage(1);
               }}
-              className="business-wallet-input h-10 rounded-xl border px-3 text-sm outline-none"
+              className="business-wallet-input h-10 rounded-lg border px-3 text-sm outline-none"
             >
               <option value="ALL">{t("ledger.allDirections")}</option>
               {filters.directions.map((item) => (
-                <option key={item} value={item}>{formatLedgerLabel(item)}</option>
+                <option key={item} value={item}>{formatLedgerLabel(item, t)}</option>
               ))}
             </select>
             <select
@@ -187,29 +208,31 @@ export default function BusinessWalletLedgerPage() {
                 setSourceType(event.target.value);
                 setPage(1);
               }}
-              className="business-wallet-input h-10 rounded-xl border px-3 text-sm outline-none"
+              className="business-wallet-input h-10 rounded-lg border px-3 text-sm outline-none"
             >
               <option value="ALL">{t("ledger.allSources")}</option>
               {filters.sourceTypes.map((item) => (
-                <option key={item} value={item}>{formatLedgerLabel(item)}</option>
+                <option key={item} value={item}>{formatLedgerLabel(item, t)}</option>
               ))}
             </select>
-            <DashboardButton className="h-10 px-4">
+            <DashboardButton type="submit" className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4">
+              <Search size={16} strokeWidth={2.2} />
               {t("ledger.search")}
             </DashboardButton>
             <DashboardButton
               type="button"
               onClick={clearFilters}
               variant="secondary"
-              className="h-10 px-4"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4"
             >
+              <X size={16} strokeWidth={2.2} />
               {t("ledger.clear")}
             </DashboardButton>
           </form>
         </DashboardPanel>
 
-        <DashboardPanel className="overflow-hidden p-0 sm:p-0">
-          <div className="hidden grid-cols-[155px_1.1fr_0.8fr_0.8fr_1fr_1fr] gap-3 border-b border-zinc-800 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 xl:grid">
+        <DashboardPanel className="overflow-hidden rounded-lg p-0 sm:p-0">
+          <div className="ledger-table-header hidden grid-cols-[155px_1.1fr_0.8fr_0.8fr_1fr_1fr] gap-3 border-b px-4 py-3 text-xs font-semibold uppercase text-zinc-500 xl:grid">
             <span>{t("ledger.date")}</span>
             <span>{t("ledger.entry")}</span>
             <span>{t("ledger.direction")}</span>
@@ -225,47 +248,47 @@ export default function BusinessWalletLedgerPage() {
           ) : entries.length === 0 ? (
             <DashboardEmptyState className="rounded-none border-0 px-4 py-5">{t("ledger.empty")}</DashboardEmptyState>
           ) : (
-            <div className="divide-y divide-zinc-800">
+            <div className="ledger-entry-list divide-y">
               {entries.map((entry) => {
                 const sourceHref = getSourceHref(entry);
                 return (
-                  <div key={entry.id} className="grid grid-cols-1 gap-3 px-4 py-4 xl:grid-cols-[155px_1.1fr_0.8fr_0.8fr_1fr_1fr] xl:items-center">
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-zinc-500 xl:hidden">{t("ledger.date")}</p>
-                      <p className="text-sm text-zinc-400">{formatDashboardDateTime(entry.createdAt, timeZone)}</p>
+                  <div key={entry.id} className="ledger-entry-row grid grid-cols-1 gap-3 px-4 py-4 xl:grid-cols-[155px_1.1fr_0.8fr_0.8fr_1fr_1fr] xl:items-center">
+                    <div className="ledger-mobile-cell ledger-mobile-cell-muted">
+                      <p className="xl:hidden">{t("ledger.date")}</p>
+                      <span>{formatDashboardDateTime(entry.createdAt, timeZone)}</span>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase text-zinc-500 xl:hidden">{t("ledger.entry")}</p>
-                      <p className="font-semibold">{formatLedgerLabel(entry.entryType)}</p>
-                      <p className="mt-1 break-all font-mono text-xs text-zinc-500">{entry.id}</p>
+                    <div className="ledger-mobile-cell min-w-0">
+                      <p className="xl:hidden">{t("ledger.entry")}</p>
+                      <span className="font-semibold">{formatLedgerLabel(entry.entryType, t)}</span>
+                      <span className="mt-1 block break-all font-mono text-xs opacity-70">{entry.id}</span>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-zinc-500 xl:hidden">{t("ledger.direction")}</p>
+                    <div className="ledger-mobile-cell ledger-mobile-cell-compact">
+                      <p className="xl:hidden">{t("ledger.direction")}</p>
                       <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${getDirectionClassName(entry.direction)}`}>
-                        {formatLedgerLabel(entry.direction)}
+                        {formatLedgerLabel(entry.direction, t)}
                       </span>
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-zinc-500 xl:hidden">{t("ledger.amount")}</p>
-                      <p className="font-semibold">{formatTokenAmount(entry.amount, entry.currency)}</p>
+                    <div className="ledger-mobile-cell ledger-mobile-cell-compact">
+                      <p className="xl:hidden">{t("ledger.amount")}</p>
+                      <span className="font-semibold">{formatTokenAmount(entry.amount, entry.currency)}</span>
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase text-zinc-500 xl:hidden">{t("ledger.source")}</p>
-                      <p className="text-sm">{formatLedgerLabel(entry.sourceType)}</p>
+                    <div className="ledger-mobile-cell min-w-0">
+                      <p className="xl:hidden">{t("ledger.source")}</p>
+                      <span className="text-sm">{formatLedgerLabel(entry.sourceType, t)}</span>
                       {sourceHref ? (
-                        <Link href={sourceHref} className="mt-1 block break-all font-mono text-xs text-blue-300 hover:text-blue-200">
+                        <Link href={sourceHref} className="ledger-source-link mt-1 block break-all font-mono text-xs">
                           {entry.sourceId}
                         </Link>
                       ) : (
-                        <p className="mt-1 break-all font-mono text-xs text-zinc-500">{entry.sourceId}</p>
+                        <span className="mt-1 block break-all font-mono text-xs opacity-70">{entry.sourceId}</span>
                       )}
                     </div>
-                    <div>
-                      <p className="text-xs font-semibold uppercase text-zinc-500 xl:hidden">{t("ledger.balanceAfter")}</p>
-                      <p className="font-semibold">{formatTokenAmount(entry.availableAfter, entry.currency)}</p>
-                      <p className="mt-1 text-xs text-zinc-500">
+                    <div className="ledger-mobile-cell ledger-mobile-cell-balance">
+                      <p className="xl:hidden">{t("ledger.balanceAfter")}</p>
+                      <span className="font-semibold">{formatTokenAmount(entry.availableAfter, entry.currency)}</span>
+                      <span className="mt-1 block text-xs opacity-70">
                         {t("overview.reserved")}: {formatTokenAmount(entry.reservedForPayoutsAfter, entry.currency)}
-                      </p>
+                      </span>
                     </div>
                   </div>
                 );
@@ -274,7 +297,7 @@ export default function BusinessWalletLedgerPage() {
           )}
         </DashboardPanel>
 
-        <div className="flex flex-col gap-3 rounded-xl border border-zinc-800 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="ledger-pagination flex flex-col gap-3 rounded-lg border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <DashboardPill className="w-fit text-zinc-500">
             {t("ledger.page")} {pagination.page} / {pagination.totalPages}
           </DashboardPill>
@@ -305,13 +328,13 @@ export default function BusinessWalletLedgerPage() {
 function LedgerMetric({ label, value, tone = "neutral" }) {
   const toneClassName =
     tone === "credit"
-      ? "text-emerald-300"
+      ? "ledger-metric-value-credit text-emerald-300 light-dashboard:text-emerald-700"
       : tone === "debit"
-        ? "text-rose-300"
-        : "text-white";
+        ? "ledger-metric-value-debit text-rose-300 light-dashboard:text-rose-700"
+        : "ledger-metric-value-neutral text-white light-dashboard:text-zinc-950";
 
   return (
-    <DashboardMetric>
+    <DashboardMetric className="rounded-lg">
       <p className="text-sm text-zinc-500">{label}</p>
       <p className={`mt-1 break-words text-2xl font-bold ${toneClassName}`}>{value}</p>
     </DashboardMetric>

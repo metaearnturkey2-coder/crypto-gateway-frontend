@@ -343,8 +343,8 @@ test.describe("admin frontend smoke", () => {
     const errors = watchRuntimeErrors(page);
 
     await page.goto("/admin");
-    await expect(page.getByText("Admin Sign In")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Giris yap" })).toBeVisible();
+    await expect(page.getByText("Admin girişi")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Giriş yap" })).toBeVisible();
 
     expectNoRuntimeErrors(errors);
   });
@@ -354,8 +354,8 @@ test.describe("admin frontend smoke", () => {
     await mockAdminSession(page);
 
     await page.goto("/admin");
-    await expect(page.getByText("Verified admin session")).toBeVisible();
-    await expect(page.getByText("Settlement Console").first()).toBeVisible();
+    await expect(page.getByText("Doğrulanmış admin oturumu")).toBeVisible();
+    await expect(page.getByText("Settlement konsolu").first()).toBeVisible();
 
     const navCards = page.locator('a[href^="/admin/"]');
     await expect(navCards).toHaveCount(6);

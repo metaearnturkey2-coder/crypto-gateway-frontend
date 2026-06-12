@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { DashboardButton, DashboardEmptyState, DashboardInput, DashboardMetric, DashboardPanel, DashboardPill, DashboardSelect } from "@/components/dashboard-ui";
+import {
+  DashboardButton,
+  DashboardEmptyState,
+  DashboardInput,
+  DashboardMetric,
+  DashboardPanel,
+  DashboardPill,
+  DashboardSelect,
+} from "@/components/dashboard-ui";
 import { adminFetch } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { AdminAccessRequired, AdminConsoleNav, verifyStoredAdminSession } from "@/components/admin-auth";
@@ -10,6 +18,30 @@ const STATUS_OPTIONS = ["ALL", "OPEN", "REVIEWING", "RESOLVED", "DISMISSED"];
 const SEVERITY_OPTIONS = ["ALL", "CRITICAL", "HIGH", "MEDIUM", "LOW"];
 const SOURCE_OPTIONS = ["ALL", "payment", "payout", "merchant", "wallet"];
 const REVIEW_ACTIONS = ["REVIEWING", "RESOLVED", "DISMISSED"];
+
+const STATUS_LABELS = {
+  ALL: "Tüm durumlar",
+  OPEN: "Açık",
+  REVIEWING: "İnceleniyor",
+  RESOLVED: "Çözüldü",
+  DISMISSED: "Yok sayıldı",
+};
+
+const SEVERITY_LABELS = {
+  ALL: "Tüm seviyeler",
+  CRITICAL: "Kritik",
+  HIGH: "Yüksek",
+  MEDIUM: "Orta",
+  LOW: "Düşük",
+};
+
+const SOURCE_LABELS = {
+  ALL: "Tüm kaynaklar",
+  payment: "Payment",
+  payout: "Payout",
+  merchant: "Merchant",
+  wallet: "Wallet",
+};
 
 const getSeverityClassName = (severity) => {
   if (severity === "CRITICAL") return "border-red-400/50 bg-red-500/15 text-red-200";
@@ -35,7 +67,8 @@ const formatDate = (value) => {
 
 const shortValue = (value) => {
   if (!value) return "-";
-  return String(value).length > 24 ? `${String(value).slice(0, 10)}...${String(value).slice(-8)}` : value;
+  const normalized = String(value);
+  return normalized.length > 24 ? `${normalized.slice(0, 10)}...${normalized.slice(-8)}` : normalized;
 };
 
 export default function AdminRiskReviewPage() {
@@ -76,7 +109,7 @@ export default function AdminRiskReviewPage() {
         const data = response.body;
 
         if (!response.ok) {
-          setNotice({ type: "error", message: data.message || "Risk events could not be loaded." });
+          setNotice({ type: "error", message: data.message || "Risk olayları yüklenemedi." });
           return;
         }
 
@@ -89,7 +122,7 @@ export default function AdminRiskReviewPage() {
         });
       } catch (error) {
         reportClientError("admin.riskReview.load", error);
-        setNotice({ type: "error", message: "Risk review data could not be loaded." });
+        setNotice({ type: "error", message: "Risk inceleme verileri yüklenemedi." });
       } finally {
         setLoading(false);
       }
@@ -109,15 +142,15 @@ export default function AdminRiskReviewPage() {
       const data = response.body;
 
       if (!response.ok) {
-        setNotice({ type: "error", message: data.message || "Risk event could not be updated." });
+        setNotice({ type: "error", message: data.message || "Risk olayı güncellenemedi." });
         return;
       }
 
       setEvents((current) => current.map((event) => (event.id === eventId ? data.event : event)));
-      setNotice({ type: "success", message: "Risk event updated." });
+      setNotice({ type: "success", message: "Risk olayı güncellendi." });
     } catch (error) {
       reportClientError("admin.riskReview.update", error);
-      setNotice({ type: "error", message: "Risk event update failed." });
+      setNotice({ type: "error", message: "Risk olayı güncellemesi başarısız." });
     } finally {
       setUpdatingId("");
     }
@@ -149,6 +182,7 @@ export default function AdminRiskReviewPage() {
   const severityCards = useMemo(
     () =>
       SEVERITY_OPTIONS.filter((severity) => severity !== "ALL").map((severity) => ({
+        label: SEVERITY_LABELS[severity] || severity,
         severity,
         value: stats.bySeverity?.[severity] || 0,
       })),
@@ -156,52 +190,77 @@ export default function AdminRiskReviewPage() {
   );
 
   if (tokenState !== "valid") {
-    return <AdminAccessRequired title="Risk review access required" />;
+    return <AdminAccessRequired title="Risk inceleme için admin girişi gerekli" />;
   }
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8 text-zinc-100">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+    <main className="admin-treasury-page admin-risk-page min-h-screen text-zinc-100">
+      <header className="admin-treasury-header admin-risk-header border-b">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Compliance & Risk</p>
-            <h1 className="mt-1 text-2xl font-bold">Suspicious Activity Review</h1>
-            <p className="mt-2 max-w-2xl text-sm text-zinc-500">
-              Risk kurallarinin urettigi sinyalleri inceleyin, review durumunu guncelleyin ve kaynak merchant/odeme/payout baglamini gorun.
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Operasyon konsolu</p>
+            <h1 className="mt-1 text-2xl font-bold">Risk inceleme</h1>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-zinc-500">
+              Risk kurallarının ürettiği sinyalleri inceleyin, durumlarını güncelleyin ve kaynak bağlamını görün.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <DashboardButton as="a" href="/admin/settlement-console" variant="adminSecondary" className="px-4 py-3">
-              Settlement Console
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <DashboardButton
+              as="a"
+              href="/admin/settlement-console"
+              variant="adminSecondary"
+              className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 sm:w-fit"
+            >
+              Settlement konsolu
             </DashboardButton>
-            <DashboardButton as="a" href="/admin/treasury" variant="adminSecondary" className="px-4 py-3">
-              Treasury
+            <DashboardButton
+              as="a"
+              href="/admin/treasury"
+              variant="adminSecondary"
+              className="inline-flex h-10 w-full items-center justify-center rounded-lg px-4 sm:w-fit"
+            >
+              Hazine
             </DashboardButton>
           </div>
-        </header>
+        </div>
+      </header>
 
+      <div className="mx-auto max-w-7xl space-y-5 px-4 py-5 md:px-8 md:py-6">
         <AdminConsoleNav currentPath="/admin/risk-review" onRefresh={() => fetchRiskEvents()} loading={loading || !adminAccessToken} />
+
         {notice && (
-          <div className={`rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
+          <div
+            className={`admin-risk-notice rounded-lg border px-4 py-3 text-sm ${
+              notice.type === "error"
+                ? "admin-treasury-notice-error admin-risk-notice-error"
+                : "admin-treasury-notice-success admin-risk-notice-success"
+            }`}
+          >
             {notice.message}
           </div>
         )}
 
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-          <DashboardMetric variant="admin" className="rounded-2xl bg-zinc-900 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Total</p>
-            <p className="mt-2 text-3xl font-bold">{stats.total || 0}</p>
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+          <DashboardMetric variant="admin" className="admin-treasury-metric admin-risk-metric rounded-lg p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Toplam</p>
+            <p className="mt-2 text-2xl font-bold">{stats.total || 0}</p>
           </DashboardMetric>
           {severityCards.map((item) => (
-            <DashboardMetric key={item.severity} variant="admin" className="rounded-2xl bg-zinc-900 p-5">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{item.severity}</p>
-              <p className="mt-2 text-3xl font-bold">{item.value}</p>
+            <DashboardMetric key={item.severity} variant="admin" className="admin-treasury-metric admin-risk-metric rounded-lg p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{item.label}</p>
+              <p className="mt-2 text-2xl font-bold">{item.value}</p>
             </DashboardMetric>
           ))}
         </section>
 
-        <DashboardPanel variant="adminMuted" className="p-5">
-          <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_160px_160px_160px_auto]">
+        <DashboardPanel variant="adminMuted" className="admin-treasury-panel admin-risk-panel rounded-lg p-4 sm:p-5">
+          <div className="mb-5">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Risk olayları</p>
+            <h2 className="mt-1 text-xl font-bold">İnceleme kuyruğu</h2>
+            <p className="mt-1 text-sm text-zinc-500">{pagination.totalCount || 0} olay filtreyle eşleşiyor</p>
+          </div>
+
+          <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_165px_165px_165px_auto]">
             <DashboardInput
               variant="admin"
               value={search}
@@ -209,44 +268,94 @@ export default function AdminRiskReviewPage() {
                 setPage(1);
                 setSearch(event.target.value);
               }}
-              placeholder="Rule, merchant, source id ara"
-              className="py-3"
+              placeholder="Kural, merchant veya kaynak ID ara"
+              className="h-10 rounded-lg"
             />
-            <DashboardSelect variant="admin" value={statusFilter} onChange={(event) => { setPage(1); setStatusFilter(event.target.value); }} className="py-3">
-              {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
+            <DashboardSelect
+              variant="admin"
+              value={statusFilter}
+              onChange={(event) => {
+                setPage(1);
+                setStatusFilter(event.target.value);
+              }}
+              className="h-10 rounded-lg"
+            >
+              {STATUS_OPTIONS.map((status) => (
+                <option key={status} value={status}>
+                  {STATUS_LABELS[status] || status}
+                </option>
+              ))}
             </DashboardSelect>
-            <DashboardSelect variant="admin" value={severityFilter} onChange={(event) => { setPage(1); setSeverityFilter(event.target.value); }} className="py-3">
-              {SEVERITY_OPTIONS.map((severity) => <option key={severity} value={severity}>{severity}</option>)}
+            <DashboardSelect
+              variant="admin"
+              value={severityFilter}
+              onChange={(event) => {
+                setPage(1);
+                setSeverityFilter(event.target.value);
+              }}
+              className="h-10 rounded-lg"
+            >
+              {SEVERITY_OPTIONS.map((severity) => (
+                <option key={severity} value={severity}>
+                  {SEVERITY_LABELS[severity] || severity}
+                </option>
+              ))}
             </DashboardSelect>
-            <DashboardSelect variant="admin" value={sourceFilter} onChange={(event) => { setPage(1); setSourceFilter(event.target.value); }} className="py-3">
-              {SOURCE_OPTIONS.map((source) => <option key={source} value={source}>{source}</option>)}
+            <DashboardSelect
+              variant="admin"
+              value={sourceFilter}
+              onChange={(event) => {
+                setPage(1);
+                setSourceFilter(event.target.value);
+              }}
+              className="h-10 rounded-lg"
+            >
+              {SOURCE_OPTIONS.map((source) => (
+                <option key={source} value={source}>
+                  {SOURCE_LABELS[source] || source}
+                </option>
+              ))}
             </DashboardSelect>
-            <DashboardButton type="button" variant="adminPrimary" onClick={() => fetchRiskEvents(undefined, 1)} disabled={loading || !adminAccessToken} className="px-5 py-3 disabled:opacity-40">
+            <DashboardButton
+              type="button"
+              variant="adminPrimary"
+              onClick={() => fetchRiskEvents(undefined, 1)}
+              disabled={loading || !adminAccessToken}
+              className="h-10 rounded-lg px-5 disabled:opacity-40"
+            >
               Filtrele
             </DashboardButton>
           </div>
 
           <div className="space-y-3">
             {events.map((event) => (
-              <DashboardPanel as="div" key={event.id} variant="admin" className="rounded-2xl bg-black p-4 sm:p-4">
-                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[180px_1fr_220px]">
-                  <div className="space-y-2">
-                    <DashboardPill className={`inline-flex ${getSeverityClassName(event.severity)}`}>
-                      {event.severity}
-                    </DashboardPill>
-                    <DashboardPill className={`ml-2 inline-flex ${getStatusClassName(event.status)}`}>
-                      {event.status}
-                    </DashboardPill>
-                    <p className="font-mono text-xs text-zinc-500">Score {event.score}</p>
+              <DashboardPanel
+                as="div"
+                key={event.id}
+                variant="admin"
+                className="admin-treasury-sweep-card admin-risk-event-card rounded-lg p-4 sm:p-4"
+              >
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-[180px_1fr_230px]">
+                  <div>
+                    <div className="flex flex-wrap gap-2">
+                      <DashboardPill className={`inline-flex ${getSeverityClassName(event.severity)}`}>
+                        {SEVERITY_LABELS[event.severity] || event.severity}
+                      </DashboardPill>
+                      <DashboardPill className={`inline-flex ${getStatusClassName(event.status)}`}>
+                        {STATUS_LABELS[event.status] || event.status}
+                      </DashboardPill>
+                    </div>
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">Skor</p>
+                    <p className="mt-1 text-2xl font-bold">{event.score}</p>
                   </div>
 
                   <div className="min-w-0">
                     <p className="font-semibold">{event.ruleCode}</p>
-                    <p className="mt-1 text-sm text-zinc-400">{event.message}</p>
+                    <p className="mt-1 text-sm leading-6 text-zinc-400">{event.message}</p>
                     <p className="mt-2 break-all text-xs text-zinc-500">
-                      {event.sourceType} / {shortValue(event.sourceId)} / {event.merchant?.email || "-"}
+                      {SOURCE_LABELS[event.sourceType] || event.sourceType} / {shortValue(event.sourceId)} / {event.merchant?.email || "-"}
                     </p>
-                    <pre className="mt-3 max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-xl border border-zinc-800 bg-zinc-950 p-3 text-xs text-zinc-400">
+                    <pre className="admin-treasury-panel admin-risk-metadata mt-3 max-h-28 overflow-auto whitespace-pre-wrap break-all rounded-lg border p-3 text-xs">
                       {JSON.stringify(event.metadata || {}, null, 2)}
                     </pre>
                   </div>
@@ -255,7 +364,7 @@ export default function AdminRiskReviewPage() {
                     <p className="text-xs text-zinc-500">{formatDate(event.createdAt)}</p>
                     {event.reviewedAt && (
                       <p className="text-xs text-zinc-500">
-                        Reviewed {formatDate(event.reviewedAt)} by {event.reviewedBy || "-"}
+                        İnceleme {formatDate(event.reviewedAt)} / {event.reviewedBy || "-"}
                       </p>
                     )}
                     <div className="flex flex-wrap gap-2 xl:justify-end">
@@ -266,9 +375,9 @@ export default function AdminRiskReviewPage() {
                           key={status}
                           onClick={() => updateRiskStatus(event.id, status)}
                           disabled={updatingId === event.id || event.status === status}
-                          className="rounded-lg px-3 py-2 text-xs hover:bg-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+                          className="h-9 rounded-lg px-3 text-xs disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          {status}
+                          {STATUS_LABELS[status] || status}
                         </DashboardButton>
                       ))}
                     </div>
@@ -279,12 +388,14 @@ export default function AdminRiskReviewPage() {
           </div>
 
           {!loading && events.length === 0 && (
-            <DashboardEmptyState variant="admin" className="p-6">Bu filtre icin risk event yok.</DashboardEmptyState>
+            <DashboardEmptyState variant="admin" className="rounded-lg p-6">
+              Bu filtre için risk olayı yok.
+            </DashboardEmptyState>
           )}
 
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="admin-settlement-pagination admin-risk-pagination mt-5 flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-zinc-500">
-              Sayfa {pagination.page} / {pagination.totalPages} - {pagination.totalCount} event
+              Sayfa {pagination.page} / {pagination.totalPages} - {pagination.totalCount} olay
             </p>
             <div className="flex gap-2">
               <DashboardButton
@@ -296,9 +407,9 @@ export default function AdminRiskReviewPage() {
                   setPage(nextPage);
                   fetchRiskEvents(undefined, nextPage);
                 }}
-                className="px-4 py-2 disabled:opacity-40"
+                className="h-9 rounded-lg px-4 disabled:opacity-40"
               >
-                Onceki
+                Önceki
               </DashboardButton>
               <DashboardButton
                 type="button"
@@ -309,7 +420,7 @@ export default function AdminRiskReviewPage() {
                   setPage(nextPage);
                   fetchRiskEvents(undefined, nextPage);
                 }}
-                className="px-4 py-2 disabled:opacity-40"
+                className="h-9 rounded-lg px-4 disabled:opacity-40"
               >
                 Sonraki
               </DashboardButton>

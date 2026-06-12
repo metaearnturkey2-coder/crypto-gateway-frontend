@@ -77,12 +77,12 @@ export default function PreferenceAccountPage() {
   return (
     <SettingsShell title={t("settings.preference")} activeSection="preference">
       {notice && (
-        <div className="mb-4 max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200 light-dashboard:text-red-700">
+        <div className="mb-4 max-w-3xl rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200 light-dashboard:text-red-700">
           {notice.message}
         </div>
       )}
 
-      <DashboardPanel className="max-w-3xl overflow-hidden p-0 sm:p-0">
+      <DashboardPanel className="max-w-3xl overflow-hidden rounded-lg p-0 sm:p-0">
         {loading ? (
           <div className="space-y-3 p-5">
             <div className="h-14 animate-pulse rounded-xl bg-zinc-800/70 light-dashboard:bg-zinc-100" />
@@ -91,9 +91,9 @@ export default function PreferenceAccountPage() {
           </div>
         ) : (
           <div>
-            <div className="flex flex-col gap-4 border-b border-zinc-800 px-5 py-5 light-dashboard:border-zinc-200 md:flex-row md:items-center md:justify-between">
+            <div className="settings-panel-header flex flex-col gap-4 border-b px-4 py-4 sm:px-5 md:flex-row md:items-center md:justify-between">
               <div className="flex min-w-0 items-center gap-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-lg font-bold text-white light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                <span className="settings-preference-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border text-lg font-bold">
                   {getInitial()}
                 </span>
                 <div className="min-w-0">
@@ -131,14 +131,14 @@ export default function PreferenceAccountPage() {
               </DashboardButton>
             </div>
 
-            <div className="grid gap-0 divide-y divide-zinc-800 light-dashboard:divide-zinc-200 md:grid-cols-2 md:divide-x md:divide-y-0">
-              <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
+            <div className="settings-account-grid grid gap-0 divide-y divide-zinc-800 md:grid-cols-2 md:divide-x md:divide-y-0">
+              <div className="settings-row-list divide-y divide-zinc-800">
                 {profileItems.slice(0, 2).map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-4">
+                    <div key={item.label} className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                        <span className="settings-preference-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
                           <Icon size={18} strokeWidth={2.2} />
                         </span>
                         <p className="font-semibold text-white light-dashboard:text-zinc-950">{item.label}</p>
@@ -150,13 +150,13 @@ export default function PreferenceAccountPage() {
                   );
                 })}
               </div>
-              <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
+              <div className="settings-row-list divide-y divide-zinc-800">
                 {profileItems.slice(2).map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className="flex items-center justify-between gap-4 px-5 py-4">
+                    <div key={item.label} className="flex items-center justify-between gap-4 px-4 py-4 sm:px-5">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                        <span className="settings-preference-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
                           <Icon size={18} strokeWidth={2.2} />
                         </span>
                         <p className="font-semibold text-white light-dashboard:text-zinc-950">{item.label}</p>
@@ -170,7 +170,7 @@ export default function PreferenceAccountPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 border-t border-zinc-800 px-5 py-4 light-dashboard:border-zinc-200">
+            <div className="settings-panel-footer flex items-center justify-between gap-4 border-t px-4 py-4 sm:px-5">
               <p className="text-sm font-semibold text-zinc-400 light-dashboard:text-zinc-500">{t("account.createdAt")}</p>
               <p className="text-right text-sm font-semibold text-zinc-200 light-dashboard:text-zinc-700">
                 {formatDashboardDateTime(merchant?.createdAt, timeZone)}

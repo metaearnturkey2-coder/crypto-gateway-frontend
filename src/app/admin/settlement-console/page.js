@@ -602,24 +602,24 @@ export default function AdminPayoutsPage() {
   }, [securityEvents]);
 
   if (tokenState !== "valid") {
-    return <AdminAccessRequired title="Settlement console access required" />;
+    return <AdminAccessRequired title="Settlement konsolu için admin girişi gerekli" />;
   }
 
   return (
-    <main className="min-h-screen bg-black text-white">
-      <header className="border-b border-zinc-800 bg-zinc-950/70">
+    <main className="admin-settlement-page min-h-screen text-white">
+      <header className="admin-settlement-header border-b">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-4 px-6 py-5 md:flex-row md:items-center md:justify-between md:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{t("admin.internalConsole")}</p>
             <h1 className="mt-1 text-2xl font-bold">{t("admin.payoutsTitle")}</h1>
-            <p className="text-zinc-500 text-sm">{t("admin.subtitle")}</p>
+            <p className="mt-1 text-sm text-zinc-500">{t("admin.subtitle")}</p>
           </div>
 
           <DashboardButton
             as="a"
             variant="adminSecondary"
             href="/dashboard"
-            className="w-fit px-4 py-2"
+            className="h-10 w-full rounded-lg px-4 sm:w-fit"
           >
             {t("admin.merchantDashboard")}
           </DashboardButton>
@@ -629,10 +629,10 @@ export default function AdminPayoutsPage() {
       <div className="mx-auto max-w-7xl space-y-5 px-4 py-5 md:px-8 md:py-6">
         {notice && (
           <div
-            className={`rounded-xl border px-4 py-3 text-sm ${
+            className={`admin-settlement-notice rounded-lg border px-4 py-3 text-sm ${
               notice.type === "success"
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
-                : "border-red-500/40 bg-red-500/10 text-red-200"
+                ? "admin-settlement-notice-success"
+                : "admin-settlement-notice-error"
             }`}
           >
             {notice.message}
@@ -651,7 +651,7 @@ export default function AdminPayoutsPage() {
 
         {tokenState === "valid" && (
           <>
-        <section className="sticky top-0 z-20 -mx-4 border-y border-zinc-800 bg-black/90 px-4 py-2.5 backdrop-blur md:-mx-8 md:px-8">
+        <section className="admin-settlement-tabs sticky top-0 z-20 -mx-4 border-y px-4 py-2.5 backdrop-blur md:-mx-8 md:px-8">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {[
@@ -661,14 +661,19 @@ export default function AdminPayoutsPage() {
               ].map((tab) => (
                 <DashboardButton
                   type="button"
-                  variant={activeAdminTab === tab.id ? "adminPrimary" : "adminSecondary"}
+                  variant="plain"
                   key={tab.id}
+                  aria-pressed={activeAdminTab === tab.id}
                   onClick={() => {
                     setActiveAdminTab(tab.id);
                     if (tab.id === "security") fetchSecurityEvents();
                     if (tab.id === "sessions") fetchAdminSessions();
                   }}
-                  className="px-3 py-1.5"
+                  className={`admin-settlement-tab h-9 rounded-lg px-3 ${
+                    activeAdminTab === tab.id
+                      ? "border-white bg-white text-zinc-950 hover:bg-zinc-200 light-dashboard:border-zinc-950 light-dashboard:bg-zinc-950 light-dashboard:text-white light-dashboard:hover:bg-black"
+                      : "border-zinc-700 bg-zinc-950 text-zinc-100 hover:bg-zinc-900 light-dashboard:border-slate-300 light-dashboard:bg-white light-dashboard:text-slate-900 light-dashboard:hover:bg-slate-50"
+                  }`}
                 >
                   {tab.label}
                 </DashboardButton>
@@ -759,8 +764,8 @@ export default function AdminPayoutsPage() {
       </div>
 
       {selectedPayout && (
-        <div className="fixed inset-0 z-50 bg-black/80 px-4 py-8 overflow-y-auto">
-          <DashboardPanel as="div" variant="admin" className="max-w-5xl mx-auto p-6">
+        <div className="admin-settlement-modal fixed inset-0 z-50 overflow-y-auto px-4 py-8">
+          <DashboardPanel as="div" variant="admin" className="admin-settlement-modal-card mx-auto max-w-5xl rounded-lg p-5 sm:p-6">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -799,7 +804,7 @@ export default function AdminPayoutsPage() {
                     setSelectedPayout(null);
                     setSelectedAuditLogs([]);
                   }}
-                  className="px-4 py-2 hover:bg-zinc-700"
+                  className="h-9 rounded-lg px-4 hover:bg-zinc-700"
                 >
                   {t("admin.close")}
                 </DashboardButton>

@@ -1,11 +1,35 @@
 "use client";
 
 import Link from "next/link";
+import {
+  Activity,
+  ArrowLeft,
+  ArrowUpRight,
+  BadgeCheck,
+  ClipboardCheck,
+  Landmark,
+  LockKeyhole,
+  LogIn,
+  LogOut,
+  Radar,
+  ReceiptText,
+  ShieldCheck,
+  UserCheck,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { DashboardButton, DashboardInput, DashboardPanel } from "@/components/dashboard-ui";
 import { apiResponseResult, fetchApi } from "@/lib/api";
 import { reportClientError } from "@/lib/client-error";
 import { ADMIN_NAV_ITEMS, clearStoredAdminSession, verifyStoredAdminSession } from "@/components/admin-auth";
+
+const adminIconByHref = {
+  "/admin/settlement-console": ReceiptText,
+  "/admin/treasury": Landmark,
+  "/admin/risk-review": Radar,
+  "/admin/reconciliation": ClipboardCheck,
+  "/admin/pilot-readiness": BadgeCheck,
+  "/admin/merchant-onboarding": UserCheck,
+};
 
 export default function AdminHomePage() {
   const [credentials, setCredentials] = useState({ email: "", password: "" });
@@ -34,12 +58,13 @@ export default function AdminHomePage() {
     };
   }, []);
 
-  const login = async () => {
+  const login = async (event) => {
+    event?.preventDefault();
     const email = credentials.email.trim();
     const password = credentials.password;
 
     if (!email || !password) {
-      setNotice({ type: "error", message: "Admin e-posta ve sifre zorunludur." });
+      setNotice({ type: "error", message: "Admin e-posta ve şifre zorunludur." });
       return;
     }
 
@@ -58,7 +83,7 @@ export default function AdminHomePage() {
       if (!ok || !data.accessToken) {
         clearStoredAdminSession();
         setSessionState("signed-out");
-        setNotice({ type: "error", message: data.message || "Admin bilgileri gecersiz." });
+        setNotice({ type: "error", message: data.message || "Admin bilgileri geçersiz." });
         return;
       }
 
@@ -67,10 +92,10 @@ export default function AdminHomePage() {
       setAdmin(data.admin || null);
       setSessionState("signed-in");
       setCredentials({ email: "", password: "" });
-      setNotice({ type: "success", message: "Admin oturumu acildi." });
+      setNotice({ type: "success", message: "Admin oturumu açıldı." });
     } catch (error) {
       reportClientError("admin.home.login", error);
-      setNotice({ type: "error", message: "Admin login hatasi." });
+      setNotice({ type: "error", message: "Admin giriş hatası." });
     } finally {
       setLoading(false);
     }
@@ -92,76 +117,90 @@ export default function AdminHomePage() {
   };
 
   return (
-    <main className="min-h-screen bg-black px-4 py-8 text-zinc-100">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <header className="flex flex-col gap-4 border-b border-zinc-900 pb-6 md:flex-row md:items-start md:justify-between">
+    <main className="admin-home-page min-h-screen px-4 py-6 text-zinc-100 sm:py-8">
+      <div className="mx-auto max-w-7xl space-y-5">
+        <header className="admin-home-header flex flex-col gap-4 border-b pb-5 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Internal console</p>
-            <h1 className="mt-2 text-3xl font-bold">Admin Panel</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400">
-              Tek giris noktasi, operasyon konsollari ve kritik finansal kontroller.
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Operasyon konsolu</p>
+            <h1 className="mt-2 text-2xl font-bold sm:text-[28px]">Admin Panel</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-400 light-dashboard:text-zinc-600">
+              Tek giriş noktası, operasyon konsolları ve kritik finansal kontroller.
             </p>
           </div>
           <DashboardButton
             as={Link}
             variant="adminSecondary"
             href="/overview"
-            className="px-4 py-3"
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg px-4 sm:w-fit"
           >
-            Merchant Dashboard
+            <ArrowLeft size={16} strokeWidth={2.2} />
+            Merchant paneli
           </DashboardButton>
         </header>
 
         {sessionState !== "signed-in" && (
-          <DashboardPanel variant="admin" className="grid grid-cols-1 overflow-hidden p-0 sm:p-0 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="p-6">
-              <p className="text-sm font-semibold text-zinc-400">Admin Sign In</p>
-              <h2 className="mt-2 text-2xl font-bold">Guvenli admin oturumu ac</h2>
-              <p className="mt-3 text-sm leading-6 text-zinc-500">
-                Alt admin sayfalari dogrulanmis oturum olmadan veri yuklemez. Giris yaptiktan sonra admin merkezinden
-                ilgili operasyon ekranina gecebilirsin.
+          <DashboardPanel variant="admin" className="admin-login-panel grid grid-cols-1 overflow-hidden rounded-lg p-0 sm:p-0 lg:grid-cols-[minmax(0,1fr)_390px]">
+            <div className="p-5 sm:p-6">
+              <div className="flex items-start gap-3">
+                <span className="admin-home-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border">
+                  <LockKeyhole size={18} strokeWidth={2.3} />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-zinc-400 light-dashboard:text-zinc-600">Admin girişi</p>
+                  <h2 className="mt-1 text-xl font-bold sm:text-2xl">Güvenli admin oturumu aç</h2>
+                </div>
+              </div>
+              <p className="mt-4 max-w-2xl text-sm leading-6 text-zinc-500 light-dashboard:text-zinc-600">
+                Alt admin sayfaları doğrulanmış oturum olmadan veri yüklemez. Girişten sonra ilgili operasyon ekranına
+                admin merkezinden geçebilirsiniz.
               </p>
-              <div className="mt-6 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto]">
+
+              <form onSubmit={login} className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_150px]">
                 <DashboardInput
                   type="email"
                   variant="admin"
                   value={credentials.email}
                   onChange={(event) => setCredentials((current) => ({ ...current, email: event.target.value }))}
                   placeholder="Admin e-posta"
-                  className="py-3"
+                  className="h-11 rounded-lg"
+                  autoComplete="email"
                 />
                 <DashboardInput
                   type="password"
                   variant="admin"
                   value={credentials.password}
                   onChange={(event) => setCredentials((current) => ({ ...current, password: event.target.value }))}
-                  placeholder="Admin sifre"
-                  className="py-3"
+                  placeholder="Admin şifre"
+                  className="h-11 rounded-lg"
+                  autoComplete="current-password"
                 />
                 <DashboardButton
-                  type="button"
+                  type="submit"
                   variant="adminPrimary"
-                  onClick={login}
                   disabled={loading || sessionState === "checking"}
-                  className="px-5 py-3 disabled:opacity-40"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-lg px-5 disabled:opacity-40"
                 >
-                  {loading ? "Giris yapiliyor..." : "Giris yap"}
+                  <LogIn size={16} strokeWidth={2.2} />
+                  {loading ? "Giriş yapılıyor..." : "Giriş yap"}
                 </DashboardButton>
-              </div>
+              </form>
               {notice && (
-                <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${notice.type === "error" ? "border-red-500/40 bg-red-500/10 text-red-200" : "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"}`}>
+                <div className={`admin-home-notice mt-4 rounded-lg border px-4 py-3 text-sm ${notice.type === "error" ? "admin-home-notice-error" : "admin-home-notice-success"}`}>
                   {notice.message}
                 </div>
               )}
+              {sessionState === "checking" && (
+                <p className="mt-4 text-xs font-semibold text-zinc-500 light-dashboard:text-zinc-600">Oturum doğrulanıyor...</p>
+              )}
             </div>
-            <aside className="border-t border-zinc-800 bg-black p-6 lg:border-l lg:border-t-0">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Locked until sign in</p>
+            <aside className="admin-locked-panel border-t p-5 sm:p-6 lg:border-l lg:border-t-0">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Oturum sonrası açılır</p>
               <div className="mt-4 grid gap-3">
                 {ADMIN_NAV_ITEMS.slice(0, 4).map((item) => (
-                  <DashboardPanel as="div" key={item.href} variant="admin" className="rounded-xl border-zinc-900 px-4 py-3 sm:p-4">
-                    <p className="font-semibold text-zinc-300">{item.label}</p>
-                    <p className="mt-1 text-xs text-zinc-600">{item.description}</p>
-                  </DashboardPanel>
+                  <div key={item.href} className="admin-locked-row rounded-lg border px-3 py-3">
+                    <p className="text-sm font-semibold text-zinc-300 light-dashboard:text-zinc-900">{item.label}</p>
+                    <p className="mt-1 text-xs leading-5 text-zinc-600">{item.description}</p>
+                  </div>
                 ))}
               </div>
             </aside>
@@ -170,36 +209,51 @@ export default function AdminHomePage() {
 
         {sessionState === "signed-in" && (
           <>
-            <section className="flex flex-col gap-3 rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-5 md:flex-row md:items-center md:justify-between">
+            <section className="admin-session-banner flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">Verified admin session</p>
-                <p className="mt-1 text-sm text-emerald-100">
-                  {admin?.email ? `${admin.email} ile giris yapildi.` : "Admin oturumu aktif."}
+                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide">
+                  <ShieldCheck size={15} strokeWidth={2.3} />
+                  Doğrulanmış admin oturumu
+                </p>
+                <p className="mt-1 text-sm">
+                  {admin?.email ? `${admin.email} ile giriş yapıldı.` : "Admin oturumu aktif."}
                 </p>
               </div>
               <DashboardButton
                 type="button"
                 variant="plain"
                 onClick={logout}
-                className="rounded-xl border border-emerald-400/30 bg-black/30 px-4 py-3 text-sm font-semibold text-emerald-100 hover:bg-black/50"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-sm font-semibold"
               >
+                <LogOut size={16} strokeWidth={2.2} />
                 Oturumu kapat
               </DashboardButton>
             </section>
 
-            <section className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {ADMIN_NAV_ITEMS.map((item) => (
-                <DashboardPanel
-                  as={Link}
-                  key={item.href}
-                  href={item.href}
-                  variant="admin"
-                  className="p-5 transition hover:border-zinc-600 hover:bg-zinc-900"
-                >
-                  <p className="text-lg font-bold">{item.label}</p>
-                  <p className="mt-2 text-sm leading-6 text-zinc-500">{item.description}</p>
-                </DashboardPanel>
-              ))}
+            <section className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {ADMIN_NAV_ITEMS.map((item) => {
+                const Icon = adminIconByHref[item.href] || Activity;
+                return (
+                  <DashboardPanel
+                    as={Link}
+                    key={item.href}
+                    href={item.href}
+                    variant="admin"
+                    className="admin-console-card rounded-lg p-4 transition"
+                  >
+                    <span className="admin-home-icon mb-4 flex h-10 w-10 items-center justify-center rounded-lg border">
+                      <Icon size={18} strokeWidth={2.3} />
+                    </span>
+                    <span className="flex items-start justify-between gap-3">
+                      <span>
+                        <span className="block text-base font-bold">{item.label}</span>
+                        <span className="mt-2 block text-sm leading-6 text-zinc-500 light-dashboard:text-zinc-600">{item.description}</span>
+                      </span>
+                      <ArrowUpRight size={17} strokeWidth={2.2} className="mt-0.5 shrink-0 opacity-70" />
+                    </span>
+                  </DashboardPanel>
+                );
+              })}
             </section>
           </>
         )}

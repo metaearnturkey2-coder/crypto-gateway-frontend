@@ -62,8 +62,8 @@ export default function PreferenceActiveSessionsPage() {
 
   return (
     <SettingsShell title={t("settings.preference")} activeSection="preference">
-      <DashboardPanel className="max-w-3xl overflow-hidden p-0 sm:p-0">
-        <div className="flex items-center justify-between gap-4 border-b border-zinc-800 px-5 py-4 light-dashboard:border-zinc-200">
+      <DashboardPanel className="max-w-3xl overflow-hidden rounded-lg p-0 sm:p-0">
+        <div className="settings-panel-header flex items-center justify-between gap-4 border-b px-4 py-3 sm:px-5">
           <h3 className="text-base font-bold text-white light-dashboard:text-zinc-950">{t("sessions.pageTitle")}</h3>
           {sessions.length > 0 ? (
             <DashboardPill className="border-emerald-500/25 bg-emerald-500/10 text-emerald-300 light-dashboard:bg-emerald-50 light-dashboard:text-emerald-700">
@@ -73,17 +73,17 @@ export default function PreferenceActiveSessionsPage() {
         </div>
 
         {loading || sessions.length === 0 ? (
-          <div className="p-5">
-            <DashboardEmptyState className="px-4 py-5 font-semibold">
+          <div className="p-4 sm:p-5">
+            <DashboardEmptyState className="rounded-lg px-4 py-5 font-semibold">
               {loading ? t("sessions.loading") : t("sessions.noSession")}
             </DashboardEmptyState>
           </div>
         ) : (
-          <div className="divide-y divide-zinc-800 light-dashboard:divide-zinc-200">
+          <div className="settings-row-list divide-y divide-zinc-800">
             {sessions.map((session) => (
-              <div key={session.id} className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-start md:justify-between">
+              <div key={session.id} className="flex flex-col gap-4 px-4 py-4 sm:px-5 md:flex-row md:items-start md:justify-between">
                 <div className="flex min-w-0 gap-4">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                  <span className="settings-preference-icon flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border">
                     <MonitorCheck size={20} strokeWidth={2.2} />
                   </span>
                   <div className="min-w-0">

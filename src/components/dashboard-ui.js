@@ -69,7 +69,7 @@ export function DashboardSelect({ className = "", variant = "business", ...props
 export function DashboardButton({ as: Component = "button", children, className = "", variant = "primary", ...props }) {
   return (
     <Component
-      className={cn(buttonVariants[variant] || buttonVariants.primary, "rounded-xl border text-sm font-semibold transition", className)}
+      className={cn(buttonVariants[variant] ?? buttonVariants.primary, "rounded-xl border text-sm font-semibold transition", className)}
       {...props}
     >
       {children}

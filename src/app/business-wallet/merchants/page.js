@@ -35,7 +35,7 @@ export default function BusinessWalletMerchantsPage() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [webhookStatusFilter, setWebhookStatusFilter] = useState("ALL");
   const [paymentPage, setPaymentPage] = useState(1);
-  const [now, setNow] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [auditLogs, setAuditLogs] = useState([]);
   const [auditPagination, setAuditPagination] = useState({
@@ -131,7 +131,7 @@ export default function BusinessWalletMerchantsPage() {
     }
 
     if (hasMoreThanDecimals(newAmount, 2)) {
-      setNotice({ type: "error", message: "Amount can have at most 2 decimal places." });
+      setNotice({ type: "error", message: t("merchantPayments.maxDecimals") });
       return;
     }
 
@@ -167,7 +167,7 @@ export default function BusinessWalletMerchantsPage() {
         return;
       }
 
-      setNotice({ type: "success", message: data.message || "Payment created." });
+      setNotice({ type: "success", message: data.message || t("merchantPayments.paymentCreated") });
       setNewAmount("");
       setNewOrderId("");
       setNewCustomerEmail("");
@@ -325,74 +325,76 @@ export default function BusinessWalletMerchantsPage() {
 
   return (
     <OverviewShell>
-      <NoticeBanner notice={notice} />
+      <div className="mx-auto w-full max-w-[1220px]">
+        <NoticeBanner notice={notice} />
 
-      <CreatePaymentPanel
-        creatingPayment={creatingPayment}
-        maxAmount={MAX_PAYMENT_AMOUNT}
-        minAmount={MIN_PAYMENT_AMOUNT}
-        newAmount={newAmount}
-        newCustomerEmail={newCustomerEmail}
-        newOrderId={newOrderId}
-        onCreatePayment={createPayment}
-        setNewAmount={setNewAmount}
-        setNewCustomerEmail={setNewCustomerEmail}
-        setNewOrderId={setNewOrderId}
-        t={t}
-      />
+        <CreatePaymentPanel
+          creatingPayment={creatingPayment}
+          maxAmount={MAX_PAYMENT_AMOUNT}
+          minAmount={MIN_PAYMENT_AMOUNT}
+          newAmount={newAmount}
+          newCustomerEmail={newCustomerEmail}
+          newOrderId={newOrderId}
+          onCreatePayment={createPayment}
+          setNewAmount={setNewAmount}
+          setNewCustomerEmail={setNewCustomerEmail}
+          setNewOrderId={setNewOrderId}
+          t={t}
+        />
 
-      <PaymentOperationsPanel
-        confirmAction={confirmAction}
-        copyText={copyText}
-        loading={loading}
-        now={now}
-        paymentAction={paymentAction}
-        paymentPagination={paymentPagination}
-        payments={payments}
-        paymentSearch={paymentSearch}
-        needsAttentionOnly={needsAttentionOnly}
-        runPaymentAction={runPaymentAction}
-        setConfirmAction={setConfirmAction}
-        setPaymentPage={setPaymentPage}
-        setPaymentSearch={setPaymentSearch}
-        setNeedsAttentionOnly={setNeedsAttentionOnly}
-        setStatusFilter={setStatusFilter}
-        setWebhookStatusFilter={setWebhookStatusFilter}
-        statusFilter={statusFilter}
-        timeZone={timeZone}
-        t={t}
-        webhookStatusFilter={webhookStatusFilter}
-      />
-      <ActivityPanel
-        auditActionFilter={auditActionFilter}
-        auditActions={auditActions}
-        auditLogs={auditLogs}
-        auditPagination={auditPagination}
-        auditTargetTypeFilter={auditTargetTypeFilter}
-        auditTargetTypes={auditTargetTypes}
-        setAuditActionFilter={setAuditActionFilter}
-        setAuditPage={setAuditPage}
-        setAuditTargetTypeFilter={setAuditTargetTypeFilter}
-        timeZone={timeZone}
-        t={t}
-      />
+        <PaymentOperationsPanel
+          confirmAction={confirmAction}
+          copyText={copyText}
+          loading={loading}
+          now={now}
+          paymentAction={paymentAction}
+          paymentPagination={paymentPagination}
+          payments={payments}
+          paymentSearch={paymentSearch}
+          needsAttentionOnly={needsAttentionOnly}
+          runPaymentAction={runPaymentAction}
+          setConfirmAction={setConfirmAction}
+          setPaymentPage={setPaymentPage}
+          setPaymentSearch={setPaymentSearch}
+          setNeedsAttentionOnly={setNeedsAttentionOnly}
+          setStatusFilter={setStatusFilter}
+          setWebhookStatusFilter={setWebhookStatusFilter}
+          statusFilter={statusFilter}
+          timeZone={timeZone}
+          t={t}
+          webhookStatusFilter={webhookStatusFilter}
+        />
+        <ActivityPanel
+          auditActionFilter={auditActionFilter}
+          auditActions={auditActions}
+          auditLogs={auditLogs}
+          auditPagination={auditPagination}
+          auditTargetTypeFilter={auditTargetTypeFilter}
+          auditTargetTypes={auditTargetTypes}
+          setAuditActionFilter={setAuditActionFilter}
+          setAuditPage={setAuditPage}
+          setAuditTargetTypeFilter={setAuditTargetTypeFilter}
+          timeZone={timeZone}
+          t={t}
+        />
 
-      <PaymentDetailsModal
-        confirmAction={confirmAction}
-        copyText={copyText}
-        now={now}
-        onClose={() => setSelectedPayment(null)}
-        paymentAction={paymentAction}
-        retryWebhook={retryWebhook}
-        runPaymentAction={runPaymentAction}
-        selectedPayment={selectedPayment}
-        setConfirmAction={setConfirmAction}
-        setConfirmActionEmpty={() => setConfirmAction(null)}
-        timeZone={timeZone}
-        t={t}
-        verificationResult={verificationResult}
-        webhookAction={webhookAction}
-      />
+        <PaymentDetailsModal
+          confirmAction={confirmAction}
+          copyText={copyText}
+          now={now}
+          onClose={() => setSelectedPayment(null)}
+          paymentAction={paymentAction}
+          retryWebhook={retryWebhook}
+          runPaymentAction={runPaymentAction}
+          selectedPayment={selectedPayment}
+          setConfirmAction={setConfirmAction}
+          setConfirmActionEmpty={() => setConfirmAction(null)}
+          timeZone={timeZone}
+          t={t}
+          verificationResult={verificationResult}
+          webhookAction={webhookAction}
+        />
+      </div>
     </OverviewShell>
   );
 }

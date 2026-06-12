@@ -158,20 +158,20 @@ export default function BasicPreferencesPage() {
   return (
     <SettingsShell title={t("settings.preference")} activeSection="preference">
       {notice && (
-        <div className="mb-4 max-w-3xl rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200 light-dashboard:text-red-700">
+        <div className="mb-4 max-w-3xl rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-200 light-dashboard:text-red-700">
           {notice.message}
         </div>
       )}
-      <DashboardPanel as="div" className="max-w-4xl overflow-hidden p-0 sm:p-0">
+      <DashboardPanel as="div" className="max-w-3xl overflow-hidden rounded-lg p-0 sm:p-0">
         {rows.map((row) => {
           const Icon = row.icon;
           return (
             <div
               key={row.key}
-              className="flex flex-col items-start justify-between gap-3 border-b border-zinc-800 px-4 py-3 last:border-b-0 light-dashboard:border-zinc-200 sm:flex-row sm:items-center sm:gap-4"
+              className="settings-preference-row flex flex-col items-start justify-between gap-3 border-b px-4 py-3 last:border-b-0 sm:flex-row sm:items-center sm:gap-4"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+                <span className="settings-preference-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
                   <Icon size={17} strokeWidth={2.2} />
                 </span>
                 <p className="text-sm font-semibold text-white light-dashboard:text-zinc-950">{t(row.labelKey)}</p>
@@ -180,7 +180,7 @@ export default function BasicPreferencesPage() {
                 value={preferences[row.key]}
                 onChange={(event) => updatePreference(row.key, event.target.value)}
                 disabled={!ready || savingKey === row.key}
-                className="h-9 w-full font-semibold transition disabled:opacity-60 sm:w-[168px]"
+                className="h-10 w-full rounded-lg font-semibold transition disabled:opacity-60 sm:w-[190px]"
               >
                 {row.options.map((option) => (
                   <option key={option} value={option}>
@@ -192,9 +192,9 @@ export default function BasicPreferencesPage() {
           );
         })}
 
-        <div className="flex flex-col items-start justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="settings-preference-row flex flex-col items-start justify-between gap-3 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-zinc-100 light-dashboard:bg-zinc-100 light-dashboard:text-zinc-950">
+            <span className="settings-preference-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
               <Moon size={17} strokeWidth={2.2} />
             </span>
             <p className="text-sm font-semibold text-white light-dashboard:text-zinc-950">{t("preferences.darkTheme")}</p>
@@ -207,8 +207,8 @@ export default function BasicPreferencesPage() {
               type="button"
               onClick={() => updatePreference("dashboardTheme", darkThemeEnabled ? "light" : "dark")}
               disabled={!ready || savingKey === "dashboardTheme"}
-              className={`relative h-7 w-12 rounded-full transition disabled:opacity-60 ${
-                darkThemeEnabled ? "bg-zinc-600" : "bg-zinc-300"
+              className={`settings-theme-toggle relative h-7 w-12 rounded-full transition disabled:opacity-60 ${
+                darkThemeEnabled ? "settings-theme-toggle-on" : "settings-theme-toggle-off"
               }`}
             >
               <span

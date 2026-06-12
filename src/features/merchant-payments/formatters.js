@@ -175,30 +175,30 @@ export const getWebhookStatusMessage = (webhook) => {
 export const getActivityMeta = (action) => {
   if (action?.includes("webhook")) {
     return {
-      label: "Webhook",
+      labelKey: "merchantPayments.activityWebhook",
       className: "bg-sky-400/15 text-sky-200 border border-sky-300/30",
     };
   }
   if (action?.includes("payment")) {
     return {
-      label: "Payment",
+      labelKey: "merchantPayments.activityPayment",
       className: "bg-emerald-400/15 text-emerald-200 border border-emerald-300/30",
     };
   }
   if (action?.includes("api_key") || action?.includes("secret")) {
     return {
-      label: "Security",
+      labelKey: "merchantPayments.activitySecurity",
       className: "bg-red-400/15 text-red-200 border border-red-300/30",
     };
   }
   if (action?.includes("callback")) {
     return {
-      label: "Settings",
+      labelKey: "merchantPayments.activitySettings",
       className: "bg-amber-400/15 text-amber-100 border border-amber-300/30",
     };
   }
   return {
-    label: "Activity",
+    labelKey: "merchantPayments.activityGeneric",
     className: "bg-zinc-700/50 text-zinc-100 border border-zinc-500/40",
   };
 };

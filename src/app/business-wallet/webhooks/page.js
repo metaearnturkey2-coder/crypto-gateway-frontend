@@ -1,5 +1,6 @@
 "use client";
 
+import { RefreshCw, Send } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DashboardButton,
@@ -137,36 +138,37 @@ export default function BusinessWalletWebhooksPage() {
   return (
     <OverviewShell>
       <div className="space-y-5">
-        <DashboardPanel>
+        <DashboardPanel className="rounded-lg p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.title")}</h2>
+              <h2 className="text-lg font-bold">{t("webhooks.title")}</h2>
               <p className="text-sm text-zinc-500">{t("webhooks.description")}</p>
             </div>
             <DashboardButton
               type="button"
               onClick={refreshPage}
               variant="secondary"
-              className="rounded-full px-4 py-2"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4"
             >
+              <RefreshCw size={16} strokeWidth={2.2} />
               {t("common.refresh")}
             </DashboardButton>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
-            <DashboardMetric>
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">{t("webhooks.total")}</p>
               <p className="font-mono text-2xl font-bold">{data.stats.total || 0}</p>
             </DashboardMetric>
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">SUCCESS</p>
               <p className="font-mono text-2xl font-bold">{data.stats.SUCCESS || 0}</p>
             </DashboardMetric>
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">PENDING</p>
               <p className="font-mono text-2xl font-bold">{data.stats.PENDING || 0}</p>
             </DashboardMetric>
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">FAILED</p>
               <p className="font-mono text-2xl font-bold">{data.stats.FAILED || 0}</p>
             </DashboardMetric>
@@ -176,29 +178,29 @@ export default function BusinessWalletWebhooksPage() {
           </p>
         </DashboardPanel>
 
-        <DashboardPanel>
+        <DashboardPanel className="rounded-lg p-4 sm:p-5">
           <div className="mb-4">
-            <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.operationsTitle")}</h2>
+            <h2 className="text-lg font-bold">{t("webhooks.operationsTitle")}</h2>
             <p className="text-sm text-zinc-500">{t("webhooks.operationsDescription")}</p>
           </div>
 
           <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-4">
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">{t("webhooks.paymentWatcherQueue")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.queues?.paymentWatcher?.pendingJobs ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">{opsSummary?.queues?.paymentWatcher?.backend || "-"}</p>
             </DashboardMetric>
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">{t("webhooks.webhookRetryQueue")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.queues?.webhookRetry?.pendingJobs ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">{opsSummary?.queues?.webhookRetry?.backend || "-"}</p>
             </DashboardMetric>
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">{t("webhooks.dueRetries")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.webhooks?.dueRetries ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">FAILED/PENDING</p>
             </DashboardMetric>
-            <DashboardMetric>
+            <DashboardMetric className="rounded-lg">
               <p className="text-xs text-zinc-500">{t("webhooks.deadLetter")}</p>
               <p className="font-mono text-2xl font-bold">{opsSummary?.webhooks?.deadLetter ?? "-"}</p>
               <p className="mt-1 text-xs text-zinc-500">
@@ -208,10 +210,10 @@ export default function BusinessWalletWebhooksPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel>
+        <DashboardPanel className="rounded-lg p-4 sm:p-5">
           <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
-              <h2 className="text-xl font-semibold sm:text-[22px]">{t("webhooks.testToolTitle")}</h2>
+              <h2 className="text-lg font-bold">{t("webhooks.testToolTitle")}</h2>
               <p className="text-sm text-zinc-500">{t("webhooks.testToolDescription")}</p>
             </div>
             <DashboardButton
@@ -219,21 +221,22 @@ export default function BusinessWalletWebhooksPage() {
               onClick={sendTestWebhook}
               disabled={testingWebhook}
               variant="secondary"
-              className="rounded-full px-4 py-2 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 disabled:cursor-wait disabled:opacity-60"
             >
+              <Send size={16} strokeWidth={2.2} />
               {testingWebhook ? t("webhooks.testing") : t("webhooks.sendTest")}
             </DashboardButton>
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <div className="rounded-xl border border-zinc-800 bg-black/30 p-4">
+            <div className="webhook-sample-card rounded-lg border p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <p className="text-sm font-semibold">{t("webhooks.sampleHeaders")}</p>
-                <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-400">
+                <span className="business-wallet-pill rounded-full border px-3 py-1 text-xs font-semibold">
                   HTTP {testResult?.statusCode || "-"}
                 </span>
               </div>
-              <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-950 p-3 text-xs text-zinc-300">
+              <pre className="webhook-code-block max-h-72 overflow-auto whitespace-pre rounded-lg p-3 text-xs">
                 {JSON.stringify(
                   testResult?.headers || {
                     "content-type": "application/json",
@@ -249,9 +252,9 @@ export default function BusinessWalletWebhooksPage() {
               </pre>
             </div>
 
-            <div className="rounded-xl border border-zinc-800 bg-black/30 p-4">
+            <div className="webhook-sample-card rounded-lg border p-4">
               <p className="mb-3 text-sm font-semibold">{t("webhooks.samplePayload")}</p>
-              <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg bg-zinc-950 p-3 text-xs text-zinc-300">
+              <pre className="webhook-code-block max-h-72 overflow-auto whitespace-pre rounded-lg p-3 text-xs">
                 {JSON.stringify(
                   testResult?.payload || {
                     id: "event-id",
@@ -282,7 +285,7 @@ export default function BusinessWalletWebhooksPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel>
+        <DashboardPanel className="rounded-lg p-4 sm:p-5">
           <div className="mb-4 grid grid-cols-1 gap-2.5 lg:grid-cols-[1fr_180px_220px]">
             <DashboardInput
               value={search}
@@ -291,7 +294,7 @@ export default function BusinessWalletWebhooksPage() {
                 setSearch(event.target.value);
               }}
               placeholder={t("webhooks.searchPlaceholder")}
-              className="h-10"
+              className="h-10 rounded-lg"
             />
             <select
               value={statusFilter}
@@ -299,7 +302,7 @@ export default function BusinessWalletWebhooksPage() {
                 setPage(1);
                 setStatusFilter(event.target.value);
               }}
-              className="business-wallet-input h-10 rounded-xl border px-4 text-sm outline-none"
+              className="business-wallet-input h-10 rounded-lg border px-4 text-sm outline-none"
             >
               <option value="ALL">ALL</option>
               {STATUS_OPTIONS.map((status) => (
@@ -312,7 +315,7 @@ export default function BusinessWalletWebhooksPage() {
                 setPage(1);
                 setEventFilter(event.target.value);
               }}
-              className="business-wallet-input h-10 rounded-xl border px-4 text-sm outline-none"
+              className="business-wallet-input h-10 rounded-lg border px-4 text-sm outline-none"
             >
               <option value="ALL">{t("webhooks.allEvents")}</option>
               {(data.filters.events || []).map((event) => (
@@ -322,7 +325,13 @@ export default function BusinessWalletWebhooksPage() {
           </div>
 
           {notice && (
-            <div className="mb-4 rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div
+              className={`mb-4 rounded-lg border px-4 py-3 text-sm ${
+                notice.type === "success"
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200 light-dashboard:text-emerald-700"
+                  : "border-red-500/40 bg-red-500/10 text-red-300 light-dashboard:text-red-700"
+              }`}
+            >
               {notice.message}
             </div>
           )}
@@ -332,11 +341,11 @@ export default function BusinessWalletWebhooksPage() {
           ) : data.webhooks.length === 0 ? (
             <DashboardEmptyState>{t("webhooks.empty")}</DashboardEmptyState>
           ) : (
-            <div className="business-wallet-activity-list divide-y overflow-hidden rounded-xl border">
+            <div className="business-wallet-activity-list divide-y overflow-hidden rounded-lg border">
               {data.webhooks.map((webhook) => (
-                <div key={webhook.id} className="business-wallet-activity-row grid grid-cols-1 gap-3 px-4 py-3 xl:grid-cols-[170px_1fr_160px_180px] xl:items-center">
+                <div key={webhook.id} className="business-wallet-activity-row grid grid-cols-1 gap-3 px-4 py-3 xl:grid-cols-[170px_minmax(0,1fr)_170px_190px] xl:items-center">
                   <div className="space-y-1">
-                    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>
+                    <span className={`business-wallet-activity-badge inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>
                       {getWebhookStatusLabel(webhook)}
                     </span>
                     <p className="break-all font-mono text-[11px] text-zinc-500">{webhook.delivery?.requestId || webhook.requestId || "-"}</p>
@@ -344,15 +353,15 @@ export default function BusinessWalletWebhooksPage() {
                   </div>
 
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold">{formatEventLabel(webhook.event)}</p>
-                    <p className="mt-1 truncate text-xs text-zinc-500">
-                      {webhook.payment?.orderId || webhook.payment?.id || "-"} · {webhook.payment?.customerEmail || "-"}
+                    <p className="business-wallet-activity-title text-sm font-semibold">{formatEventLabel(webhook.event)}</p>
+                    <p className="mt-1 break-words text-xs text-zinc-500">
+                      {webhook.payment?.orderId || webhook.payment?.id || "-"} {" / "} {webhook.payment?.customerEmail || "-"}
                     </p>
                     <p className="mt-1 break-all text-xs text-zinc-500">
                       {t("webhooks.receiver")}: {webhook.url || "-"}
                     </p>
                     {webhook.retry?.reason && (
-                      <p className="mt-1 text-xs text-amber-200">
+                      <p className="webhook-warning-text mt-1 text-xs">
                         {t("webhooks.retryDecision")}: {webhook.retry.reason}
                       </p>
                     )}
@@ -368,19 +377,19 @@ export default function BusinessWalletWebhooksPage() {
                       <p className="mt-1 break-words text-xs text-rose-300">{webhook.lastError}</p>
                     )}
                     {webhook.deadLetter && (
-                      <p className="mt-1 text-xs text-amber-200">
+                      <p className="webhook-warning-text mt-1 text-xs">
                         {t("webhooks.deadLetter")}: {webhook.deadLetter.reason}
                       </p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 text-xs xl:block xl:space-y-1">
-                    <p><span className="text-zinc-500">{t("webhooks.attempts")}:</span> {webhook.attempts}/{webhook.maxAttempts}</p>
-                    <p><span className="text-zinc-500">HTTP:</span> {webhook.lastStatusCode || "-"}</p>
-                    <p><span className="text-zinc-500">{t("webhooks.duration")}:</span> {webhook.durationMs ?? "-"}ms</p>
+                  <div className="webhook-delivery-meta grid grid-cols-1 gap-2 text-xs sm:grid-cols-3 xl:block xl:space-y-1">
+                    <p><span>{t("webhooks.attempts")}</span> {webhook.attempts}/{webhook.maxAttempts}</p>
+                    <p><span>HTTP</span> {webhook.lastStatusCode || "-"}</p>
+                    <p><span>{t("webhooks.duration")}</span> {webhook.durationMs ?? "-"}ms</p>
                   </div>
 
-                  <div className="text-xs text-zinc-500 xl:text-right">
+                  <div className="business-wallet-activity-date text-xs xl:text-right">
                     <p>{formatDashboardDateTime(webhook.deliveredAt || webhook.updatedAt || webhook.createdAt, timeZone)}</p>
                     {webhook.nextRetryAt && (
                       <p className="mt-1">{t("webhooks.nextRetry")}: {formatDashboardDateTime(webhook.nextRetryAt, timeZone)}</p>
@@ -401,7 +410,7 @@ export default function BusinessWalletWebhooksPage() {
                 disabled={page <= 1}
                 onClick={() => setPage((value) => Math.max(value - 1, 1))}
                 variant="secondary"
-                className="rounded-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-10 rounded-lg px-4 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t("common.previous")}
               </DashboardButton>
@@ -410,7 +419,7 @@ export default function BusinessWalletWebhooksPage() {
                 disabled={page >= (data.totalPages || 1)}
                 onClick={() => setPage((value) => value + 1)}
                 variant="secondary"
-                className="rounded-full px-4 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="h-10 rounded-lg px-4 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t("common.next")}
               </DashboardButton>

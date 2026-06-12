@@ -15,34 +15,34 @@ import {
 const getActivityMeta = (action) => {
   if (action?.includes("webhook")) {
     return {
-      label: "Webhook",
+      labelKey: "businessWallet.activityWebhook",
       className: "border-sky-200 bg-sky-50 text-sky-700",
       critical: action?.includes("retry") || action?.includes("test"),
     };
   }
   if (action?.includes("payment")) {
     return {
-      label: "Payment",
+      labelKey: "businessWallet.activityPayment",
       className: "border-emerald-200 bg-emerald-50 text-emerald-700",
       critical: false,
     };
   }
   if (action?.includes("api_key") || action?.includes("secret")) {
     return {
-      label: "Security",
+      labelKey: "businessWallet.activitySecurity",
       className: "border-red-200 bg-red-50 text-red-700",
       critical: true,
     };
   }
   if (action?.includes("callback")) {
     return {
-      label: "Settings",
+      labelKey: "businessWallet.activitySettings",
       className: "border-amber-200 bg-amber-50 text-amber-700",
       critical: false,
     };
   }
   return {
-    label: "Activity",
+    labelKey: "businessWallet.activityGeneric",
     className: "border-zinc-200 bg-zinc-100 text-zinc-700",
     critical: false,
   };
@@ -369,7 +369,7 @@ export default function BusinessWalletPage() {
       if (!ok) {
         setNotice({
           type: "error",
-          message: data.errors?.join(" ") || data.message || "Payout address could not be whitelisted.",
+          message: data.errors?.join(" ") || data.message || t("businessWallet.payoutAddressAddFailed"),
         });
         return;
       }
@@ -381,14 +381,14 @@ export default function BusinessWalletPage() {
         type: "success",
         message:
           data.address?.effectiveStatus === "ACTIVE" || data.address?.status === "ACTIVE"
-            ? data.message || "Payout address whitelisted."
-            : `${data.message || "Payout address whitelisted."} Activation pending until ${formatDashboardDateTime(data.address?.activatesAt, timeZone)}.`,
+            ? data.message || t("businessWallet.payoutAddressAdded")
+            : `${data.message || t("businessWallet.payoutAddressAdded")} ${t("businessWallet.payoutAddressPending")} ${formatDashboardDateTime(data.address?.activatesAt, timeZone)}.`,
       });
       await loadDashboard();
     } catch (error) {
       setNotice({
         type: "error",
-        message: `Payout address could not be whitelisted. ${error.message}`,
+        message: `${t("businessWallet.payoutAddressAddFailed")} ${error.message}`,
       });
     } finally {
       setWhitelisting(false);
@@ -425,13 +425,13 @@ export default function BusinessWalletPage() {
 
   return (
     <OverviewShell>
-      <div className="space-y-5">
+      <div className="mx-auto w-full max-w-[1220px] space-y-5">
         {notice && (
           <div
-            className={`rounded-xl border px-4 py-3 text-sm ${
+            className={`rounded-lg border px-4 py-3 text-sm ${
               notice.type === "success"
-                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
-                : "border-red-500/40 bg-red-500/10 text-red-700"
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+                : "border-red-500/40 bg-red-500/10 text-red-200"
             }`}
           >
             {notice.message}

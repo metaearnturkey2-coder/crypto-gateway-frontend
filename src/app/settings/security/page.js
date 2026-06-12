@@ -1,5 +1,6 @@
 "use client";
 
+import { Clipboard, KeyRound, RotateCw, Send, ShieldCheck, Webhook } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { DashboardButton, DashboardInput, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import SettingsShell from "@/components/settings-shell";
@@ -16,7 +17,7 @@ function Notice({ notice }) {
       : "border-red-500/40 bg-red-500/10 text-red-200";
 
   return (
-    <div className={`rounded-xl border px-4 py-3 text-sm ${className}`}>
+    <div className={`max-w-4xl rounded-lg border px-4 py-3 text-sm ${className}`}>
       {notice.message}
     </div>
   );
@@ -240,27 +241,37 @@ export default function SecuritySettingsPage() {
 
   return (
     <SettingsShell title={t("settings.security")} activeSection="security">
-      <div className="space-y-6">
+      <div className="space-y-5">
         <Notice notice={notice} />
 
-        <DashboardPanel className="p-6">
-          <h2 className="text-2xl font-bold text-white light-dashboard:text-zinc-950">{t("security.title")}</h2>
-          <p className="mt-2 text-zinc-400 light-dashboard:text-zinc-600">{t("security.description")}</p>
+        <DashboardPanel className="max-w-4xl overflow-hidden rounded-lg p-0 sm:p-0">
+          <div className="settings-panel-header border-b px-4 py-4 sm:px-5">
+            <div className="flex items-start gap-3">
+              <span className="settings-preference-icon mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+                <Webhook size={17} strokeWidth={2.2} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-white light-dashboard:text-zinc-950">{t("security.title")}</h2>
+                <p className="mt-1 max-w-2xl text-sm text-zinc-400 light-dashboard:text-zinc-600">{t("security.description")}</p>
+              </div>
+            </div>
+          </div>
 
-          <div className="mt-6 flex gap-3 flex-col md:flex-row">
+          <div className="grid gap-3 px-4 py-4 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
             <DashboardInput
               type="text"
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               placeholder="https://your-site.com/webhook"
-              className="flex-1 py-3"
+              className="h-10 min-w-0 rounded-lg font-semibold"
             />
             <DashboardButton
               type="button"
               onClick={saveWebhookUrl}
               disabled={loading || saving}
-              className="px-6 py-3 disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 disabled:opacity-60"
             >
+              <ShieldCheck size={16} strokeWidth={2.2} />
               {saving ? t("security.saving") : t("security.saveUrl")}
             </DashboardButton>
             <DashboardButton
@@ -268,15 +279,16 @@ export default function SecuritySettingsPage() {
               variant="secondary"
               onClick={testWebhook}
               disabled={loading || testingWebhook || !webhookUrl.trim()}
-              className="px-6 py-3 disabled:opacity-60"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 disabled:opacity-60"
             >
+              <Send size={16} strokeWidth={2.2} />
               {testingWebhook ? t("security.testing") : t("security.testWebhook")}
             </DashboardButton>
           </div>
 
           {webhookTestResult && (
             <div
-              className={`mt-4 rounded-xl border p-4 text-sm ${
+              className={`mx-4 mb-4 rounded-lg border p-4 text-sm sm:mx-5 ${
                 webhookTestResult.success
                   ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
                   : "border-red-500/30 bg-red-500/10 text-red-100"
@@ -294,17 +306,17 @@ export default function SecuritySettingsPage() {
             </div>
           )}
 
-          <div className="mt-6 rounded-xl border border-zinc-800 bg-black/40 p-4 light-dashboard:border-zinc-200 light-dashboard:bg-zinc-50">
+          <div className="settings-security-subcard mx-4 mb-4 rounded-lg border p-4 sm:mx-5">
             <div className="flex items-center justify-between mb-3">
               <p className="text-zinc-400 text-xs uppercase tracking-wide light-dashboard:text-zinc-500">{t("security.webhookSecret")}</p>
               <p className="text-zinc-500 text-sm">{t("security.sensitive")}</p>
             </div>
-            <div className="flex flex-col md:flex-row gap-3">
+            <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
               <DashboardInput
                 type="text"
                 value={merchant?.webhookSecret || ""}
                 readOnly
-                className="flex-1 py-3"
+                className="h-10 min-w-0 rounded-lg font-mono text-xs"
               />
               <DashboardButton
                 type="button"
@@ -314,8 +326,9 @@ export default function SecuritySettingsPage() {
                   await navigator.clipboard.writeText(merchant.webhookSecret);
                   showNotice("success", t("security.webhookSecretCopied"));
                 }}
-                className="px-6 py-3"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4"
               >
+                <Clipboard size={16} strokeWidth={2.2} />
                 {t("security.copySecret")}
               </DashboardButton>
               <DashboardButton
@@ -323,20 +336,21 @@ export default function SecuritySettingsPage() {
                 variant="dangerSolid"
                 onClick={() => setConfirmAction("webhookSecret")}
                 disabled={regenerating}
-                className="px-6 py-3 disabled:opacity-60"
+                className="settings-danger-solid inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 disabled:opacity-60"
               >
+                <RotateCw size={16} strokeWidth={2.2} />
                 {regenerating ? t("security.regenerating") : t("security.regenerate")}
               </DashboardButton>
             </div>
             {confirmAction === "webhookSecret" && (
-              <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+              <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
                 <p className="mb-3">{t("security.regenerateWebhookPrompt")}</p>
                 <div className="flex flex-wrap gap-3">
                   <DashboardButton
                     type="button"
                     variant="dangerSolid"
                     onClick={regenerateWebhookSecret}
-                    className="rounded-lg px-4 py-2"
+                    className="settings-danger-solid rounded-lg px-4 py-2"
                   >
                     {t("security.confirmRegenerate")}
                   </DashboardButton>
@@ -354,29 +368,34 @@ export default function SecuritySettingsPage() {
           </div>
         </DashboardPanel>
 
-        <DashboardPanel className="p-6">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-white light-dashboard:text-zinc-950">{t("security.apiAccess")}</h2>
-              <p className="mt-2 text-zinc-400 light-dashboard:text-zinc-600">{t("security.apiAccessDescription")}</p>
+        <DashboardPanel className="max-w-4xl overflow-hidden rounded-lg p-0 sm:p-0">
+          <div className="settings-panel-header flex flex-col gap-3 border-b px-4 py-4 sm:px-5 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="settings-preference-icon mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+                <KeyRound size={17} strokeWidth={2.2} />
+              </span>
+              <div className="min-w-0">
+                <h2 className="text-lg font-bold text-white light-dashboard:text-zinc-950">{t("security.apiAccess")}</h2>
+                <p className="mt-1 max-w-2xl text-sm text-zinc-400 light-dashboard:text-zinc-600">{t("security.apiAccessDescription")}</p>
+              </div>
             </div>
             <DashboardPill className="w-fit">
               {t("security.currentMode")}: {getMerchantApiKeyMode(merchant)}
             </DashboardPill>
           </div>
-          <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 px-4 py-4 sm:px-5 md:grid-cols-2">
             {["LIVE", "TEST"].map((mode) => (
               <button
                 key={mode}
                 type="button"
                 onClick={() => setSelectedApiKeyMode(mode)}
-                className={`rounded-xl border p-4 text-left transition ${
+                className={`rounded-lg border p-4 text-left transition ${
                   selectedApiKeyMode === mode
-                    ? "border-blue-400 bg-blue-400/10 text-blue-100 light-dashboard:text-blue-800"
+                    ? "settings-mode-card-selected border-blue-400 bg-blue-400/10 text-blue-100 light-dashboard:text-blue-800"
                     : "border-zinc-800 bg-zinc-950 text-zinc-300 hover:border-zinc-600 light-dashboard:border-zinc-200 light-dashboard:bg-zinc-50 light-dashboard:text-zinc-700 light-dashboard:hover:border-zinc-300"
                 }`}
               >
-                <span className="text-sm font-semibold">
+                <span className="settings-mode-card-title text-sm font-semibold">
                   {mode === "LIVE" ? t("security.liveMode") : t("security.testMode")}
                 </span>
                 <span className="mt-1 block text-xs text-zinc-500">
@@ -385,34 +404,36 @@ export default function SecuritySettingsPage() {
               </button>
             ))}
           </div>
-          <div className="flex flex-col md:flex-row gap-3">
+          <div className="grid gap-3 px-4 pb-4 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto_auto]">
             <DashboardInput
               type="text"
               value={apiCredentialDisplayValue}
               readOnly
               placeholder={loading ? t("security.loadingApiKey") : t("security.noApiKeyPreview")}
-              className="flex-1 py-3"
+              className="h-10 min-w-0 rounded-lg font-mono text-xs"
             />
             <DashboardButton
               type="button"
               variant="secondary"
               onClick={copyApiKey}
               disabled={!hasFullApiKey}
-              className="px-6 py-3 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
+              <Clipboard size={16} strokeWidth={2.2} />
               {t("security.copyApiKey")}
             </DashboardButton>
             <DashboardButton
               type="button"
               variant="dangerSolid"
               onClick={() => setConfirmAction("apiKey")}
-              className="px-6 py-3"
+              className="settings-danger-solid inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4"
             >
+              <RotateCw size={16} strokeWidth={2.2} />
               {t("security.regenerate")}
             </DashboardButton>
           </div>
           {confirmAction === "apiKey" && (
-            <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+            <div className="mx-4 mb-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100 sm:mx-5">
               <p className="mb-3">
                 {t("security.regenerateApiPrompt")} ({selectedApiKeyMode})
               </p>
@@ -421,7 +442,7 @@ export default function SecuritySettingsPage() {
                   type="button"
                   variant="dangerSolid"
                   onClick={regenerateApiKey}
-                  className="rounded-lg px-4 py-2"
+                  className="settings-danger-solid rounded-lg px-4 py-2"
                 >
                   {t("security.confirmRegenerate")}
                 </DashboardButton>
@@ -437,7 +458,7 @@ export default function SecuritySettingsPage() {
             </div>
           )}
           {!hasFullApiKey && (
-            <p className="mt-3 text-xs text-zinc-500 light-dashboard:text-zinc-600">
+            <p className="px-4 pb-4 text-xs text-zinc-500 light-dashboard:text-zinc-600 sm:px-5">
               {t("security.apiKeyHiddenHelp")}
             </p>
           )}

@@ -1,4 +1,5 @@
 ﻿import Link from "next/link";
+import { Filter, ListChecks, Search } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import { DashboardButton, DashboardEmptyState, DashboardPanel, DashboardPill } from "@/components/dashboard-ui";
 import { formatTokenAmount } from "@/lib/money";
@@ -10,11 +11,53 @@ import {
   getPaymentStatusClassName,
   getPaymentStatusGuidance,
   getWebhookStatusClassName,
-  getWebhookStatusDescription,
-  getWebhookStatusLabel,
   MERCHANT_PAYMENT_STATUS_OPTIONS,
   WEBHOOK_STATUS_OPTIONS,
 } from "@/features/merchant-payments/formatters";
+
+const paymentStatusLabelKeys = {
+  CANCELLED: "merchantPayments.statusCancelled",
+  CONFIRMING: "merchantPayments.statusConfirming",
+  EXPIRED: "merchantPayments.statusExpired",
+  EXPIRED_PAID_REVIEW: "merchantPayments.statusReview",
+  PAID: "merchantPayments.statusPaid",
+  PENDING: "merchantPayments.statusPending",
+  UNDERPAID: "merchantPayments.statusUnderpaid",
+};
+
+const webhookStatusLabelKeys = {
+  FAILED: "merchantPayments.webhookStatusFailed",
+  NONE: "merchantPayments.webhookStatusNone",
+  PENDING: "merchantPayments.webhookStatusPending",
+  SUCCESS: "merchantPayments.webhookStatusSuccess",
+};
+
+const paymentGuidanceKeys = {
+  CANCELLED: ["merchantPayments.statusCancelled", "merchantPayments.statusCancelledTitle", "merchantPayments.statusCancelledDescription"],
+  CONFIRMING: ["merchantPayments.statusConfirming", "merchantPayments.statusConfirmingTitle", "merchantPayments.statusConfirmingDescription"],
+  EXPIRED: ["merchantPayments.statusExpired", "merchantPayments.statusExpiredTitle", "merchantPayments.statusExpiredDescription"],
+  EXPIRED_PAID_REVIEW: ["merchantPayments.statusReview", "merchantPayments.statusReviewTitle", "merchantPayments.statusReviewDescription"],
+  PAID: ["merchantPayments.statusPaid", "merchantPayments.statusPaidTitle", "merchantPayments.statusPaidDescription"],
+  PENDING: ["merchantPayments.statusPending", "merchantPayments.statusPendingTitle", "merchantPayments.statusPendingDescription"],
+  UNDERPAID: ["merchantPayments.statusUnderpaid", "merchantPayments.statusUnderpaidTitle", "merchantPayments.statusUnderpaidDescription"],
+};
+
+const getPaymentGuidanceText = (status, fallback, t) => {
+  const keys = paymentGuidanceKeys[status];
+  if (!keys) return fallback;
+  return {
+    label: t(keys[0]),
+    title: t(keys[1]),
+    description: t(keys[2]),
+  };
+};
+
+const getWebhookDescription = (webhook, t) => {
+  if (!webhook) return t("merchantPayments.webhookNoDelivery");
+  if (webhook.status === "SUCCESS") return t("merchantPayments.webhookDeliveredShort");
+  if (webhook.status === "FAILED") return t("merchantPayments.webhookFailedShort");
+  return t("merchantPayments.webhookPendingShort");
+};
 
 export function PaymentOperationsPanel({
   confirmAction,
@@ -39,15 +82,20 @@ export function PaymentOperationsPanel({
   webhookStatusFilter,
 }) {
   return (
-    <DashboardPanel as="div" variant="merchant" className="mb-8 p-5 sm:p-5">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-        <div>
-          <h2 className="text-2xl font-bold">{t("merchantPayments.operations")}</h2>
-          <p className="text-zinc-500 text-sm">
-            {t("merchantPayments.showingPayments")
-              .replace("{shown}", payments.length)
-              .replace("{total}", paymentPagination.totalCount)}
-          </p>
+    <DashboardPanel as="div" variant="merchant" className="mb-5 !rounded-lg p-4 md:p-5">
+      <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-800 bg-black text-emerald-300">
+            <ListChecks size={17} />
+          </span>
+          <div>
+            <h2 className="text-xl font-bold text-white">{t("merchantPayments.operations")}</h2>
+            <p className="text-sm text-zinc-500">
+              {t("merchantPayments.showingPayments")
+                .replace("{shown}", payments.length)
+                .replace("{total}", paymentPagination.totalCount)}
+            </p>
+          </div>
         </div>
         <DashboardButton
           onClick={() => {
@@ -58,35 +106,39 @@ export function PaymentOperationsPanel({
             setPaymentPage(1);
           }}
           variant="filter"
-          className="px-4 py-2"
+          className="flex h-10 items-center justify-center gap-2 !rounded-lg px-4"
         >
+          <Filter size={15} />
           {t("merchantPayments.clearFilters")}
         </DashboardButton>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr_1fr_auto] mb-6">
-        <input
-          type="text"
-          placeholder={t("merchantPayments.searchPlaceholder")}
-          value={paymentSearch}
-          onChange={(event) => {
-            setPaymentSearch(event.target.value);
-            setPaymentPage(1);
-          }}
-          className="operations-filter-field p-3 rounded-xl border outline-none transition"
-        />
+      <div className="mb-5 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_0.9fr_0.9fr_auto]">
+        <label className="relative">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+          <input
+            type="text"
+            placeholder={t("merchantPayments.searchPlaceholder")}
+            value={paymentSearch}
+            onChange={(event) => {
+              setPaymentSearch(event.target.value);
+              setPaymentPage(1);
+            }}
+            className="operations-filter-field h-10 w-full rounded-lg border pl-9 pr-3 text-sm outline-none transition"
+          />
+        </label>
         <select
           value={statusFilter}
           onChange={(event) => {
             setStatusFilter(event.target.value);
             setPaymentPage(1);
           }}
-          className="operations-filter-field p-3 rounded-xl border outline-none transition"
+          className="operations-filter-field h-10 rounded-lg border px-3 text-sm outline-none transition"
         >
           <option value="ALL">{t("merchantPayments.allPaymentStatuses")}</option>
           {MERCHANT_PAYMENT_STATUS_OPTIONS.map((status) => (
             <option key={status.value} value={status.value}>
-              {status.label}
+              {t(paymentStatusLabelKeys[status.value])}
             </option>
           ))}
         </select>
@@ -96,12 +148,12 @@ export function PaymentOperationsPanel({
             setWebhookStatusFilter(event.target.value);
             setPaymentPage(1);
           }}
-          className="operations-filter-field p-3 rounded-xl border outline-none transition"
+          className="operations-filter-field h-10 rounded-lg border px-3 text-sm outline-none transition"
         >
           <option value="ALL">{t("merchantPayments.allWebhookStatuses")}</option>
           {WEBHOOK_STATUS_OPTIONS.map((status) => (
             <option key={status.value} value={status.value}>
-              {status.label}
+              {t(webhookStatusLabelKeys[status.value])}
             </option>
           ))}
         </select>
@@ -112,7 +164,7 @@ export function PaymentOperationsPanel({
             setPaymentPage(1);
           }}
           variant="filter"
-          className={`px-4 py-3 ${
+          className={`h-10 !rounded-lg px-4 ${
             needsAttentionOnly ? "border-amber-300/50 bg-amber-300/15 text-amber-100" : ""
           }`}
         >
@@ -121,7 +173,7 @@ export function PaymentOperationsPanel({
       </div>
 
       <div className="space-y-3">
-        {!loading && payments.length === 0 && <DashboardEmptyState>{t("merchantPayments.noPayments")}</DashboardEmptyState>}
+        {!loading && payments.length === 0 && <DashboardEmptyState className="!rounded-lg">{t("merchantPayments.noPayments")}</DashboardEmptyState>}
 
         {payments.map((payment) => (
           <PaymentOperationCard
@@ -139,7 +191,7 @@ export function PaymentOperationsPanel({
         ))}
       </div>
 
-      <div className="operations-list-footer mt-4 flex flex-col gap-3 rounded-xl border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="operations-list-footer mt-4 flex flex-col gap-3 rounded-lg border px-3 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap items-center gap-2">
           <DashboardPill className="operations-page-pill">
             {t("merchantPayments.pageIndicator")
@@ -172,12 +224,19 @@ function PaymentOperationCard({
 }) {
   const latestWebhook = payment.webhookEvents?.[0];
   const effectiveStatus = getEffectivePaymentStatus(payment, now);
-  const statusGuidance = getPaymentStatusGuidance(effectiveStatus);
+  const statusGuidance = getPaymentGuidanceText(effectiveStatus, getPaymentStatusGuidance(effectiveStatus), t);
   const canManagePayment = effectiveStatus === "PENDING" && paymentAction?.paymentId !== payment.id;
+  const webhookLabel = latestWebhook
+    ? t(webhookStatusLabelKeys[latestWebhook.status])
+    : t(webhookStatusLabelKeys.NONE);
+  const expiryDisplay =
+    effectiveStatus === "PENDING"
+      ? formatTimeLeft(payment.expiresAt, now)
+      : formatDateTime(payment.expiresAt, timeZone);
 
   return (
-    <div className="merchant-payment-card rounded-xl border p-3 sm:p-4">
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[120px_minmax(0,1fr)_105px_minmax(280px,360px)] xl:items-center">
+    <div className="merchant-payment-card rounded-lg border p-3 sm:p-4">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[124px_minmax(0,1fr)_130px_minmax(280px,350px)] xl:items-center">
         <div>
           <p className="text-xl font-semibold">{formatTokenAmount(payment.amount, payment.currency)}</p>
           <p className="mt-0.5 text-xs text-zinc-500">{payment.network}</p>
@@ -208,14 +267,14 @@ function PaymentOperationCard({
             </div>
             <div className="payment-card-meta-row">
               <span>{t("merchantPayments.expires")}</span>
-              <p>{formatTimeLeft(payment.expiresAt, now)}</p>
+              <p>{expiryDisplay}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <span className={`webhook-status-badge inline-block px-3 py-1 rounded-full text-xs font-semibold ${getWebhookStatusClassName(latestWebhook?.status)}`}>
-              {getWebhookStatusLabel(latestWebhook)}
+              {webhookLabel}
             </span>
-            <span className="text-xs text-zinc-500">{getWebhookStatusDescription(latestWebhook)}</span>
+            <span className="text-xs text-zinc-500">{getWebhookDescription(latestWebhook, t)}</span>
             {latestWebhook && (
               <div className="payment-card-meta-row payment-card-attempts-row">
                 <span>{t("merchantPayments.attempts")}</span>
@@ -262,7 +321,7 @@ function PaymentOperationCard({
             </Link>
           </div>
           {effectiveStatus === "PENDING" && (
-            <div className="payment-card-qr hidden items-center justify-between gap-3 rounded-xl border px-3 py-1.5 xl:flex xl:max-w-[360px]">
+            <div className="payment-card-qr hidden items-center justify-between gap-3 rounded-lg border px-3 py-1.5 xl:flex xl:max-w-[350px]">
               <div>
                 <p className="text-xs font-bold uppercase">{t("merchantPayments.qrPreview")}</p>
                 <p className="mt-0.5 text-xs">{t("merchantPayments.fullPaymentViewInDetails")}</p>
@@ -277,7 +336,7 @@ function PaymentOperationCard({
       {effectiveStatus === "PENDING" &&
         confirmAction?.type === "cancelPayment" &&
         confirmAction.paymentId === payment.id && (
-          <div className="mt-4 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
+          <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-100">
             <p className="mb-3">{t("merchantPayments.cancelPrompt")}</p>
             <div className="flex flex-wrap gap-3">
               <button

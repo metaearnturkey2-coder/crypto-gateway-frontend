@@ -1,6 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Check,
+  Clock3,
+  Copy,
+  ExternalLink,
+  Network,
+  RefreshCcw,
+  ReceiptText,
+  Send,
+  WalletCards,
+  Webhook,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { QRCodeSVG } from "qrcode.react";
@@ -12,13 +26,11 @@ import { formatTokenAmount } from "@/lib/money";
 import {
   canRetryWebhook,
   formatDateTime,
-  formatTimeLeft,
   getEffectivePaymentStatus,
   getPaymentStatusClassName,
   getPaymentStatusGuidance,
   getWebhookStatusClassName,
   getWebhookStatusLabel,
-  getWebhookStatusMessage,
   getWebhookSummary,
 } from "@/features/merchant-payments/formatters";
 
@@ -102,7 +114,8 @@ export default function MerchantPaymentDetailPage() {
     [payment?.webhookEvents]
   );
   const effectiveStatus = getEffectivePaymentStatus(payment, now);
-  const statusGuidance = getPaymentStatusGuidance(effectiveStatus);
+  const baseStatusGuidance = getPaymentStatusGuidance(effectiveStatus);
+  const statusGuidance = getPaymentGuidanceText(effectiveStatus, baseStatusGuidance, t);
   const latestWebhook = webhookSummary.latest;
   const requiresAction =
     ["UNDERPAID", "EXPIRED_PAID_REVIEW"].includes(effectiveStatus) ||
@@ -110,28 +123,28 @@ export default function MerchantPaymentDetailPage() {
 
   return (
     <OverviewShell>
-      <div className="space-y-6">
+      <div className="mx-auto w-full max-w-[1220px] space-y-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <Link href="/business-wallet/merchants" className="text-sm font-semibold text-zinc-400 hover:text-zinc-100">
+          <div className="min-w-0">
+            <Link href="/business-wallet/merchants" className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-500 transition hover:text-zinc-100">
+              <ArrowLeft size={16} strokeWidth={2.2} />
               {t("merchantPayments.backToPayments")}
             </Link>
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold md:text-4xl">{t("merchantPayments.paymentDetails")}</h1>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-100">
+                <ReceiptText size={18} strokeWidth={2.2} />
+              </span>
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{t("merchantPayments.paymentDetails")}</h1>
               {payment && (
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
+                <span className={`payment-status-badge rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
                   {statusGuidance.label}
                 </span>
               )}
-              {payment?.mode && (
-                <DashboardPill>
-                  {payment.mode}
-                </DashboardPill>
-              )}
+              {payment?.mode && <DashboardPill>{payment.mode}</DashboardPill>}
             </div>
             {payment && (
               <div className="mt-2 max-w-3xl space-y-1 text-sm text-zinc-500">
-                <p>
+                <p className="font-semibold text-zinc-300">
                   {formatTokenAmount(payment.amount, payment.currency)}
                   {payment.orderId ? ` - ${payment.orderId}` : ""}
                 </p>
@@ -145,16 +158,18 @@ export default function MerchantPaymentDetailPage() {
               variant="secondary"
               onClick={refreshPayment}
               disabled={refreshing}
-              className="rounded-lg px-4 py-2 disabled:cursor-wait disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-lg px-4 disabled:cursor-wait disabled:opacity-60"
             >
+              <RefreshCcw size={15} strokeWidth={2.2} className={refreshing ? "animate-spin" : ""} />
               {refreshing ? t("common.refreshing") : t("common.refresh")}
             </DashboardButton>
             {payment?.checkoutUrl && (
               <a
                 href={payment.checkoutUrl}
                 target="_blank"
-                className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-black transition hover:opacity-80"
+                className="business-wallet-primary-button inline-flex h-10 items-center gap-2 rounded-lg border px-4 text-sm font-semibold transition"
               >
+                <ExternalLink size={15} strokeWidth={2.2} />
                 {t("merchantPayments.checkout")}
               </a>
             )}
@@ -163,7 +178,7 @@ export default function MerchantPaymentDetailPage() {
 
         {notice && (
           <div
-            className={`rounded-xl border p-4 text-sm ${
+            className={`rounded-lg border p-4 text-sm ${
               notice.type === "error"
                 ? "border-red-500/30 bg-red-500/10 text-red-100"
                 : "border-emerald-500/30 bg-emerald-500/10 text-emerald-100"
@@ -181,66 +196,55 @@ export default function MerchantPaymentDetailPage() {
 
         {payment && (
           <>
-            <section className={`rounded-xl border p-5 ${
+            <section className={`payment-detail-decision rounded-lg border p-4 sm:p-5 ${
               requiresAction
-                ? "border-amber-400/40 bg-amber-400/10"
+                ? "payment-detail-decision-warning"
                 : effectiveStatus === "PAID"
-                  ? "border-emerald-400/40 bg-emerald-400/10"
-                  : "border-zinc-800 bg-zinc-950"
+                  ? "payment-detail-decision-success"
+                  : "payment-detail-decision-neutral"
             }`}>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase text-zinc-500">
+                    {requiresAction ? <AlertTriangle size={14} strokeWidth={2.4} /> : <Check size={14} strokeWidth={2.4} />}
                     {requiresAction ? t("merchantPayments.actionRequired") : t("merchantPayments.paymentDecision")}
                   </p>
-                  <h2 className="mt-2 text-xl font-bold">{statusGuidance.title}</h2>
+                  <h2 className="mt-2 text-lg font-bold md:text-xl">{statusGuidance.title}</h2>
                   <p className="mt-2 max-w-3xl text-sm text-zinc-300">{statusGuidance.description}</p>
                   {latestWebhook?.status === "FAILED" && (
-                    <p className="mt-2 text-sm text-amber-100">
+                    <p className="payment-detail-warning-text mt-2 text-sm text-amber-100">
                       {t("merchantPayments.latestWebhookFailedGuidance")}
                     </p>
                   )}
                 </div>
-                <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
+                <span className={`payment-status-badge w-fit rounded-full px-3 py-1 text-xs font-semibold ${getPaymentStatusClassName(effectiveStatus)}`}>
                   {requiresAction ? t("merchantPayments.needsAttentionStatus") : statusGuidance.label}
                 </span>
               </div>
             </section>
 
-            <section className="grid grid-cols-1 gap-4 lg:grid-cols-4">
-              <DashboardMetric>
-                <p className="text-xs text-zinc-500">{t("merchantPayments.paymentId")}</p>
-                <p className="mt-2 break-all font-mono text-sm">{payment.id}</p>
-              </DashboardMetric>
-              <DashboardMetric>
-                <p className="text-xs text-zinc-500">{t("merchantPayments.timeLeft")}</p>
-                <p className="mt-2 text-lg font-semibold">{formatTimeLeft(payment.expiresAt, now)}</p>
-              </DashboardMetric>
-              <DashboardMetric>
-                <p className="text-xs text-zinc-500">{t("merchantPayments.webhookEvents")}</p>
-                <p className="mt-2 text-lg font-semibold">{webhookSummary.total}</p>
-              </DashboardMetric>
-              <DashboardMetric>
-                <p className="text-xs text-zinc-500">{t("merchantPayments.network")}</p>
-                <p className="mt-2 text-lg font-semibold">{payment.network}</p>
-              </DashboardMetric>
+            <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <MetricCard icon={ReceiptText} label={t("merchantPayments.paymentId")} value={payment.id} mono />
+              <MetricCard icon={Clock3} label={t("merchantPayments.timeLeft")} value={formatTimeLeftText(payment.expiresAt, now, t)} />
+              <MetricCard icon={Webhook} label={t("merchantPayments.webhookEvents")} value={webhookSummary.total} />
+              <MetricCard icon={Network} label={t("merchantPayments.network")} value={payment.network} />
             </section>
 
-            <section className="grid grid-cols-1 gap-5 xl:grid-cols-[340px_1fr]">
-              <aside className="space-y-5">
-                <DashboardPanel className="p-5 sm:p-5">
-                  <h2 className="text-xl font-bold">{t("merchantPayments.timeline")}</h2>
+            <section className="grid grid-cols-1 gap-4 xl:grid-cols-[320px_minmax(0,1fr)]">
+              <aside className="space-y-4">
+                <DashboardPanel className="rounded-lg p-4 sm:p-4">
+                  <h2 className="text-base font-bold">{t("merchantPayments.timeline")}</h2>
                   <div className="mt-4 space-y-4">
                     {(payment.timeline || []).map((item, index) => (
                       <div className="flex gap-3" key={item.id || `${item.type}-${index}`}>
                         <div className="flex flex-col items-center">
-                          <span className="flex h-8 w-8 items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 text-xs font-bold">
+                          <span className="payment-detail-step flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold">
                             {index + 1}
                           </span>
-                          {index < (payment.timeline || []).length - 1 && <span className="mt-2 h-8 w-px bg-zinc-800" />}
+                          {index < (payment.timeline || []).length - 1 && <span className="payment-detail-step-line mt-2 h-8 w-px" />}
                         </div>
                         <div className="min-w-0">
-                          <p className="font-semibold">{item.message || item.type}</p>
+                          <p className="text-sm font-semibold">{item.message || item.type}</p>
                           <p className="mt-1 text-xs text-zinc-500">{formatDateTime(item.at, timeZone)}</p>
                         </div>
                       </div>
@@ -251,59 +255,50 @@ export default function MerchantPaymentDetailPage() {
                   </div>
                 </DashboardPanel>
 
-                <DashboardPanel className="p-5 sm:p-5">
-                  <h2 className="text-xl font-bold">{t("merchantPayments.webhookDelivery")}</h2>
+                <DashboardPanel className="rounded-lg p-4 sm:p-4">
+                  <h2 className="text-base font-bold">{t("merchantPayments.webhookDelivery")}</h2>
                   <div className="mt-4 grid grid-cols-2 gap-3">
-                    <DashboardMetric className="rounded-lg bg-black p-3">
-                      <p className="text-xs text-zinc-500">{t("merchantPayments.successful")}</p>
-                      <p className="mt-1 font-semibold text-emerald-300">{webhookSummary.successful}</p>
-                    </DashboardMetric>
-                    <DashboardMetric className="rounded-lg bg-black p-3">
-                      <p className="text-xs text-zinc-500">{t("merchantPayments.pending")}</p>
-                      <p className="mt-1 font-semibold text-amber-200">{webhookSummary.pending}</p>
-                    </DashboardMetric>
-                    <DashboardMetric className="rounded-lg bg-black p-3">
-                      <p className="text-xs text-zinc-500">{t("merchantPayments.failed")}</p>
-                      <p className="mt-1 font-semibold text-rose-300">{webhookSummary.failed}</p>
-                    </DashboardMetric>
-                    <DashboardMetric className="rounded-lg bg-black p-3">
-                      <p className="text-xs text-zinc-500">{t("merchantPayments.events")}</p>
-                      <p className="mt-1 font-semibold">{webhookSummary.total}</p>
-                    </DashboardMetric>
+                    <WebhookStat label={t("merchantPayments.successful")} value={webhookSummary.successful} tone="success" />
+                    <WebhookStat label={t("merchantPayments.pending")} value={webhookSummary.pending} tone="pending" />
+                    <WebhookStat label={t("merchantPayments.failed")} value={webhookSummary.failed} tone="failed" />
+                    <WebhookStat label={t("merchantPayments.events")} value={webhookSummary.total} />
                   </div>
                 </DashboardPanel>
               </aside>
 
-              <div className="space-y-5">
-                <DashboardPanel className="grid grid-cols-1 gap-3 p-5 sm:p-5 md:grid-cols-3">
+              <div className="space-y-4">
+                <DashboardPanel className="grid grid-cols-1 gap-3 rounded-lg p-4 sm:p-4 md:grid-cols-3">
                   <EvidenceBox label={t("merchantPayments.customer")} value={payment.customerEmail || "-"} />
                   <EvidenceBox label={t("merchantPayments.orderId")} value={payment.orderId || "-"} />
-                  <EvidenceBox label={t("merchantPayments.latestWebhook")} value={latestWebhook ? getWebhookStatusLabel(latestWebhook) : t("merchantPayments.noWebhookEventsShort")} />
+                  <EvidenceBox label={t("merchantPayments.latestWebhook")} value={latestWebhook ? getWebhookLabel(latestWebhook, t) : t("merchantPayments.noWebhookEventsShort")} />
                 </DashboardPanel>
 
-                <DashboardPanel className="grid grid-cols-1 gap-4 p-5 sm:p-5 md:grid-cols-[150px_1fr]">
-                  <div className="w-fit rounded-lg bg-white p-2">
-                    <QRCodeSVG value={payment.walletAddress} size={126} />
+                <DashboardPanel className="grid grid-cols-1 gap-4 rounded-lg p-4 sm:p-4 md:grid-cols-[148px_minmax(0,1fr)]">
+                  <div className="payment-detail-qr w-fit rounded-lg border bg-white p-2">
+                    <QRCodeSVG value={payment.walletAddress} size={124} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm text-zinc-500">{t("merchantPayments.checkoutUrl")}</p>
+                    <p className="text-sm font-semibold text-zinc-500">{t("merchantPayments.checkoutUrl")}</p>
                     <p className="mt-1 break-all font-mono text-sm">{payment.checkoutUrl}</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         onClick={() => copyText(payment.checkoutUrl, "checkout")}
-                        className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-800"
+                        className="operation-action-button operation-action-secondary inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition"
                       >
+                        {copiedValue?.label === "checkout" ? <Check size={14} strokeWidth={2.4} /> : <Copy size={14} strokeWidth={2.2} />}
                         {copiedValue?.label === "checkout" ? t("common.copied") : t("merchantPayments.copyCheckoutLink")}
                       </button>
                       <button
                         onClick={() => copyText(payment.walletAddress, "wallet")}
-                        className="rounded-lg border border-zinc-700 px-3 py-2 text-xs font-semibold hover:bg-zinc-800"
+                        className="operation-action-button operation-action-secondary inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition"
                       >
+                        {copiedValue?.label === "wallet" ? <Check size={14} strokeWidth={2.4} /> : <WalletCards size={14} strokeWidth={2.2} />}
                         {copiedValue?.label === "wallet" ? t("common.copied") : t("checkout.copyWallet")}
                       </button>
                     </div>
                     {(copiedValue?.label === "checkout" || copiedValue?.label === "wallet") && (
                       <CopyConfirmation
+                        copiedText={t("common.copied")}
                         label={copiedValue.label === "checkout" ? t("merchantPayments.checkoutUrl") : t("merchantPayments.walletAddress")}
                         value={copiedValue.value}
                       />
@@ -321,63 +316,34 @@ export default function MerchantPaymentDetailPage() {
                   <DetailBox label={t("merchantPayments.expires")} value={formatDateTime(payment.expiresAt, timeZone)} />
                 </div>
 
-                <DashboardPanel className="p-5 sm:p-5">
+                <DashboardPanel className="rounded-lg p-4 sm:p-4">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <h2 className="text-xl font-bold">{t("merchantPayments.webhookDelivery")}</h2>
+                    <div className="min-w-0">
+                      <h2 className="flex items-center gap-2 text-base font-bold">
+                        <Webhook size={17} strokeWidth={2.2} />
+                        {t("merchantPayments.webhookDelivery")}
+                      </h2>
                       <p className="mt-1 text-sm text-zinc-500">
-                        {getWebhookStatusMessage(webhookSummary.latest)}
+                        {getWebhookMessage(webhookSummary.latest, t)}
                       </p>
                     </div>
-                    <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhookSummary.latest?.status)}`}>
-                      {getWebhookStatusLabel(webhookSummary.latest)}
+                    <span className={`webhook-status-badge ${getWebhookToneClass(webhookSummary.latest?.status)} w-fit rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhookSummary.latest?.status)}`}>
+                      {getWebhookLabel(webhookSummary.latest, t)}
                     </span>
                   </div>
                   {!payment.webhookEvents?.length ? (
-                    <DashboardEmptyState className="mt-4 bg-black p-4">{t("merchantPayments.noWebhookEvents")}</DashboardEmptyState>
+                    <DashboardEmptyState className="mt-4 rounded-lg p-4">{t("merchantPayments.noWebhookEvents")}</DashboardEmptyState>
                   ) : (
                     <div className="mt-4 space-y-3">
                       {payment.webhookEvents.map((webhook) => (
-                        <div key={webhook.id} className="rounded-xl border border-zinc-800 bg-black p-4">
-                          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                            <div className="min-w-0">
-                              <div className="flex flex-wrap items-center gap-2">
-                                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>
-                                  {getWebhookStatusLabel(webhook)}
-                                </span>
-                                <span className="text-xs text-zinc-500">{webhook.event}</span>
-                              </div>
-                              <p className="mt-2 break-all text-sm text-zinc-400">{webhook.url || "-"}</p>
-                            </div>
-                            {canRetryWebhook(webhook) ? (
-                              <button
-                                onClick={() => retryWebhook(webhook.id)}
-                                disabled={webhookAction === webhook.id}
-                                className="h-10 rounded-lg bg-amber-200 px-4 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                {webhookAction === webhook.id ? t("merchantPayments.retrying") : t("merchantPayments.retryDelivery")}
-                              </button>
-                            ) : (
-                              <span className="inline-flex h-10 items-center rounded-lg border border-zinc-800 px-4 text-xs font-semibold text-zinc-500">
-                                {t("merchantPayments.noAction")}
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="mt-4 grid grid-cols-1 gap-3 text-xs md:grid-cols-4">
-                            <WebhookMeta label={t("merchantPayments.attempts")} value={`${webhook.attempts}/${webhook.maxAttempts}`} />
-                            <WebhookMeta label={t("merchantPayments.lastStatus")} value={webhook.lastStatusCode || "-"} />
-                            <WebhookMeta label={t("merchantPayments.nextRetry")} value={formatDateTime(webhook.nextRetryAt, timeZone)} />
-                            <WebhookMeta label={t("merchantPayments.delivered")} value={formatDateTime(webhook.deliveredAt, timeZone)} />
-                          </div>
-
-                          {webhook.lastError && (
-                            <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-100">
-                              <p className="font-semibold">{t("merchantPayments.lastError")}</p>
-                              <p className="mt-1 break-all">{webhook.lastError}</p>
-                            </div>
-                          )}
-                        </div>
+                        <WebhookEventCard
+                          key={webhook.id}
+                          retryWebhook={retryWebhook}
+                          timeZone={timeZone}
+                          t={t}
+                          webhook={webhook}
+                          webhookAction={webhookAction}
+                        />
                       ))}
                     </div>
                   )}
@@ -393,8 +359,8 @@ export default function MerchantPaymentDetailPage() {
 
 function DetailBox({ label, value, mono = false }) {
   return (
-    <DashboardMetric>
-      <p className="text-xs text-zinc-500">{label}</p>
+    <DashboardMetric className="rounded-lg">
+      <p className="text-xs font-semibold uppercase text-zinc-500">{label}</p>
       <p className={`mt-2 break-all text-sm ${mono ? "font-mono" : "font-medium"}`}>{value}</p>
     </DashboardMetric>
   );
@@ -402,27 +368,158 @@ function DetailBox({ label, value, mono = false }) {
 
 function EvidenceBox({ label, value }) {
   return (
-    <DashboardMetric className="rounded-lg bg-black p-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-2 break-all text-sm font-semibold text-zinc-100">{value}</p>
+    <DashboardMetric className="payment-detail-submetric rounded-lg p-3">
+      <p className="text-xs font-semibold uppercase text-zinc-500">{label}</p>
+      <p className="mt-2 break-all text-sm font-semibold">{value}</p>
     </DashboardMetric>
   );
 }
 
-function CopyConfirmation({ label, value }) {
+function MetricCard({ icon: Icon, label, value, mono = false }) {
+  return (
+    <DashboardMetric className="rounded-lg">
+      <div className="flex items-start gap-3">
+        <span className="payment-detail-metric-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border">
+          <Icon size={17} strokeWidth={2.2} />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase text-zinc-500">{label}</p>
+          <p className={`mt-1 break-all text-sm font-semibold ${mono ? "font-mono" : ""}`}>{value}</p>
+        </div>
+      </div>
+    </DashboardMetric>
+  );
+}
+
+function CopyConfirmation({ copiedText, label, value }) {
   return (
     <div className="mt-3 rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-3 py-2 text-xs text-emerald-100">
-      <p className="font-semibold">{label} copied</p>
+      <p className="font-semibold">{label}: {copiedText}</p>
       <p className="mt-1 break-all font-mono text-emerald-50">{value}</p>
+    </div>
+  );
+}
+
+function WebhookStat({ label, value, tone }) {
+  const toneClass =
+    tone === "success"
+      ? "text-emerald-300"
+      : tone === "pending"
+        ? "text-amber-200"
+        : tone === "failed"
+          ? "text-rose-300"
+          : "";
+
+  return (
+    <DashboardMetric className="payment-detail-submetric rounded-lg p-3">
+      <p className="text-xs text-zinc-500">{label}</p>
+      <p className={`mt-1 font-semibold ${toneClass}`}>{value}</p>
+    </DashboardMetric>
+  );
+}
+
+function WebhookEventCard({ retryWebhook, timeZone, t, webhook, webhookAction }) {
+  return (
+    <div className="merchant-payment-card rounded-lg border p-4">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`webhook-status-badge ${getWebhookToneClass(webhook.status)} rounded-full px-3 py-1 text-xs font-semibold ${getWebhookStatusClassName(webhook.status)}`}>
+              {getWebhookLabel(webhook, t)}
+            </span>
+            <span className="text-xs text-zinc-500">{webhook.event}</span>
+          </div>
+          <p className="mt-2 break-all text-sm text-zinc-400">{webhook.url || "-"}</p>
+        </div>
+        {canRetryWebhook(webhook) ? (
+          <button
+            onClick={() => retryWebhook(webhook.id)}
+            disabled={webhookAction === webhook.id}
+            className="operation-action-button operation-action-success inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Send size={14} strokeWidth={2.2} />
+            {webhookAction === webhook.id ? t("merchantPayments.retrying") : t("merchantPayments.retryDelivery")}
+          </button>
+        ) : (
+          <span className="operation-action-button operation-action-muted inline-flex h-10 items-center rounded-lg border px-4 text-xs font-semibold">
+            {t("merchantPayments.noAction")}
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4 grid grid-cols-1 gap-3 text-xs md:grid-cols-4">
+        <WebhookMeta label={t("merchantPayments.attempts")} value={`${webhook.attempts}/${webhook.maxAttempts}`} />
+        <WebhookMeta label={t("merchantPayments.lastStatus")} value={webhook.lastStatusCode || "-"} />
+        <WebhookMeta label={t("merchantPayments.nextRetry")} value={formatDateTime(webhook.nextRetryAt, timeZone)} />
+        <WebhookMeta label={t("merchantPayments.delivered")} value={formatDateTime(webhook.deliveredAt, timeZone)} />
+      </div>
+
+      {webhook.lastError && (
+        <div className="payment-detail-error mt-3 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-100">
+          <p className="font-semibold">{t("merchantPayments.lastError")}</p>
+          <p className="mt-1 break-all">{webhook.lastError}</p>
+        </div>
+      )}
     </div>
   );
 }
 
 function WebhookMeta({ label, value }) {
   return (
-    <DashboardMetric className="rounded-lg p-3">
+    <DashboardMetric className="payment-detail-submetric rounded-lg p-3">
       <p className="text-zinc-500">{label}</p>
-      <p className="mt-1 break-all font-semibold text-zinc-100">{value}</p>
+      <p className="mt-1 break-all font-semibold">{value}</p>
     </DashboardMetric>
   );
+}
+
+function getPaymentGuidanceText(status, fallback, t) {
+  const guidanceKeys = {
+    CANCELLED: ["merchantPayments.statusCancelled", "merchantPayments.statusCancelledTitle", "merchantPayments.statusCancelledDescription"],
+    CONFIRMING: ["merchantPayments.statusConfirming", "merchantPayments.statusConfirmingTitle", "merchantPayments.statusConfirmingDescription"],
+    EXPIRED: ["merchantPayments.statusExpired", "merchantPayments.statusExpiredTitle", "merchantPayments.statusExpiredDescription"],
+    EXPIRED_PAID_REVIEW: ["merchantPayments.statusReview", "merchantPayments.statusReviewTitle", "merchantPayments.statusReviewDescription"],
+    PAID: ["merchantPayments.statusPaid", "merchantPayments.statusPaidTitle", "merchantPayments.statusPaidDescription"],
+    PENDING: ["merchantPayments.statusPending", "merchantPayments.statusPendingTitle", "merchantPayments.statusPendingDescription"],
+    UNDERPAID: ["merchantPayments.statusUnderpaid", "merchantPayments.statusUnderpaidTitle", "merchantPayments.statusUnderpaidDescription"],
+  };
+  const keys = guidanceKeys[status] || guidanceKeys.PENDING;
+
+  return {
+    label: t(keys[0]) || fallback.label,
+    title: t(keys[1]) || fallback.title,
+    description: t(keys[2]) || fallback.description,
+  };
+}
+
+function getWebhookLabel(webhook, t) {
+  if (!webhook) return t("merchantPayments.webhookStatusNone");
+  if (webhook.status === "SUCCESS") return t("merchantPayments.webhookStatusSuccess");
+  if (webhook.status === "FAILED") return t("merchantPayments.webhookStatusFailed");
+  if (webhook.status === "PENDING") return t("merchantPayments.webhookStatusPending");
+  return getWebhookStatusLabel(webhook);
+}
+
+function getWebhookMessage(webhook, t) {
+  if (!webhook) return t("merchantPayments.webhookNoDelivery");
+  if (webhook.status === "SUCCESS") return t("merchantPayments.webhookDeliveredShort");
+  if (webhook.status === "FAILED") return t("merchantPayments.webhookFailedShort");
+  return t("merchantPayments.webhookPendingShort");
+}
+
+function getWebhookToneClass(status) {
+  if (status === "SUCCESS") return "webhook-status-success";
+  if (status === "FAILED") return "webhook-status-failed";
+  if (status === "PENDING") return "webhook-status-pending";
+  return "webhook-status-none";
+}
+
+function formatTimeLeftText(expiresAt, now, t) {
+  if (!expiresAt) return t("checkout.noExpiration");
+  const diff = new Date(expiresAt).getTime() - now;
+  if (diff <= 0) return t("checkout.expired");
+  const totalSeconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
 }
