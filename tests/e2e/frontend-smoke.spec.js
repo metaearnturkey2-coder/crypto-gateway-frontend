@@ -106,6 +106,24 @@ const mockMerchantSession = async (
       json,
       status,
     });
+  const merchantPreferences = {
+    countryRegion: "Türkiye",
+    dashboardLanguage: "English",
+    dashboardTheme: "dark",
+    displayCurrency: "USD",
+    notificationLanguage: "English",
+    paymentEmailAlerts: true,
+    payoutEmailAlerts: true,
+    securityEmailAlerts: true,
+    timeZone: "Europe/Istanbul",
+    webhookEmailAlerts: true,
+    weeklySummaryEmail: false,
+  };
+  const preferenceOptions = {
+    dashboardLanguage: ["English", "Türkçe"],
+    displayCurrency: ["USD", "TRY", "EUR", "GBP"],
+    notificationLanguage: ["English", "Türkçe"],
+  };
 
   for (const baseUrl of backendUrls) {
     await page.route(`${baseUrl}/api/**`, async (route) => {
@@ -125,6 +143,19 @@ const mockMerchantSession = async (
             name: "E2E Merchant",
             webhookSecret: "whsec_e2e_preview",
           },
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/preferences") {
+        if (route.request().method() === "PUT") {
+          Object.assign(merchantPreferences, route.request().postDataJSON());
+        }
+
+        await fulfillJson(route, {
+          message: "Preferences updated",
+          options: preferenceOptions,
+          preference: merchantPreferences,
         });
         return;
       }
@@ -209,7 +240,7 @@ const mockPublicCheckoutPayment = async (page, payment = activeCheckoutPayment) 
 };
 
 test.describe("public frontend smoke", () => {
-  for (const route of ["/login", "/register", "/history", "/trade"]) {
+  for (const route of ["/login", "/forgot-password", "/reset-password?token=e2e-reset-token", "/register", "/history", "/trade"]) {
     test(`${route} renders without runtime errors`, async ({ page }) => {
       const errors = watchRuntimeErrors(page);
 
@@ -225,6 +256,7 @@ test.describe("public frontend smoke", () => {
     const errors = watchRuntimeErrors(page);
 
     await page.goto("/register");
+    await page.waitForLoadState("networkidle");
     await expect(page.getByText("Password strength")).toBeVisible();
     await expect(page.getByText("10+ characters")).toBeVisible();
     await expect(page.getByLabel("Confirm password")).toBeVisible();
@@ -243,12 +275,125 @@ test.describe("public frontend smoke", () => {
     const errors = watchRuntimeErrors(page);
 
     await page.goto("/login");
+    await page.waitForLoadState("networkidle");
     await page.getByLabel("Email Address").fill("not-an-email");
     await page.getByLabel("Password").fill("anything");
     await page.getByRole("button", { name: "Login" }).click();
 
     await expect(page.getByText("Enter a valid email address.")).toBeVisible();
     expectNoRuntimeErrors(errors);
+  });
+
+  test("forgot password shows custom validation for invalid email", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+
+    await page.goto("/forgot-password");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("Email Address").fill("not-an-email");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+
+    await expect(page.getByText("Enter a valid email address.")).toBeVisible();
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("forgot password shows generic success after accepted request", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    let requestPayload = null;
+
+    for (const baseUrl of backendUrls) {
+      await page.route(`${baseUrl}/api/auth/forgot-password`, async (route) => {
+        requestPayload = route.request().postDataJSON();
+        await route.fulfill({
+          contentType: "application/json",
+          json: {
+            message: "If an account exists for this email, password reset instructions will be sent.",
+          },
+          status: 200,
+        });
+      });
+    }
+
+    await page.goto("/forgot-password");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("Email Address").fill(" Merchant@Example.TEST ");
+    await page.getByRole("button", { name: "Send reset link" }).click();
+
+    await expect(
+      page.getByText("If an account exists for this email, password reset instructions will be sent.")
+    ).toBeVisible();
+    expect(requestPayload).toEqual({ email: "merchant@example.test" });
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("reset password enforces token, policy, and confirmation", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+
+    await page.goto("/reset-password");
+    await page.waitForLoadState("networkidle");
+    await page.getByRole("button", { name: "Reset password" }).click();
+    await expect(page.getByText("Reset token is required.")).toBeVisible();
+
+    await page.goto("/reset-password?token=e2e-reset-token");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("New password").fill("1234567890");
+    await page.getByLabel("Confirm password").fill("1234567890");
+    await page.getByRole("button", { name: "Reset password" }).click();
+    await expect(page.getByText("Password does not meet the security requirements.")).toBeVisible();
+
+    await page.getByLabel("New password").fill("Reset-password-123!");
+    await page.getByLabel("Confirm password").fill("Different-password-123!");
+    await page.getByRole("button", { name: "Reset password" }).click();
+    await expect(page.getByText("Passwords do not match.")).toBeVisible();
+
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("reset password submits valid token and handles success and api errors", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    const resetRequests = [];
+    let shouldFail = false;
+
+    for (const baseUrl of backendUrls) {
+      await page.route(`${baseUrl}/api/auth/reset-password`, async (route) => {
+        resetRequests.push(route.request().postDataJSON());
+        await route.fulfill({
+          contentType: "application/json",
+          json: shouldFail
+            ? { message: "Password reset token is invalid or expired" }
+            : { message: "Password reset successful" },
+          status: shouldFail ? 400 : 200,
+        });
+      });
+    }
+
+    await page.goto("/reset-password?token=e2e-reset-token");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("New password").fill("Reset-password-123!");
+    await page.getByLabel("Confirm password").fill("Reset-password-123!");
+    await page.getByRole("button", { name: "Reset password" }).click();
+
+    await expect(page.getByText("Password reset successful")).toBeVisible();
+    expect(resetRequests[0]).toEqual({
+      password: "Reset-password-123!",
+      token: "e2e-reset-token",
+    });
+
+    shouldFail = true;
+    await page.getByLabel("New password").fill("Reset-password-456!");
+    await page.getByLabel("Confirm password").fill("Reset-password-456!");
+    await page.getByRole("button", { name: "Reset password" }).click();
+
+    await expect(page.getByText("Password reset token is invalid or expired")).toBeVisible();
+    expect(resetRequests[1]).toEqual({
+      password: "Reset-password-456!",
+      token: "e2e-reset-token",
+    });
+    expect(
+      errors
+        .filter((message) => !message.includes("favicon"))
+        .filter((message) => !message.includes("the server responded with a status of 400"))
+        .join("\n")
+    ).toBe("");
   });
 
   test("checkout renders hosted payment details", async ({ page }) => {
@@ -307,6 +452,26 @@ test.describe("merchant frontend smoke", () => {
     await expect(page.getByText("Webhook Secret")).toBeVisible();
     await expect(page.getByRole("heading", { name: "API Access" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Save URL" })).toBeVisible();
+
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("notifications settings update email controls and language", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    await mockMerchantSession(page);
+
+    await page.goto("/settings/notifications");
+    await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
+    await expect(page.getByText("Email delivery controls")).toBeVisible();
+    await expect(page.getByText("4/5 Enabled")).toBeVisible();
+
+    await page.getByRole("button", { name: "Payment status alerts" }).click();
+    await expect(page.getByText("3/5 Enabled")).toBeVisible();
+    await expect(page.getByText("Notification settings saved.")).toBeVisible();
+
+    await page.getByRole("combobox").selectOption("Türkçe");
+    await expect(page.getByRole("combobox")).toHaveValue("Türkçe");
+    await expect(page.getByText("Notification settings saved.")).toBeVisible();
 
     expectNoRuntimeErrors(errors);
   });

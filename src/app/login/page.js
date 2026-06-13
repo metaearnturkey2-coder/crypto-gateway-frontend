@@ -127,6 +127,12 @@ export default function LoginPage() {
           />
         </AuthField>
 
+        <div className="flex justify-end">
+          <a href="/forgot-password" className="text-sm font-semibold text-zinc-300 hover:text-white hover:underline">
+            {t("auth.forgotPassword")}
+          </a>
+        </div>
+
         <AuthSubmitButton disabled={loading}>
           {loading ? t("auth.loggingIn") : t("auth.login")}
         </AuthSubmitButton>

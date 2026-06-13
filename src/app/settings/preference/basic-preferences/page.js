@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { DashboardPanel, DashboardSelect } from "@/components/dashboard-ui";
 import SettingsShell from "@/components/settings-shell";
 import { merchantFetch } from "@/lib/api";
-import { useDashboardLanguage } from "@/lib/i18n";
+import { normalizeDashboardLanguage, turkishLanguageLabel, useDashboardLanguage } from "@/lib/i18n";
 
 const preferenceDefaults = {
   displayCurrency: "USD",
@@ -27,13 +27,13 @@ const preferenceRows = [
     key: "dashboardLanguage",
     labelKey: "preferences.language",
     icon: Globe2,
-    options: ["English", "Türkçe"],
+    options: ["English", turkishLanguageLabel],
   },
   {
     key: "notificationLanguage",
     labelKey: "preferences.notificationLanguage",
     icon: Bell,
-    options: ["English", "Türkçe"],
+    options: ["English", turkishLanguageLabel],
   },
   {
     key: "countryRegion",
@@ -57,6 +57,15 @@ export default function BasicPreferencesPage() {
   const [notice, setNotice] = useState(null);
   const { t } = useDashboardLanguage();
 
+  const normalizePreferences = (preference = {}) => ({
+    ...preferenceDefaults,
+    ...preference,
+    dashboardLanguage: normalizeDashboardLanguage(preference.dashboardLanguage || preferenceDefaults.dashboardLanguage),
+    notificationLanguage: normalizeDashboardLanguage(
+      preference.notificationLanguage || preferenceDefaults.notificationLanguage
+    ),
+  });
+
   useEffect(() => {
     const loadPreferences = async () => {
       try {
@@ -67,10 +76,7 @@ export default function BasicPreferencesPage() {
           return;
         }
 
-        const loadedPreferences = {
-          ...preferenceDefaults,
-          ...(data.preference || {}),
-        };
+        const loadedPreferences = normalizePreferences(data.preference);
         setPreferences(loadedPreferences);
         setOptions(data.options || null);
 
@@ -134,10 +140,7 @@ export default function BasicPreferencesPage() {
         throw new Error(data.errors?.join(" ") || data.message || t("preferences.saveError"));
       }
 
-      const savedPreferences = {
-        ...preferenceDefaults,
-        ...(data.preference || {}),
-      };
+      const savedPreferences = normalizePreferences(data.preference);
       setPreferences(savedPreferences);
       Object.entries(savedPreferences).forEach(([preferenceKey, preferenceValue]) => {
         localStorage.setItem(preferenceKey, preferenceValue);
@@ -152,7 +155,11 @@ export default function BasicPreferencesPage() {
   const darkThemeEnabled = preferences.dashboardTheme !== "light";
   const rows = preferenceRows.map((row) => ({
     ...row,
-    options: options?.[row.key] || row.options,
+    options: (options?.[row.key] || row.options).map((option) =>
+      row.key === "dashboardLanguage" || row.key === "notificationLanguage"
+        ? normalizeDashboardLanguage(option)
+        : option
+    ),
   }));
 
   return (

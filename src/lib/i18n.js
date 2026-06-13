@@ -6,14 +6,27 @@ import { turkishTranslations } from "./i18n/translations-tr";
 
 export const languageStorageKey = "dashboardLanguage";
 export const timeZoneStorageKey = "timeZone";
+export const turkishLanguageLabel = "Türkçe";
 
 export const translations = {
   English: englishTranslations,
-  "Türkçe": turkishTranslations,
+  [turkishLanguageLabel]: turkishTranslations,
+};
+
+const legacyLanguageAliases = {
+  "TÃ¼rkÃ§e": turkishLanguageLabel,
+  Turkish: turkishLanguageLabel,
+};
+
+export const normalizeDashboardLanguage = (language) => {
+  const value = String(language || "").trim();
+  const normalized = legacyLanguageAliases[value] || value;
+
+  return translations[normalized] ? normalized : "English";
 };
 
 export const getTranslation = (language, key) =>
-  translations[language]?.[key] || translations.English[key] || key;
+  translations[normalizeDashboardLanguage(language)]?.[key] || translations.English[key] || key;
 
 export const formatDashboardDateTime = (value, timeZone = "Europe/Istanbul") => {
   if (!value) return "-";
@@ -82,7 +95,12 @@ export function useDashboardLanguage() {
 
   useEffect(() => {
     const updateLanguage = (value) => {
-      if (translations[value]) setLanguage(value);
+      const normalizedLanguage = normalizeDashboardLanguage(value);
+      setLanguage(normalizedLanguage);
+
+      if (value && value !== normalizedLanguage) {
+        localStorage.setItem(languageStorageKey, normalizedLanguage);
+      }
     };
 
     updateLanguage(localStorage.getItem(languageStorageKey) || "English");

@@ -4,6 +4,8 @@ const timeoutMs = Number(process.env.SMOKE_TIMEOUT_MS || 8000);
 const routes = [
   "/",
   "/login",
+  "/forgot-password",
+  "/reset-password?token=smoke-reset-token",
   "/register",
   "/overview",
   "/history",
@@ -16,6 +18,7 @@ const routes = [
   { path: "/settings", allowedStatuses: [200, 307, 308] },
   "/settings/api",
   "/settings/security",
+  "/settings/notifications",
   "/settings/preference/account",
   "/settings/preference/active-sessions",
   "/settings/preference/basic-preferences",

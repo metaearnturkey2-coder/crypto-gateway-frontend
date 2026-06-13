@@ -1,14 +1,34 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
-export const apiUrl = (path) => `${API_BASE_URL}${path}`;
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+
+const getApiBaseUrl = () => {
+  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
+    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    window.location?.hostname &&
+    !LOCAL_HOSTNAMES.has(window.location.hostname)
+  ) {
+    return `${window.location.protocol}//${window.location.hostname}:5000`;
+  }
+
+  return API_BASE_URL;
+};
+
+export const apiUrl = (path) => `${getApiBaseUrl()}${path}`;
 
 const getFallbackApiBaseUrl = () => {
-  if (!API_BASE_URL.startsWith("http://localhost:")) {
+  const apiBaseUrl = getApiBaseUrl();
+
+  if (!apiBaseUrl.startsWith("http://localhost:")) {
     return null;
   }
 
-  return API_BASE_URL.replace("http://localhost:", "http://127.0.0.1:");
+  return apiBaseUrl.replace("http://localhost:", "http://127.0.0.1:");
 };
 
 const NETWORK_ERROR_MESSAGE = "Network error. Please check your connection and try again.";
