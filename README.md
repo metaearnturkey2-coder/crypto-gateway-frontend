@@ -40,6 +40,7 @@ $env:SMOKE_BASE_URL="http://localhost:3001"; npm run smoke
 npm run lint
 npm run build
 npm run smoke
+npm run e2e:contract
 npm run e2e:smoke
 ```
 
@@ -47,4 +48,22 @@ The browser smoke suite uses Playwright and covers desktop/mobile render paths, 
 
 ```bash
 npm exec playwright install chromium
+```
+
+The full-stack contract suite uses the real backend and frontend instead of mocked API routes. Start the backend at `http://localhost:5000` and the frontend at `http://localhost:3000`, then run:
+
+```bash
+npm run e2e:contract
+```
+
+To target another backend or frontend URL:
+
+```bash
+CONTRACT_API_BASE_URL=http://localhost:5001 E2E_BASE_URL=http://localhost:3001 npm run e2e:contract
+```
+
+On Windows PowerShell:
+
+```powershell
+$env:CONTRACT_API_BASE_URL="http://localhost:5001"; $env:E2E_BASE_URL="http://localhost:3001"; npm run e2e:contract
 ```

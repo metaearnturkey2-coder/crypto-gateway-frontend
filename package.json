@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "qa:local": "npm run lint && npm run build && npm run guard:ui && npm run guard:navigation && npm run smoke",
+    "e2e:contract": "node scripts/run-fullstack-contract.mjs",
     "e2e:smoke": "playwright test",
     "guard:ui": "node scripts/guard-dashboard-ui.mjs",
     "guard:navigation": "node scripts/guard-navigation.mjs",
