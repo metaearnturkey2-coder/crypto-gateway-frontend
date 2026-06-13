@@ -44,6 +44,10 @@ export default function OverviewPage() {
     createCalls: 0,
     statusCalls: 0,
   });
+  const [complianceOnboarding, setComplianceOnboarding] = useState({
+    kybApproved: false,
+    legalAccepted: false,
+  });
   const [webhookTestCompleted, setWebhookTestCompleted] = useState(false);
   const [available, setAvailable] = useState(0);
   const [pending, setPending] = useState(0);
@@ -190,23 +194,33 @@ export default function OverviewPage() {
           paymentsResult,
           apiUsageResult,
           webhookTestResult,
+          kybResult,
+          legalResult,
         ] = await Promise.all([
           merchantFetch("/api/merchant/dashboard"),
           merchantFetch("/api/merchant/settlements"),
           merchantFetch("/api/payments?limit=1"),
           merchantFetch("/api/merchant/api-usage"),
           merchantFetch("/api/merchant/audit-logs?action=webhook.test&limit=1"),
+          merchantFetch("/api/merchant/kyb"),
+          merchantFetch("/api/merchant/legal"),
         ]);
         const dashboardData = dashboardResult.ok ? dashboardResult.body : {};
         const settlementsData = settlementsResult.ok ? settlementsResult.body : {};
         const paymentsData = paymentsResult.ok ? paymentsResult.body : {};
         const apiUsageData = apiUsageResult.ok ? apiUsageResult.body : {};
         const webhookTestData = webhookTestResult.ok ? webhookTestResult.body : {};
+        const kybData = kybResult.ok ? kybResult.body : {};
+        const legalData = legalResult.ok ? legalResult.body : {};
 
         setMerchant(dashboardData?.merchant || null);
         setPaymentStats(paymentsData?.stats || { total: 0, paid: 0, pending: 0, expired: 0 });
         setApiUsage(apiUsageData?.summary || { total: 0, createCalls: 0, statusCalls: 0 });
         setWebhookTestCompleted(Number(webhookTestData?.totalCount || webhookTestData?.count || 0) > 0);
+        setComplianceOnboarding({
+          kybApproved: kybData?.profile?.status === "APPROVED",
+          legalAccepted: Boolean(legalData?.allCurrentAccepted),
+        });
 
         const summary = settlementsData?.summary;
         if (summary) {
@@ -247,10 +261,18 @@ export default function OverviewPage() {
       action: merchant?.callbackUrl ? t("onboarding.webhook.actionReady") : t("onboarding.webhook.action"),
     },
     {
+      title: t("onboarding.compliance.title"),
+      shortTitle: t("onboarding.compliance.short"),
+      description: t("onboarding.compliance.description"),
+      done: complianceOnboarding.kybApproved && complianceOnboarding.legalAccepted,
+      href: "/business-wallet/onboarding",
+      action: complianceOnboarding.legalAccepted ? t("onboarding.compliance.actionReview") : t("onboarding.compliance.action"),
+    },
+    {
       title: t("onboarding.api.title"),
       shortTitle: t("onboarding.api.short"),
       description: t("onboarding.api.description"),
-      done: Boolean(merchant?.apiKey),
+      done: Boolean(merchant?.apiKey || merchant?.apiKeyPrefix || merchant?.apiKeyPreview),
       href: "/business-wallet/api-docs",
       action: t("onboarding.api.action"),
     },
@@ -462,7 +484,7 @@ export default function OverviewPage() {
 
           {!onboardingComplete && (
           <div className="px-5 py-3 md:px-6">
-          <div className="grid grid-cols-1 divide-y divide-zinc-800 lg:grid-cols-5 lg:divide-x lg:divide-y-0">
+          <div className="grid grid-cols-1 divide-y divide-zinc-800 lg:grid-cols-6 lg:divide-x lg:divide-y-0">
             {onboardingSteps.map((step, index) => (
               <Link
                 key={step.title}

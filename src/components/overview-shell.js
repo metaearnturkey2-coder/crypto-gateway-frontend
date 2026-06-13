@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, ChevronDown, Code2, CreditCard, ListChecks } from "lucide-react";
+import { BadgeCheck, BarChart3, ChevronDown, Code2, CreditCard, ListChecks } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import MerchantTopbar from "@/components/merchant-topbar";
@@ -27,6 +27,12 @@ const businessMenuItems = [
     labelKey: "nav.merchantPayments",
     descriptionKey: "nav.merchantPaymentsDescription",
     icon: CreditCard,
+  },
+  {
+    href: "/business-wallet/onboarding",
+    labelKey: "nav.merchantOnboarding",
+    descriptionKey: "nav.merchantOnboardingDescription",
+    icon: BadgeCheck,
   },
   {
     href: "/business-wallet/ledger",

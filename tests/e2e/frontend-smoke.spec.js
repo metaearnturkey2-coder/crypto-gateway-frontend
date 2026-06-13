@@ -124,6 +124,102 @@ const mockMerchantSession = async (
     displayCurrency: ["USD", "TRY", "EUR", "GBP"],
     notificationLanguage: ["English", "Türkçe"],
   };
+  const merchantSessions = [
+    {
+      browser: "Chrome",
+      city: "Istanbul",
+      country: "Türkiye",
+      createdAt: "2026-06-13T09:00:00.000Z",
+      device: "Desktop",
+      expiresAt: "2026-06-20T09:00:00.000Z",
+      id: "session-current-e2e",
+      ipAddress: "127.0.0.1",
+      isActive: true,
+      isCurrent: true,
+      os: "Windows",
+    },
+  ];
+  const merchantApiKeys = [
+    {
+      createdAt: "2026-06-12T09:00:00.000Z",
+      effectiveStatus: "ACTIVE",
+      expiresAt: null,
+      id: "api-key-live-e2e",
+      lastUsedAt: "2026-06-13T08:00:00.000Z",
+      mode: "LIVE",
+      prefix: "cg_live_e2e",
+      scopes: ["payments:create", "payments:read"],
+      status: "ACTIVE",
+    },
+    {
+      createdAt: "2026-06-11T09:00:00.000Z",
+      effectiveStatus: "ACTIVE",
+      expiresAt: null,
+      id: "api-key-test-e2e",
+      lastUsedAt: null,
+      mode: "TEST",
+      prefix: "cg_test_e2e",
+      scopes: ["payments:create"],
+      status: "ACTIVE",
+    },
+  ];
+  const kybRequirements = {
+    businessTypes: ["SOLE_PROPRIETORSHIP", "LIMITED_COMPANY", "CORPORATION", "PARTNERSHIP", "NON_PROFIT", "OTHER"],
+    expectedVolumeBands: ["0-10K", "10K-50K", "50K-250K", "250K-1M", "1M+"],
+    requiredFields: ["businessName", "businessType", "country", "contactName", "contactEmail"],
+  };
+  let kybProfile = {
+    businessName: "E2E Merchant",
+    businessType: "LIMITED_COMPANY",
+    contactEmail: "merchant@example.test",
+    contactName: "E2E Merchant",
+    country: "Turkey",
+    expectedVolumeBand: "10K-50K",
+    registrationNumber: "MERSIS-123456",
+    status: "NOT_SUBMITTED",
+    website: "https://merchant.example.test",
+  };
+  const requiredLegalDocuments = [
+    { documentType: "TERMS_OF_SERVICE", version: "2026-06-07" },
+    { documentType: "PRIVACY_POLICY", version: "2026-06-07" },
+    { documentType: "ACCEPTABLE_USE_POLICY", version: "2026-06-07" },
+    { documentType: "MERCHANT_AGREEMENT", version: "2026-06-07" },
+  ];
+  let legalAccepted = false;
+  const buildLegalDocuments = () => [
+    {
+      accepted: legalAccepted,
+      required: true,
+      summary: "Operational terms for payment processing and account usage.",
+      title: "Terms of Service",
+      type: "TERMS_OF_SERVICE",
+      version: "2026-06-07",
+    },
+    {
+      accepted: legalAccepted,
+      required: true,
+      summary: "Privacy commitments covering merchant and customer data.",
+      title: "Privacy Policy",
+      type: "PRIVACY_POLICY",
+      version: "2026-06-07",
+    },
+    {
+      accepted: legalAccepted,
+      required: true,
+      summary: "Restricted business categories and prohibited payment flows.",
+      title: "Acceptable Use Policy",
+      type: "ACCEPTABLE_USE_POLICY",
+      version: "2026-06-07",
+    },
+    {
+      accepted: legalAccepted,
+      required: true,
+      summary: "Merchant responsibilities for production payment operations.",
+      title: "Merchant Agreement",
+      type: "MERCHANT_AGREEMENT",
+      version: "2026-06-07",
+    },
+  ];
 
   for (const baseUrl of backendUrls) {
     await page.route(`${baseUrl}/api/**`, async (route) => {
@@ -147,6 +243,135 @@ const mockMerchantSession = async (
         return;
       }
 
+      if (path === "/api/merchant/kyb") {
+        if (route.request().method() === "PUT") {
+          kybProfile = {
+            ...kybProfile,
+            ...route.request().postDataJSON(),
+            status: "SUBMITTED",
+          };
+        }
+
+        await fulfillJson(route, {
+          profile: kybProfile,
+          requirements: kybRequirements,
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/onboarding/checklist") {
+        await fulfillJson(route, {
+          checklist: {
+            checks: [
+              {
+                code: "KYB_APPROVED",
+                message:
+                  kybProfile.status === "APPROVED"
+                    ? "Merchant KYB is approved."
+                    : "Merchant KYB must be approved before pilot go-live.",
+                status: kybProfile.status === "APPROVED" ? "PASS" : "FAIL",
+              },
+              {
+                code: "LEGAL_DOCUMENTS_ACCEPTED",
+                message: legalAccepted
+                  ? "Current legal documents are accepted."
+                  : "Merchant must accept current legal documents.",
+                status: legalAccepted ? "PASS" : "FAIL",
+              },
+              {
+                code: "ACTIVE_API_KEY",
+                message: "Merchant has at least one active API key.",
+                status: "PASS",
+              },
+              {
+                code: "WEBHOOK_CONFIGURED",
+                message: "Webhook URL should be configured and tested successfully.",
+                status: "WARN",
+              },
+              {
+                code: "PAYOUT_ADDRESS_READY",
+                message: "Merchant has an active payout whitelist address.",
+                status: "PASS",
+              },
+              {
+                code: "RISK_EVENTS_REVIEWED",
+                message: "No open risk events remain.",
+                status: "PASS",
+              },
+              {
+                code: "BALANCE_RECONCILED",
+                message: "Merchant balance matches ledger.",
+                status: "PASS",
+              },
+              {
+                code: "SANDBOX_PAYMENT_TESTED",
+                message: "A sandbox payment test is recommended before live traffic.",
+                status: "WARN",
+              },
+            ],
+            generatedAt: "2026-06-13T09:00:00.000Z",
+            merchant: {
+              id: "merchant-e2e",
+              name: "E2E Merchant",
+            },
+            overallStatus: legalAccepted && kybProfile.status === "APPROVED" ? "REVIEW_REQUIRED" : "BLOCKED",
+            summary: {
+              fail: [kybProfile.status === "APPROVED", legalAccepted].filter((value) => !value).length,
+              pass: 4 + (kybProfile.status === "APPROVED" ? 1 : 0) + (legalAccepted ? 1 : 0),
+              total: 8,
+              warn: 2,
+            },
+          },
+          message: "Merchant onboarding checklist",
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/legal/accept") {
+        legalAccepted = true;
+        await fulfillJson(route, {
+          acceptances: requiredLegalDocuments,
+          allCurrentAccepted: true,
+          message: "Legal documents accepted",
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/legal") {
+        await fulfillJson(route, {
+          acceptances: legalAccepted ? requiredLegalDocuments : [],
+          allCurrentAccepted: legalAccepted,
+          documents: buildLegalDocuments(),
+          required: requiredLegalDocuments,
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/compliance/travel-rule") {
+        await fulfillJson(route, {
+          assessment: {
+            checklist: [
+              {
+                code: "KYB_PROFILE_APPROVED",
+                complete: kybProfile.status === "APPROVED",
+                description: "KYB approval is required before production Travel Rule enforcement.",
+              },
+              {
+                code: "LEGAL_DOCUMENTS_ACCEPTED",
+                complete: legalAccepted,
+                description: "Current legal documents must be accepted by the merchant.",
+              },
+            ],
+            market: url.searchParams.get("targetMarket") || "TURKEY",
+            policyDescription: "Travel Rule policy is ready for merchant onboarding review.",
+            readiness: legalAccepted ? "PARTIAL" : "PENDING",
+            readyForProductionEnforcement: false,
+            threshold: url.searchParams.get("amount") || "1000",
+          },
+        });
+        return;
+      }
+
       if (path === "/api/merchant/preferences") {
         if (route.request().method() === "PUT") {
           Object.assign(merchantPreferences, route.request().postDataJSON());
@@ -156,6 +381,21 @@ const mockMerchantSession = async (
           message: "Preferences updated",
           options: preferenceOptions,
           preference: merchantPreferences,
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/sessions") {
+        await fulfillJson(route, {
+          sessions: merchantSessions,
+        });
+        return;
+      }
+
+      if (path === "/api/merchant/api-keys") {
+        await fulfillJson(route, {
+          apiKeys: merchantApiKeys,
+          message: "Merchant API keys",
         });
         return;
       }
@@ -426,6 +666,11 @@ test.describe("merchant frontend smoke", () => {
     await expect(page.getByText("Total funds")).toBeVisible();
     await expect(page.getByRole("link", { exact: true, name: "Create payment" })).toBeVisible();
     await expect(page.getByText("Merchant setup")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Continue onboarding/ })).toHaveAttribute(
+      "href",
+      "/business-wallet/onboarding"
+    );
+    await expect(page.getByRole("heading", { name: "Complete compliance onboarding" }).first()).toBeVisible();
     await expect(page.getByText("Assets")).toBeVisible();
 
     expectNoRuntimeErrors(errors);
@@ -472,6 +717,54 @@ test.describe("merchant frontend smoke", () => {
     await page.getByRole("combobox").selectOption("Türkçe");
     await expect(page.getByRole("combobox")).toHaveValue("Türkçe");
     await expect(page.getByText("Notification settings saved.")).toBeVisible();
+
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("authorization settings summarize sessions and api access", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    await mockMerchantSession(page);
+
+    await page.goto("/settings/preference/authorization");
+    await expect(page.getByRole("heading", { name: "Authorization control center" })).toBeVisible();
+    await expect(page.locator(".settings-preference-row").filter({ hasText: "Active sessions" })).toBeVisible();
+    await expect(page.locator(".settings-preference-row").filter({ hasText: "Active API keys" })).toBeVisible();
+    await expect(page.getByText("API key authorization")).toBeVisible();
+    await expect(page.getByText("cg_live_e2e")).toBeVisible();
+    await expect(page.getByText("cg_test_e2e")).toBeVisible();
+    await expect(page.getByText("Webhook endpoint configured")).toBeVisible();
+    await expect(page.getByRole("link", { name: /Manage sessions/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /Manage keys/ })).toBeVisible();
+
+    expectNoRuntimeErrors(errors);
+  });
+
+  test("merchant onboarding submits kyb and accepts legal documents", async ({ page }) => {
+    const errors = watchRuntimeErrors(page);
+    await mockMerchantSession(page);
+
+    await page.goto("/business-wallet/onboarding");
+    await expect(page.getByRole("heading", { name: "Merchant onboarding" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Business verification" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Legal acceptance" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Go-live checklist" })).toBeVisible();
+    await expect(page.getByText("Balance reconciled")).toBeVisible();
+    await expect(page.getByText("Merchant KYB must be approved before pilot go-live.")).toBeVisible();
+
+    await page.getByLabel("Business name").fill("E2E Merchant Limited");
+    await page.getByLabel("Contact name").fill("E2E Owner");
+    await page.getByLabel("Contact email").fill("owner@example.test");
+    await page.getByLabel("Registration number").fill("REG-2026-001");
+    await page.getByLabel("Website").fill("https://merchant.example.test");
+    await page.getByRole("button", { name: "Submit KYB profile" }).click();
+
+    await expect(page.getByText("KYB profile submitted for review.")).toBeVisible();
+    await expect(page.getByText("SUBMITTED", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Accept required documents" }).click();
+
+    await expect(page.getByText("Required legal documents accepted.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Legal documents accepted" })).toBeVisible();
 
     expectNoRuntimeErrors(errors);
   });
